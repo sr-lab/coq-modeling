@@ -160,11 +160,17 @@ def get_datasets(
         filtered_val_path = orig_val_path.parent / orig_val_path.name.replace(".db", "_tmp.db")
         
         if len(valid_files) > 0:
-            _logger.info(f"Creating filtered training database at {filtered_train_path}")
-            create_filtered_db(orig_train_path, filtered_train_path, valid_files)
+            if filtered_train_path.exists():
+                print(f"Reusing existing filtered training database at {filtered_train_path}")
+            else:
+                _logger.info(f"Creating filtered training database at {filtered_train_path}")
+                create_filtered_db(orig_train_path, filtered_train_path, valid_files)
             
-            _logger.info(f"Creating filtered validation database at {filtered_val_path}")
-            create_filtered_db(orig_val_path, filtered_val_path, valid_files)
+            if filtered_val_path.exists():
+                print(f"Reusing existing filtered validation database at {filtered_val_path}")
+            else:
+                _logger.info(f"Creating filtered validation database at {filtered_val_path}")
+                create_filtered_db(orig_val_path, filtered_val_path, valid_files)
         else:
             _logger.info("No valid files specified, using original databases")
             shutil.copy(orig_train_path, filtered_train_path)
