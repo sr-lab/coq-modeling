@@ -126,9 +126,9 @@ def get_datasets(
 def get_valid_files(repo_path: Path) -> set[Path]:
     valid_files = set()
 
-    for repo in os.path.join(repo_path, "repos").iterdir():
+    for repo in Path(os.path.join(repo_path, "repos")).iterdir():
         if repo.is_dir():
-            if os.path.exists(repo / "valid_files.csv"):
+            if (repo / "valid_files.csv").exists():
                 with open(repo / "valid_files.csv", "r") as f:
                     reader = csv.reader(f)
                     for row in reader:
