@@ -1,50 +1,29 @@
-from typing import Optional, Iterable, Generator, Any
-import sys, os
-import shutil
-import re
-import time
+from typing import Optional, Any
+import sys
 import argparse
-import functools
-import subprocess
 from pathlib import Path
 
-from yaml import load, Loader
-import jsonlines
-
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import (
     AutoModelForCausalLM,
-    AutoTokenizer,
     PreTrainedModel,
-    PreTrainedTokenizer,
     BitsAndBytesConfig,
-    TrainingArguments,
-    CodeLlamaTokenizer,
     Trainer,
 )
 import torch
-from torch.utils.data import Dataset
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 
-from trl import GRPOTrainer, GRPOConfig
-
-# from datasets import Dataset
-import numpy as np
+from trl import GRPOTrainer
 
 from util.train_utils import (
     get_optional_arg,
     get_required_arg,
-    get_training_args,
     get_grpo_training_args,
     load_config,
     make_output_dir,
     copy_configs,
     get_train_val_path,
-    TrainType,
-    TRAINING_CONF_NAME,
-    REQS_NAME,
-    GIT_NAME,
+    TrainType
 )
 from util.util import set_rango_logger
 from util.constants import RANGO_LOGGER
@@ -162,26 +141,10 @@ def get_trainer(
     train_dataset, val_dataset = get_datasets(conf)
 
     print("\n\nBuilding Trainer...")
-    # trainer = SFTTrainer(
-    #     model=model,
-    #     tokenizer=tokenizer,
-    #     args=training_args,
-    #     data_collator=train_dataset.collator,
-    #     train_dataset=train_dataset,
-    #     eval_dataset=val_dataset,
-    #     max_seq_length=hard_seq_len,
-    # )
-
-    #trainer = Trainer(
-        #model=model,
-        #tokenizer=train_dataset.tokenizer,
-        #args=training_args,
-       # data_collator=train_dataset.collator,
-       # train_dataset=train_dataset,
-       # eval_dataset=val_dataset,
-        # max_seq_length=hard_seq_len,
-  #)
     def dummy_reward(prompts, completions, answer, **kwargs):
+        print(kwargs["file_name"])
+        print(kwargs["proof_idx"])
+        print(kwargs["step_idx"])
         return [1 for prompt in prompts]
 
     trainer = GRPOTrainer(

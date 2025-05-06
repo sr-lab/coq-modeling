@@ -675,7 +675,10 @@ class LmProcessedDataset(Dataset):
         #)
         return {
             "prompt": clean_example,
-            "answer": None
+            "answer": None,
+            "file_name": target_lm_example.file_name,
+            "proof_idx": target_lm_example.proof_idx,
+            "step_idx": target_lm_example.step_idx,
         }
 
 
