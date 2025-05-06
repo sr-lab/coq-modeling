@@ -4,6 +4,11 @@ import csv
 import sys
 import argparse
 from pathlib import Path
+import tempfile
+import shutil
+import json
+import sqlite3
+from sqlite3 import Connection, Cursor
 
 from peft import LoraConfig, get_peft_model
 import transformers
@@ -14,7 +19,6 @@ from transformers import (
     Trainer,
 )
 import torch
-from torch.utils.data import Subset
 
 from trl import GRPOTrainer
 
@@ -31,6 +35,7 @@ from util.train_utils import (
 from util.util import set_rango_logger
 from util.constants import RANGO_LOGGER
 from data_management.splits import Split
+from data_management.jsonl_utils import ExampleDB
 from tactic_gen.tactic_data import (
     LmDataset,
     LmProcessedDataset,
@@ -86,6 +91,53 @@ def get_model(model_name: str) -> PreTrainedModel:
     return model
 
 
+def create_filtered_db(source_db_path: Path, target_db_path: Path, valid_files: set[Path]) -> None:
+    """
+    Create a new database filtered by valid files using ExampleDB methods.
+    
+    Args:
+        source_db_path: Path to the source database
+        target_db_path: Path to save the filtered database
+        valid_files: Set of valid file paths to filter by
+    """
+    valid_file_strs = set(str(path) for path in valid_files)
+    
+    if len(valid_file_strs) == 0:
+        _logger.warning("No valid files provided for filtering, copying entire database")
+        shutil.copy(source_db_path, target_db_path)
+        return
+    
+    if target_db_path.exists():
+        raise ValueError(f"Target DB {target_db_path} already exists")
+    
+    source_db = ExampleDB.load(source_db_path)
+    target_db = ExampleDB.create(target_db_path)
+    
+    total_count = source_db.size()
+    total_copied = 0
+    batch_size = 10000
+    
+    # Process in batches to avoid memory issues
+    for i in range(1, total_count + 1, batch_size):
+        batch = []
+        for j in range(i, min(i + batch_size, total_count + 1)):
+            example_text = source_db.retrieve(j)
+            example_data = json.loads(example_text)
+            if example_data.get('file_name') in valid_file_strs:
+                batch.append((example_text,))
+        
+        if batch:
+            target_db.insert_examples(batch)
+            total_copied += len(batch)
+    
+    source_db.close()
+    target_db.close()
+    
+    print(
+        f"Created filtered database with {total_copied} examples out of {total_count} original examples ({(total_copied/total_count)*100:.2f}%)"
+    )
+
+
 def get_datasets(
     conf: dict[str, Any],
 ) -> tuple[LmDataset | LmProcessedDataset, LmDataset | LmProcessedDataset]:
@@ -94,19 +146,41 @@ def get_datasets(
         data_path = Path(get_required_arg("data_path", conf))
         num_eval_examples = get_optional_arg("num_eval_examples", conf, None)
         hard_seq_len = get_required_arg("hard_seq_len", conf)
-        train_path, val_path = get_train_val_path(data_path)
-
+        orig_train_path, orig_val_path = get_train_val_path(data_path)
+        
+        # Get valid files for filtering if specified
+        repo_path = get_optional_arg("repo_path", conf, None)
+        valid_files = set()
+        if repo_path:
+            repo_path = Path(repo_path)
+            valid_files = get_valid_files(repo_path)
+            _logger.info(f"Found {len(valid_files)} valid files to filter by")
+        
+        filtered_train_path = orig_train_path.parent / orig_train_path.name.replace(".db", "_tmp.db")
+        filtered_val_path = orig_val_path.parent / orig_val_path.name.replace(".db", "_tmp.db")
+        
+        if len(valid_files) > 0:
+            _logger.info(f"Creating filtered training database at {filtered_train_path}")
+            create_filtered_db(orig_train_path, filtered_train_path, valid_files)
+            
+            _logger.info(f"Creating filtered validation database at {filtered_val_path}")
+            create_filtered_db(orig_val_path, filtered_val_path, valid_files)
+        else:
+            _logger.info("No valid files specified, using original databases")
+            shutil.copy(orig_train_path, filtered_train_path)
+            shutil.copy(orig_val_path, filtered_val_path)
+        
         example_collator_conf = example_collator_conf_from_yaml(
             example_collator_yaml_conf
         )
         example_collator = example_collator_from_conf(example_collator_conf)
-        print("EXAMPLE COLLATOR", example_collator)
+        _logger.info("EXAMPLE COLLATOR: %s", example_collator)
         tokenizer = get_tokenizer(get_required_arg("model_name", conf))
         train_dataset = LmProcessedDataset(
-            train_path, tokenizer, example_collator, hard_seq_len
+            filtered_train_path, tokenizer, example_collator, hard_seq_len
         )
         val_dataset = LmProcessedDataset(
-            val_path,
+            filtered_val_path,
             tokenizer,
             example_collator,
             hard_seq_len,
@@ -132,32 +206,9 @@ def get_valid_files(repo_path: Path) -> set[Path]:
                 with open(repo / "valid_files.csv", "r") as f:
                     reader = csv.reader(f)
                     for row in reader:
-                        valid_files.add(os.path.join("repos", Path(row[0])))
+                        valid_files.add(os.path.join("repos", repo.name, Path(row[0])))
 
     return valid_files
-
-
-def filter_dataset_by_files(
-    dataset: LmDataset | LmProcessedDataset, valid_files: set[Path]
-) -> LmDataset | LmProcessedDataset:
-    """
-    Filter a dataset by keeping only examples from valid files.
-    
-    Args:
-        dataset: LmDataset or LmProcessedDataset
-        valid_files: list of valid file paths
-    
-    Returns:
-        A filtered dataset containing only examples from valid files
-    """
-    valid_indices = []
-    valid_file_strs = set(str(path) for path in valid_files)
-    
-    for i in range(len(dataset)):
-        if dataset[i]["file_name"] in valid_file_strs:
-            valid_indices.append(i)
-            
-    return Subset(dataset, valid_indices)
 
 
 def get_trainer(
@@ -171,18 +222,8 @@ def get_trainer(
     lora_config = get_lora_conf(conf)
     model = get_peft_model(raw_model, lora_config)
 
-    valid_files = get_valid_files(Path(conf["repos_path"]))
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf)
-    
-    # Filtering datasets by valid files
-    print("Training dataset size:", len(train_dataset))
-    train_dataset = filter_dataset_by_files(train_dataset, valid_files)
-    print("Filtered Training dataset size:", len(train_dataset))
-
-    print("Validation dataset size:", len(val_dataset))
-    val_dataset = filter_dataset_by_files(val_dataset, valid_files)
-    print("Filtered Validation dataset size:", len(val_dataset))
 
     print("\n\nBuilding Trainer...")
     def dummy_reward(prompts, completions, answer, **kwargs):
@@ -193,12 +234,12 @@ def get_trainer(
         return [1 for prompt in prompts]
 
     trainer = GRPOTrainer(
-            model=model,
-            processing_class=train_dataset.tokenizer,
-            reward_funcs=[dummy_reward],
-            args=training_args,
-            train_dataset=train_dataset,
-            eval_dataset=val_dataset
+        model=model,
+        processing_class=train_dataset.tokenizer,
+        reward_funcs=[dummy_reward],
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset
     )
     
     return trainer
