@@ -149,11 +149,11 @@ def get_datasets(
         orig_train_path, orig_val_path = get_train_val_path(data_path)
         
         # Get valid files for filtering if specified
-        repo_path = get_optional_arg("repo_path", conf, None)
+        repos_path = get_optional_arg("repos_path", conf, None)
         valid_files = set()
-        if repo_path:
-            repo_path = Path(repo_path)
-            valid_files = get_valid_files(repo_path)
+        if repos_path:
+            repos_path = Path(repos_path)
+            valid_files = get_valid_files(repos_path)
             _logger.info(f"Found {len(valid_files)} valid files to filter by")
         
         filtered_train_path = orig_train_path.parent / orig_train_path.name.replace(".db", "_tmp.db")
