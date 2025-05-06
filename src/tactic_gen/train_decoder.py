@@ -4,11 +4,8 @@ import csv
 import sys
 import argparse
 from pathlib import Path
-import tempfile
 import shutil
 import json
-import sqlite3
-from sqlite3 import Connection, Cursor
 
 from peft import LoraConfig, get_peft_model
 import transformers

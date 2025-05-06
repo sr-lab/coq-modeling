@@ -666,7 +666,7 @@ class LmProcessedDataset(Dataset):
         target_lm_example = LmExample.from_json(
             json.loads(self.edb.retrieve(target_idx + 1))
         )
-        clean_example = self.example_collator.collate(self.tokenizer, target_lm_example)
+        clean_example = self.example_collator.collate_input(self.tokenizer, target_lm_example)
         return {
             "prompt": clean_example,
             "answer": None,
