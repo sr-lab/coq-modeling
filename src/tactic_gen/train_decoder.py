@@ -14,6 +14,7 @@ from transformers import (
     Trainer,
 )
 import torch
+from torch.utils.data import Subset
 
 from trl import GRPOTrainer
 
@@ -131,16 +132,42 @@ def get_valid_files(repo_path: Path) -> list[Path]:
                 with open(repo / "valid_files.csv", "r") as f:
                     reader = csv.reader(f)
                     for row in reader:
-                        valid_files.append(os.path.join(repo_path, repo, Path(row[0])))
+                        valid_files.append(os.path.join(repo, Path(row[0])))
 
     return valid_files
+
+
+def filter_dataset_by_files(
+    dataset: LmDataset | LmProcessedDataset, valid_files: list[Path]
+) -> LmDataset | LmProcessedDataset:
+    """
+    Filter a dataset by keeping only examples from valid files.
+    
+    Args:
+        dataset: LmDataset or LmProcessedDataset
+        valid_files: list of valid file paths
+    
+    Returns:
+        A filtered dataset containing only examples from valid files
+    """
+    valid_indices = []
+    valid_file_strs = [str(path) for path in valid_files]
+    
+    for i in range(len(dataset)):
+        example_path = dataset[i]["file_name"]
+        if any(
+            valid_path.endswith(str(example_path))
+            for valid_path in valid_file_strs
+        ):
+            valid_indices.append(i)
+            
+    return Subset(dataset, valid_indices)
 
 
 def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
 ) -> Trainer:
     print("\n\nBuilding Training Config...")
-    #training_args = get_training_args(conf, local_rank)
     training_args = get_grpo_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
@@ -148,9 +175,18 @@ def get_trainer(
     lora_config = get_lora_conf(conf)
     model = get_peft_model(raw_model, lora_config)
 
-    print(get_valid_files(Path(conf["repos_path"])))
+    valid_files = get_valid_files(Path(conf["repos_path"]))
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf)
+    
+    # Filtering datasets by valid files
+    print("Training dataset size:", len(train_dataset))
+    train_dataset = filter_dataset_by_files(train_dataset, valid_files)
+    print("Filtered Training dataset size:", len(train_dataset))
+
+    print("Validation dataset size:", len(val_dataset))
+    val_dataset = filter_dataset_by_files(val_dataset, valid_files)
+    print("Filtered Validation dataset size:", len(val_dataset))
 
     print("\n\nBuilding Trainer...")
     def dummy_reward(prompts, completions, answer, **kwargs):
