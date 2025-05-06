@@ -22,6 +22,8 @@ from util.constants import (
     TMP_LOC,
 )
 from util.util import get_basic_logger
+from trl import GRPOConfig
+
 
 _logger = get_basic_logger(__name__)
 
@@ -72,9 +74,9 @@ def copy_configs(conf_path: Path, conf: dict[str, Any], train_type: TrainType) -
     reqs = subprocess.check_output([sys.executable, "-m", "pip", "freeze"])
     with open(os.path.join(output_dir, REQS_NAME), "wb") as fout:
         fout.write(reqs)
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"])
-    with open(os.path.join(output_dir, GIT_NAME), "wb") as fout:
-        fout.write(commit)
+    #commit = subprocess.check_output(["git", "rev-parse", "HEAD"])
+    #with open(os.path.join(output_dir, GIT_NAME), "wb") as fout:
+    #    fout.write(commit)
 
 
 def make_output_dir(conf: dict[str, Any]) -> None:
@@ -145,3 +147,30 @@ def get_training_args(
         local_rank=(local_rank if local_rank else -1),
         ddp_find_unused_parameters=False,
     )
+
+def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> GRPOConfig:
+    return GRPOConfig(
+        output_dir=get_required_arg("output_dir", conf),
+        per_device_train_batch_size=get_required_arg(
+            "per_device_train_batch_size", conf
+        ),
+        gradient_accumulation_steps=get_optional_arg(
+            "gradient_accumulation_steps", conf, 2
+        ),
+        learning_rate=get_required_arg("learning_rate", conf),
+        logging_steps=get_required_arg("logging_steps", conf),
+        num_train_epochs=get_required_arg("num_train_epochs", conf),
+        max_steps=get_optional_arg("max_steps", conf, -1),
+        save_strategy="steps",
+        save_steps=get_required_arg("save_steps", conf),
+        save_total_limit=get_required_arg("save_total_limit", conf),
+        evaluation_strategy="steps",
+        eval_steps=get_required_arg("eval_steps", conf),
+        per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
+        eval_accumulation_steps=get_optional_arg("eval_accumulation_steps", conf, 1),
+        load_best_model_at_end=True,
+        # deepspeed=__get_required_arg("deepspeed", conf),
+        local_rank=(local_rank if local_rank else -1),
+        ddp_find_unused_parameters=False,
+    )
+

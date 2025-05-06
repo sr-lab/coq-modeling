@@ -1,7 +1,7 @@
+from tqdm import tqdm
 import argparse
 import json
 import shutil
-from typing import Optional
 
 from pathlib import Path
 from dataclasses import dataclass
@@ -105,13 +105,12 @@ def get_sentence_db_loc(split: Split) -> Path:
 
 
 def get_searcher_conf(model_alias: str) -> SearcherConf:
-    timeout = 600
+    timeout = 60
     straight_line_conf = StraightLineSearcherConf(
         timeout=timeout,
         print_proofs=True,
         initial_proof=None,
         token_mask=None,
-        interleave_hammer=False,
     )
 
     match model_alias:
@@ -120,7 +119,7 @@ def get_searcher_conf(model_alias: str) -> SearcherConf:
                 max_branch=4,
                 max_search_steps=1000000,
                 depth_limit=30,
-                timeout=600,
+                timeout=60,
                 beam_decode=True,
                 initial_proof=None,
             )
@@ -130,18 +129,9 @@ def get_searcher_conf(model_alias: str) -> SearcherConf:
                 max_branch=4,
                 max_search_steps=1000000,
                 depth_limit=30,
-                timeout=600,
+                timeout=60,
                 beam_decode=False,
                 initial_proof=None,
-            )
-
-        case "rango-hammer":
-            return StraightLineSearcherConf(
-                timeout=timeout,
-                print_proofs=True,
-                initial_proof=None,
-                token_mask=None,
-                interleave_hammer=True,
             )
 
         case _:
@@ -200,9 +190,9 @@ def get_tactic_confs(model_alias: str, split: Split) -> list[TacticGenConf]:
     )
 
     match model_alias:
-        case "rango" | "rango-best-beam" | "rango-best-rand" | "rango-hammer":
+        case "rango" | "rango-best-beam" | "rango-best-rand":
             checkpoint = (
-                "models/deepseek-bm25-proof-tfidf-proj-thm-prem-final/checkpoint-54500"
+                "models/deepseek-r1/DeepSeek-R1-Distill-Qwen-1.5B"
             )
             formatter = GeneralFormatterConf(
                 premise_client_conf=tfidf_premise_conf,
@@ -384,7 +374,6 @@ def get_results_loc(model_alias: str) -> list[Path]:
             Path("results/rango.json"),
             Path("results/rango-cutoff.json"),
         ],
-        "rango-hammer": [],
         "rango-inter-file": [
             Path("results/rango-abl-intersect-random.json"),
         ],
@@ -432,7 +421,7 @@ def get_results_loc(model_alias: str) -> list[Path]:
     return results_locs[model_alias]
 
 
-def get_result(model_alias: str, thm: EvalTheorem) -> Optional[Result]:
+def get_result(model_alias: str, thm: EvalTheorem) -> Result:
     results_locs = get_results_loc(model_alias)
     for results_loc in results_locs:
         with open(results_loc) as f:
@@ -442,10 +431,10 @@ def get_result(model_alias: str, thm: EvalTheorem) -> Optional[Result]:
         for r in results.results:
             if r.thm == thm:
                 return r
-    return None
+    raise ValueError(f"Do not have a results for {model_alias}")
 
 
-def get_orig_result(model_alias: str, split: Split, idx: int) -> Optional[Result]:
+def get_orig_result(model_alias: str, split: Split, idx: int) -> Result:
     thm = get_theorem(split, idx, COQSTOQ_LOC)
     return get_result(model_alias, thm)
 
@@ -555,13 +544,10 @@ if __name__ == "__main__":
         conf = get_test_proof(args.alias, coqstoq_split, args.idx)
         print(conf.thm.project.dir_name, conf.thm.path)
         orig_result = get_orig_result(args.alias, coqstoq_split, args.idx)
-        if orig_result is not None:
-            print("Original Proof:")
-            print(orig_result.proof)
-            print("Original Time:")
-            print(orig_result.time)
-        else:
-            print("Original Proof: None")
+        print("Original Proof:")
+        print(orig_result.proof)
+        print("Original Time:")
+        print(orig_result.time)
     else:
         assert args.command == "eval"
         conf = get_test_proof(args.alias, coqstoq_split, 0)
@@ -595,12 +581,11 @@ if __name__ == "__main__":
             result = run_proof(conf.to_run_conf())
             match result:
                 case ClassicalSuccess():
-                    if orig_result is not None:
-                        print(
-                            f"\n\n ORIGINAL RESULT: {'SUCCESS' if orig_result.proof is not None else 'FAILURE'}"
-                        )
-                        print(f"ORIGINAL TIME: {orig_result.time}")
-                        print(f"ORIGINAL PROOF: {orig_result.proof}")
+                    print(
+                        f"\n\n ORIGINAL RESULT: {'SUCCESS' if orig_result.proof is not None else 'FAILURE'}"
+                    )
+                    print(f"ORIGINAL TIME: {orig_result.time}")
+                    print(f"ORIGINAL PROOF: {orig_result.proof}")
                     print("CURRENT RESULT: SUCCESS")
                     print(f"CURRENT TIME: {result.time}")
                     print(f"CURRENT PROOF:")
@@ -609,12 +594,11 @@ if __name__ == "__main__":
                 case ClassicalFailure():
                     print("failed")
                 case StraightLineSuccess():
-                    if orig_result is not None:
-                        print(
-                            f"\n\nORIGINAL RESULT: {'SUCCESS' if orig_result.proof is not None else 'FAILURE'}"
-                        )
-                        print(f"ORIGINAL TIME: {orig_result.time}")
-                        print(f"ORIGINAL PROOF: {orig_result.proof}")
+                    print(
+                        f"\n\nORIGINAL RESULT: {'SUCCESS' if orig_result.proof is not None else 'FAILURE'}"
+                    )
+                    print(f"ORIGINAL TIME: {orig_result.time}")
+                    print(f"ORIGINAL PROOF: {orig_result.proof}")
                     print("CURRENT RESULT: SUCCESS")
                     print(f"CURRENT TIME: {result.time}")
                     print(f"CURRENT PROOF:")
@@ -635,7 +619,7 @@ if __name__ == "__main__":
         theorem_list = get_theorem_list(coqstoq_split, COQSTOQ_LOC)
         results: list[Result] = []
         try:
-            for thm in theorem_list[37:]:
+            for thm in tqdm(theorem_list):
                 thm_conf = TestProofConf(
                     thm,
                     conf.coqstoq_loc,

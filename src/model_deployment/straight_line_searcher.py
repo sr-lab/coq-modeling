@@ -37,7 +37,6 @@ class StraightLineSearcherConf:
     print_proofs: bool
     initial_proof: Optional[str]
     token_mask: Optional[str]
-    interleave_hammer: bool
     ALIAS = "straight_line"
 
     @classmethod
@@ -47,7 +46,6 @@ class StraightLineSearcherConf:
             yaml_data["print_proofs"],
             yaml_data.get("initial_proof", None),
             yaml_data.get("token_mask", None),
-            yaml_data.get("interleave_hammer", False),
         )
 
 
@@ -60,7 +58,6 @@ class StraightLineSearcher:
         print_proofs: bool,
         initial_proof: Optional[str],
         token_mask: Optional[str],
-        interleave_hammer: bool = False,
     ):
         self.tactic_clients = tactic_clients
         self.proof_manager = proof_manager
@@ -68,7 +65,6 @@ class StraightLineSearcher:
         self.print_proofs = print_proofs
         self.initial_proof = initial_proof
         self.token_mask = token_mask
-        self.interleave_hammer = interleave_hammer
 
         initial_dset_file = proof_manager.get_initial_context()
         if initial_dset_file is None:
@@ -103,7 +99,6 @@ class StraightLineSearcher:
             conf.print_proofs,
             conf.initial_proof,
             conf.token_mask,
-            conf.interleave_hammer,
         )
 
     def search(self, **kwargs) -> StraightLineSuccess | StraightLineFailure:
@@ -168,24 +163,6 @@ class StraightLineSearcher:
             last_proof_script = cur_proof_script + next_tactic
             cur_proof_result = proof_check_result
             cur_time = time.time() - start_time
-
-            if (
-                self.interleave_hammer
-                and cur_proof_result.tactic_result == TacticResult.VALID
-            ):
-                print("RUNNING HAMMER!!")
-                assert cur_proof_result.new_proof is not None
-                hammer_script = (
-                    last_proof_script
-                    + "\nFrom Hammer Require Import Hammer.\nSet Hammer ATPLimit 5.\nall: hammer."
-                )
-                hammer_result = self.proof_manager.check_proof(
-                    hammer_script, cur_proof_result.new_proof.theorem
-                )
-                match hammer_result.tactic_result:
-                    case TacticResult.COMPLETE:
-                        assert hammer_result.new_proof is not None
-                        return (hammer_result.new_proof, hammer_script)
 
         match cur_proof_result.tactic_result:
             case TacticResult.VALID:

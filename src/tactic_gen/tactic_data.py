@@ -662,16 +662,21 @@ class LmProcessedDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Any:
         target_idx = self.edb_map[idx]
+        # print(self.edb.retrieve(target_idx + 1))
         target_lm_example = LmExample.from_json(
             json.loads(self.edb.retrieve(target_idx + 1))
         )
         clean_example = self.example_collator.collate(self.tokenizer, target_lm_example)
-        return self.tokenizer(
-            clean_example,
-            max_length=self.hard_seq_len,
-            truncation=True,
-            padding="max_length",
-        )
+        #return self.tokenizer(
+        #    clean_example,
+        #    max_length=self.hard_seq_len,
+        #    truncation=True,
+        #    padding="max_length",
+        #)
+        return {
+            "prompt": clean_example,
+            "answer": None
+        }
 
 
 @dataclass

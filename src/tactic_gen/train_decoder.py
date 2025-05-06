@@ -27,6 +27,8 @@ import torch
 from torch.utils.data import Dataset
 from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 
+from trl import GRPOTrainer, GRPOConfig
+
 # from datasets import Dataset
 import numpy as np
 
@@ -34,6 +36,7 @@ from util.train_utils import (
     get_optional_arg,
     get_required_arg,
     get_training_args,
+    get_grpo_training_args,
     load_config,
     make_output_dir,
     copy_configs,
@@ -147,8 +150,8 @@ def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
 ) -> Trainer:
     print("\n\nBuilding Training Config...")
-    training_args = get_training_args(conf, local_rank)
-
+    #training_args = get_training_args(conf, local_rank)
+    training_args = get_grpo_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     raw_model = get_model(model_name)
@@ -157,8 +160,6 @@ def get_trainer(
 
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf)
-
-    print(train_dataset.tokenizer.decode(train_dataset[0].input_ids))
 
     print("\n\nBuilding Trainer...")
     # trainer = SFTTrainer(
@@ -171,15 +172,27 @@ def get_trainer(
     #     max_seq_length=hard_seq_len,
     # )
 
-    trainer = Trainer(
-        model=model,
-        tokenizer=train_dataset.tokenizer,
-        args=training_args,
-        data_collator=train_dataset.collator,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset,
+    #trainer = Trainer(
+        #model=model,
+        #tokenizer=train_dataset.tokenizer,
+        #args=training_args,
+       # data_collator=train_dataset.collator,
+       # train_dataset=train_dataset,
+       # eval_dataset=val_dataset,
         # max_seq_length=hard_seq_len,
+  #)
+    def dummy_reward(prompts, completions, answer, **kwargs):
+        return [1 for prompt in prompts]
+
+    trainer = GRPOTrainer(
+            model=model,
+            processing_class=train_dataset.tokenizer,
+            reward_funcs=[dummy_reward],
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset
     )
+    
     return trainer
 
 
