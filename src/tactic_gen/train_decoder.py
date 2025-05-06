@@ -1,4 +1,6 @@
 from typing import Optional, Any
+import os
+import csv
 import sys
 import argparse
 from pathlib import Path
@@ -118,11 +120,20 @@ def get_datasets(
             dataset_conf, Split.VAL, conf.get("num_eval_examples", None)
         )
         return train_dataset, val_dataset
+    
 
+def get_valid_files(repo_path: Path) -> list[Path]:
+    valid_files = []
 
-# def formatting_func(examples: list[str]) -> list[str]:
-#     # Formatting is done upon dataset creation
-#     return examples
+    for repo in repo_path.iterdir():
+        if repo.is_dir():
+            if os.path.exists(repo / "valid_files.csv"):
+                with open(repo / "valid_files.csv", "r") as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        valid_files.append(os.path.join(repo_path, repo, Path(row[0])))
+
+    return valid_files
 
 
 def get_trainer(
@@ -137,14 +148,16 @@ def get_trainer(
     lora_config = get_lora_conf(conf)
     model = get_peft_model(raw_model, lora_config)
 
+    print(get_valid_files(Path(conf["repos_path"])))
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf)
 
     print("\n\nBuilding Trainer...")
     def dummy_reward(prompts, completions, answer, **kwargs):
-        print(kwargs["file_name"])
-        print(kwargs["proof_idx"])
-        print(kwargs["step_idx"])
+        file_name = kwargs["file_name"][0]
+        proof_idx = kwargs["proof_idx"][0]
+        step_idx = kwargs["step_idx"][0]
+
         return [1 for prompt in prompts]
 
     trainer = GRPOTrainer(
