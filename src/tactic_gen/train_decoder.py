@@ -242,18 +242,23 @@ def get_trainer(
             with open(temp_file_name, "w") as temp_file:
                 temp_file.write(prefix)
 
+            rewards = []
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name]
             ) as coq_file:
                 coq_file.run()
                 coq_file.delete_step(coq_file.steps_taken - 1)
-                print(temp_file_name)
+                for completion in completions:
+                    coq_file.add_step(coq_file.steps_taken - 1, completion)
+                    coq_file.run()
+                    rewards.append(1 if coq_file.is_valid else 0)
+
+            print(rewards)
+            return rewards
         finally:
             if temp_file_name:
                 os.remove(temp_file_name)
-
-        return [1 for prompt in prompts]
 
     trainer = GRPOTrainer(
         model=model,
