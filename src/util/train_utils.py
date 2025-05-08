@@ -172,5 +172,6 @@ def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> G
         # deepspeed=__get_required_arg("deepspeed", conf),
         local_rank=(local_rank if local_rank else -1),
         ddp_find_unused_parameters=False,
+        temperature=get_optional_arg("temperature", conf, 0.9),
     )
 

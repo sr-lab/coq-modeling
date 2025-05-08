@@ -249,7 +249,6 @@ def get_trainer(
                 workspace=valid_files[file_name]
             ) as coq_file:
                 coq_file.run()
-                coq_file.delete_step(coq_file.steps_taken - 1)
                 reward_cache = {}
 
                 for completion in completions:
