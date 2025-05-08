@@ -51,8 +51,6 @@ _logger = logging.getLogger(RANGO_LOGGER)
 valid_files = {}
 
 def init_valid_files(repo_path: Path) -> set[Path]:
-    valid_files = set()
-
     for repo in Path(os.path.join(repo_path, "repos")).iterdir():
         if repo.is_dir():
             if (repo / "valid_files.csv").exists():
@@ -105,7 +103,7 @@ def get_model(model_name: str) -> PreTrainedModel:
     return model
 
 
-def create_filtered_db(source_db_path: Path, target_db_path: Path, valid_files: set[Path]) -> None:
+def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
     """
     Create a new database filtered by valid files using ExampleDB methods.
     
@@ -167,13 +165,13 @@ def get_datasets(
                 print(f"Reusing existing filtered training database at {filtered_train_path}")
             else:
                 _logger.info(f"Creating filtered training database at {filtered_train_path}")
-                create_filtered_db(orig_train_path, filtered_train_path, valid_files)
+                create_filtered_db(orig_train_path, filtered_train_path)
             
             if filtered_val_path.exists():
                 print(f"Reusing existing filtered validation database at {filtered_val_path}")
             else:
                 _logger.info(f"Creating filtered validation database at {filtered_val_path}")
-                create_filtered_db(orig_val_path, filtered_val_path, valid_files)
+                create_filtered_db(orig_val_path, filtered_val_path)
         else:
             _logger.info("No valid files specified, using original databases")
             shutil.copy(orig_train_path, filtered_train_path)
