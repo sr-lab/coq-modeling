@@ -8,6 +8,7 @@ import shutil
 import json
 import uuid
 from coqpyt.coq.base_file import CoqFile
+from coqpyt.coq.exceptions import InvalidAddException
 
 from peft import LoraConfig, get_peft_model
 import transformers
@@ -250,11 +251,16 @@ def get_trainer(
                 coq_file.run()
                 coq_file.delete_step(coq_file.steps_taken - 1)
                 for completion in completions:
-                    coq_file.add_step(coq_file.steps_taken - 1, completion)
-                    coq_file.run()
-                    rewards.append(1 if coq_file.is_valid else 0)
-
-            print(rewards)
+                    reward = 1
+                    try:
+                        coq_file.add_step(coq_file.steps_taken - 1, completion)
+                        coq_file.run()
+                        # Remove the step we just added
+                        coq_file.delete_step(coq_file.steps_taken - 1)
+                    except InvalidAddException:
+                        reward = 0
+                    rewards.append(reward)
+                    
             return rewards
         finally:
             if temp_file_name:
