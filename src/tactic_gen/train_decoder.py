@@ -227,11 +227,11 @@ def get_trainer(
         try:
             with open(os.path.join(conf["repos_path"], file_name), "r") as f:
                 file_contents = f.read()
-                if proof_script in file_contents:
-                    prefix = file_contents.split(proof_script)[0] + proof_script
-                else:
-                    logging.warning(f"Proof script not found in file {file_name}")
+                theorem_split = file_contents.split(proof_script.split(":")[0])
+                if len(theorem_split) == 0:
+                    logging.error("Proof script not found in file %s", file_name)
                     exit(-1)
+                prefix = theorem_split[0] + "\n" + proof_script
             
             original_file_path = os.path.join(conf["repos_path"], file_name)
             dir_path = os.path.dirname(original_file_path)
