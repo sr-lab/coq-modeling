@@ -250,7 +250,13 @@ def get_trainer(
             ) as coq_file:
                 coq_file.run()
                 coq_file.delete_step(coq_file.steps_taken - 1)
+                reward_cache = {}
+
                 for completion in completions:
+                    if completion.strip() in reward_cache:
+                        rewards.append(reward_cache[completion.strip()])
+                        continue
+
                     reward = 1
                     try:
                         coq_file.add_step(coq_file.steps_taken - 1, completion)
@@ -259,6 +265,7 @@ def get_trainer(
                         coq_file.delete_step(coq_file.steps_taken - 1)
                     except InvalidAddException:
                         reward = 0
+                    reward_cache[completion.strip()] = reward
                     rewards.append(reward)
                     
             return rewards
