@@ -6,6 +6,8 @@ import argparse
 from pathlib import Path
 import shutil
 import json
+import uuid
+from coqpyt.coq.base_file import CoqFile
 
 from peft import LoraConfig, get_peft_model
 import transformers
@@ -45,6 +47,21 @@ from tactic_gen.tactic_data import (
 import logging
 
 _logger = logging.getLogger(RANGO_LOGGER)
+# {file_path: workspace_path}
+valid_files = {}
+
+def init_valid_files(repo_path: Path) -> set[Path]:
+    valid_files = set()
+
+    for repo in Path(os.path.join(repo_path, "repos")).iterdir():
+        if repo.is_dir():
+            if (repo / "valid_files.csv").exists():
+                with open(repo / "valid_files.csv", "r") as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        valid_files[os.path.join("repos", repo.name, row[0])] = row[1]
+
+    return valid_files
 
 
 # This doc details how to finetune codellama:
@@ -97,9 +114,7 @@ def create_filtered_db(source_db_path: Path, target_db_path: Path, valid_files: 
         target_db_path: Path to save the filtered database
         valid_files: Set of valid file paths to filter by
     """
-    valid_file_strs = set(str(path) for path in valid_files)
-    
-    if len(valid_file_strs) == 0:
+    if len(valid_files) == 0:
         _logger.warning("No valid files provided for filtering, copying entire database")
         shutil.copy(source_db_path, target_db_path)
         return
@@ -114,13 +129,12 @@ def create_filtered_db(source_db_path: Path, target_db_path: Path, valid_files: 
     total_copied = 0
     batch_size = 10000
     
-    # Process in batches to avoid memory issues
     for i in range(1, total_count + 1, batch_size):
         batch = []
         for j in range(i, min(i + batch_size, total_count + 1)):
             example_text = source_db.retrieve(j)
             example_data = json.loads(example_text)
-            if example_data.get('file_name') in valid_file_strs:
+            if example_data.get('file_name') in valid_files:
                 batch.append((example_text,))
         
         if batch:
@@ -144,14 +158,6 @@ def get_datasets(
         num_eval_examples = get_optional_arg("num_eval_examples", conf, None)
         hard_seq_len = get_required_arg("hard_seq_len", conf)
         orig_train_path, orig_val_path = get_train_val_path(data_path)
-        
-        # Get valid files for filtering if specified
-        repos_path = get_optional_arg("repos_path", conf, None)
-        valid_files = set()
-        if repos_path:
-            repos_path = Path(repos_path)
-            valid_files = get_valid_files(repos_path)
-            _logger.info(f"Found {len(valid_files)} valid files to filter by")
         
         filtered_train_path = orig_train_path.parent / orig_train_path.name.replace(".db", "_tmp.db")
         filtered_val_path = orig_val_path.parent / orig_val_path.name.replace(".db", "_tmp.db")
@@ -198,20 +204,6 @@ def get_datasets(
             dataset_conf, Split.VAL, conf.get("num_eval_examples", None)
         )
         return train_dataset, val_dataset
-    
-
-def get_valid_files(repo_path: Path) -> set[Path]:
-    valid_files = set()
-
-    for repo in Path(os.path.join(repo_path, "repos")).iterdir():
-        if repo.is_dir():
-            if (repo / "valid_files.csv").exists():
-                with open(repo / "valid_files.csv", "r") as f:
-                    reader = csv.reader(f)
-                    for row in reader:
-                        valid_files.add(os.path.join("repos", repo.name, Path(row[0])))
-
-    return valid_files
 
 
 def get_trainer(
@@ -229,17 +221,46 @@ def get_trainer(
     train_dataset, val_dataset = get_datasets(conf)
 
     print("\n\nBuilding Trainer...")
-    def dummy_reward(prompts, completions, answer, **kwargs):
+    def check_reward(prompts, completions, answer, **kwargs):
         file_name = kwargs["file_name"][0]
-        proof_idx = kwargs["proof_idx"][0]
-        step_idx = kwargs["step_idx"][0]
+        proof_script = kwargs["proof_script"][0]
+        temp_file_name = None
+
+        try:
+            with open(os.path.join(conf["repos_path"], file_name), "r") as f:
+                file_contents = f.read()
+                if proof_script in file_contents:
+                    prefix = file_contents.split(proof_script)[0] + proof_script
+                else:
+                    logging.warning(f"Proof script not found in file {file_name}")
+                    exit(-1)
+            
+            original_file_path = os.path.join(conf["repos_path"], file_name)
+            dir_path = os.path.dirname(original_file_path)
+            file_basename = os.path.basename(file_name)
+            random_id = str(uuid.uuid4())[:8]
+            temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
+            
+            with open(temp_file_name, "w") as temp_file:
+                temp_file.write(prefix)
+
+            with CoqFile(
+                temp_file_name, 
+                workspace=valid_files[file_name]
+            ) as coq_file:
+                coq_file.run()
+                coq_file.delete_step(coq_file.steps_taken - 1)
+                print(temp_file_name)
+        finally:
+            if temp_file_name:
+                os.remove(temp_file_name)
 
         return [1 for prompt in prompts]
 
     trainer = GRPOTrainer(
         model=model,
         processing_class=train_dataset.tokenizer,
-        reward_funcs=[dummy_reward],
+        reward_funcs=[check_reward],
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset
@@ -263,6 +284,8 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     set_rango_logger(__file__, logging.DEBUG)
     conf = load_config(args.yaml_config)
+    if "repos_path" in conf:
+        init_valid_files(conf["repos_path"])
     train_from_checkpoint = (
         conf["checkpoint_name"] if "checkpoint_name" in conf else None
     )
