@@ -311,6 +311,7 @@ def get_trainer(
                     TextDocumentIdentifier(uri),
                     Position(line, column)
                 )
+                print("prev line", line, "prev column", column)
                 reward_cache = {}
 
                 for completion in completions:
