@@ -334,6 +334,10 @@ def get_trainer(
                     valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
                     print("Unchanged: ", unchanged_reward)
                     print("Valid: ", valid_reward)
+                    try:
+                        print("goals: ", goals.goals.goals)
+                    except:
+                        print("there is no goals: ", goals)
                     final_reward = unchanged_reward + valid_reward
                     #reward_cache[completion.strip()] = final_reward
                     rewards.append(final_reward)
