@@ -309,7 +309,7 @@ def get_trainer(
                 print("proof_script", proof_script)
                 initial_goals = coq_file.coq_lsp_client.proof_goals(
                     TextDocumentIdentifier(uri),
-                    Position(line, column)
+                    Position(line, column+1)
                 )
                 print("prev line", line, "prev column", column)
                 reward_cache = {}
@@ -335,7 +335,7 @@ def get_trainer(
                         print("line", line, "column", column)
                         goals = coq_file.coq_lsp_client.proof_goals(
                             TextDocumentIdentifier(uri),
-                            Position(line, column)
+                            Position(line, column+1)
                         )
                         unchanged_reward = reward_goals(initial_goals, goals)
                     else:
