@@ -331,6 +331,7 @@ def get_trainer(
                     valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
                     if valid_reward:
                         line, column = get_last_point(prefix + "\n" + completion)
+                        print("line", line, "column", column)
                         goals = coq_file.coq_lsp_client.proof_goals(
                             TextDocumentIdentifier(uri),
                             Position(line, column)
