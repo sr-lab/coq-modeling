@@ -5,6 +5,6 @@ def compare_goals(initial_goals, final_goals):
     """
     Compare the initial goals with the final goals.
     """
-    initial_goals_ty = [goal.ty for goal in initial_goals.goals[0].goals]
-    final_goals_ty = [goal.ty for goal in final_goals.goals[0].goals]
+    initial_goals_ty = [goal.ty for goal in initial_goals.goals.goals]
+    final_goals_ty = [goal.ty for goal in final_goals.goals.goals]
     return initial_goals_ty == final_goals_ty
