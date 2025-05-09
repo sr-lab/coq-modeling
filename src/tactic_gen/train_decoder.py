@@ -1,5 +1,7 @@
 from typing import Optional, Any
+
 import os
+import time
 import csv
 import sys
 import argparse
@@ -9,6 +11,37 @@ import json
 import uuid
 from coqpyt.coq.base_file import CoqFile
 from coqpyt.coq.exceptions import InvalidAddException
+from coqpyt.lsp.structs import (
+    VersionedTextDocumentIdentifier,
+    TextDocumentContentChangeEvent,
+)
+
+from peft import LoraConfig, get_peft_model
+import transformers
+from transformers import (
+    AutoModelForCausalLM,
+    PreTrainedModel,
+    BitsAndBytesConfig,
+    Trainer,
+)
+import torch
+from typing import Optional, Any
+
+import os
+import time
+import csv
+import sys
+import argparse
+from pathlib import Path
+import shutil
+import json
+import uuid
+from coqpyt.coq.base_file import CoqFile
+from coqpyt.coq.exceptions import InvalidAddException
+from coqpyt.lsp.structs import (
+    VersionedTextDocumentIdentifier,
+    TextDocumentContentChangeEvent,
+)
 
 from peft import LoraConfig, get_peft_model
 import transformers
@@ -45,9 +78,23 @@ from tactic_gen.tactic_data import (
     get_tokenizer,
 )
 
+from torch.utils.data import Subset
 import logging
 
 _logger = logging.getLogger(RANGO_LOGGER)
+# {file_path: workspace_path}
+valid_files = {}
+
+def init_valid_files(repo_path: Path) -> set[Path]:
+    for repo in Path(os.path.join(repo_path, "repos")).iterdir():
+        if repo.is_dir():
+            if (repo / "valid_files.csv").exists():
+                with open(repo / "valid_files.csv", "r") as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        valid_files[os.path.join("repos", repo.name, row[0])] = row[1]
+
+    return valid_files
 # {file_path: workspace_path}
 valid_files = {}
 
@@ -105,6 +152,7 @@ def get_model(model_name: str) -> PreTrainedModel:
 
 
 def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
+def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
     """
     Create a new database filtered by valid files using ExampleDB methods.
     
@@ -113,6 +161,7 @@ def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
         target_db_path: Path to save the filtered database
         valid_files: Set of valid file paths to filter by
     """
+    if len(valid_files) == 0:
     if len(valid_files) == 0:
         _logger.warning("No valid files provided for filtering, copying entire database")
         shutil.copy(source_db_path, target_db_path)
@@ -133,6 +182,7 @@ def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
         for j in range(i, min(i + batch_size, total_count + 1)):
             example_text = source_db.retrieve(j)
             example_data = json.loads(example_text)
+            if example_data.get('file_name') in valid_files:
             if example_data.get('file_name') in valid_files:
                 batch.append((example_text,))
         
@@ -167,11 +217,13 @@ def get_datasets(
             else:
                 _logger.info(f"Creating filtered training database at {filtered_train_path}")
                 create_filtered_db(orig_train_path, filtered_train_path)
+                create_filtered_db(orig_train_path, filtered_train_path)
             
             if filtered_val_path.exists():
                 print(f"Reusing existing filtered validation database at {filtered_val_path}")
             else:
                 _logger.info(f"Creating filtered validation database at {filtered_val_path}")
+                create_filtered_db(orig_val_path, filtered_val_path)
                 create_filtered_db(orig_val_path, filtered_val_path)
         else:
             _logger.info("No valid files specified, using original databases")
@@ -221,10 +273,11 @@ def get_trainer(
 
     print("\n\nBuilding Trainer...")
     def check_reward(prompts, completions, answer, **kwargs):
+    def check_reward(prompts, completions, answer, **kwargs):
         file_name = kwargs["file_name"][0]
         proof_script = kwargs["proof_script"][0]
         temp_file_name = None
-
+        
         try:
             with open(os.path.join(conf["repos_path"], file_name), "r") as f:
                 file_contents = f.read()
@@ -240,7 +293,7 @@ def get_trainer(
             random_id = str(uuid.uuid4())[:8]
             temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
             
-            with open(temp_file_name, "w") as temp_file:
+            with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                 temp_file.write(prefix)
 
             rewards = []
@@ -248,33 +301,34 @@ def get_trainer(
                 temp_file_name, 
                 workspace=valid_files[file_name]
             ) as coq_file:
-                coq_file.run()
                 reward_cache = {}
 
                 for completion in completions:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
                         continue
-
-                    reward = 1
-                    try:
-                        coq_file.add_step(coq_file.steps_taken - 1, completion)
-                        coq_file.run()
-                        # Remove the step we just added
-                        coq_file.delete_step(coq_file.steps_taken - 1)
-                    except InvalidAddException:
-                        reward = 0
+                    
+                    with open(temp_file_name, "w") as temp_file:
+                        temp_file.write(prefix + "\n" + completion)
+                    uri = f"file://{coq_file.path}"
+                    coq_file.version += 1
+                    coq_file.coq_lsp_client.didChange(
+                        VersionedTextDocumentIdentifier(uri, coq_file.version),
+                        [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
+                    )
+                    reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
                     reward_cache[completion.strip()] = reward
                     rewards.append(reward)
-                    
             return rewards
         finally:
             if temp_file_name:
                 os.remove(temp_file_name)
+    
 
     trainer = GRPOTrainer(
         model=model,
         processing_class=train_dataset.tokenizer,
+        reward_funcs=[check_reward],
         reward_funcs=[check_reward],
         args=training_args,
         train_dataset=train_dataset,
@@ -299,6 +353,8 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     set_rango_logger(__file__, logging.DEBUG)
     conf = load_config(args.yaml_config)
+    if "repos_path" in conf:
+        init_valid_files(conf["repos_path"])
     if "repos_path" in conf:
         init_valid_files(conf["repos_path"])
     train_from_checkpoint = (
