@@ -152,7 +152,6 @@ def get_model(model_name: str) -> PreTrainedModel:
 
 
 def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
-def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
     """
     Create a new database filtered by valid files using ExampleDB methods.
     
@@ -161,7 +160,6 @@ def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
         target_db_path: Path to save the filtered database
         valid_files: Set of valid file paths to filter by
     """
-    if len(valid_files) == 0:
     if len(valid_files) == 0:
         _logger.warning("No valid files provided for filtering, copying entire database")
         shutil.copy(source_db_path, target_db_path)
@@ -182,7 +180,6 @@ def create_filtered_db(source_db_path: Path, target_db_path: Path) -> None:
         for j in range(i, min(i + batch_size, total_count + 1)):
             example_text = source_db.retrieve(j)
             example_data = json.loads(example_text)
-            if example_data.get('file_name') in valid_files:
             if example_data.get('file_name') in valid_files:
                 batch.append((example_text,))
         
@@ -272,7 +269,7 @@ def get_trainer(
     train_dataset, val_dataset = get_datasets(conf)
 
     print("\n\nBuilding Trainer...")
-    def check_reward(prompts, completions, answer, **kwargs):
+
     def check_reward(prompts, completions, answer, **kwargs):
         file_name = kwargs["file_name"][0]
         proof_script = kwargs["proof_script"][0]
