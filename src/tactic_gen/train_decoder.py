@@ -301,7 +301,8 @@ def get_trainer(
             rewards = []
             with CoqFile(
                 temp_file_name, 
-                workspace=valid_files[file_name]
+                workspace=valid_files[file_name],
+                timeout=120,
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
                 initial_goals = coq_file.coq_lsp_client.proof_goals(
