@@ -316,6 +316,8 @@ def get_trainer(
                         rewards.append(reward_cache[completion.strip()])
                         continue
                     
+                    print("completion", completion)
+
                     with open(temp_file_name, "w") as temp_file:
                         temp_file.write(prefix + "\n" + completion)
                     coq_file.version += 1
