@@ -14,6 +14,7 @@ from coqpyt.coq.exceptions import InvalidAddException
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
     TextDocumentContentChangeEvent,
+    Position
 )
 
 from peft import LoraConfig, get_peft_model
@@ -289,9 +290,17 @@ def get_trainer(
             file_basename = os.path.basename(file_name)
             random_id = str(uuid.uuid4())[:8]
             temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
-            
+            uri = f"file://{temp_file_name}"
+
+            line, column = get_last_point(prefix)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                 temp_file.write(prefix)
+            
+            initial_goal = coq_file.coq_lsp_client.proof_goals(
+                VersionedTextDocumentIdentifier(uri, coq_file.version),
+                Position(line, column)
+            )
+            print(initial_goal)
 
             rewards = []
             with CoqFile(
@@ -307,12 +316,19 @@ def get_trainer(
                     
                     with open(temp_file_name, "w") as temp_file:
                         temp_file.write(prefix + "\n" + completion)
-                    uri = f"file://{coq_file.path}"
                     coq_file.version += 1
                     coq_file.coq_lsp_client.didChange(
                         VersionedTextDocumentIdentifier(uri, coq_file.version),
                         [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
                     )
+
+                    line, column = get_last_point(prefix + "\n" + completion)
+                    goal = coq_file.coq_lsp_client.proof_goals(
+                        VersionedTextDocumentIdentifier(uri, coq_file.version),
+                        Position(line, column)
+                    )
+                    print(goal)
+                    
                     reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
                     reward_cache[completion.strip()] = reward
                     rewards.append(reward)
@@ -333,6 +349,26 @@ def get_trainer(
     )
     
     return trainer
+
+
+def get_last_point(s: str) -> tuple[int, int]:
+    """
+    Returns the (line, column) of the last character in the string.
+    Lines and columns are 0-based.
+    If the string is empty, returns (0, 0).
+    """
+    if not s:
+        return (0, 0)
+    lines = s.splitlines(keepends=True)
+    if not lines:
+        return (0, 0)
+    last_line_idx = len(lines) - 1
+    last_line = lines[-1]
+    # If the string ends with a newline, the last character is at column 0 of the next line
+    if last_line.endswith('\n') or last_line.endswith('\r'):
+        return (last_line_idx + 1, 0)
+    else:
+        return (last_line_idx, len(last_line) - 1)
 
 
 if __name__ == "__main__":
