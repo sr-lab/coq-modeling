@@ -20,12 +20,13 @@ def reward_goals(initial_goals, final_goals):
         initial_goals_ty = [goal.ty for goal in initial_goals.goals.goals]
         final_goals_ty = [goal.ty for goal in final_goals.goals.goals]
     except Exception as e:
-        print(initial_goals)
-        print(final_goals)
+        print("initial_goals", initial_goals)
+        print("final_goals", final_goals)
         if initial_goals is not None:
-            print(initial_goals.goals)
+            print("initial_goals.goals", initial_goals.goals)
         if final_goals is not None:
-            print(final_goals.goals)
+            print("final_goals.goals", final_goals.goals)
         raise e
+        
 
     return -1 if initial_goals_ty == final_goals_ty else 1
