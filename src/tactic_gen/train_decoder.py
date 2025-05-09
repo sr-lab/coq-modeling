@@ -306,6 +306,7 @@ def get_trainer(
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
                 print("file", coq_file.path, temp_file_name)
+                print("proof_script", proof_script)
                 initial_goals = coq_file.coq_lsp_client.proof_goals(
                     TextDocumentIdentifier(uri),
                     Position(line, column)
