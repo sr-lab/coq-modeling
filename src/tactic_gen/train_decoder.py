@@ -295,18 +295,17 @@ def get_trainer(
             line, column = get_last_point(prefix)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                 temp_file.write(prefix)
-            
-            initial_goal = coq_file.coq_lsp_client.proof_goals(
-                VersionedTextDocumentIdentifier(uri, coq_file.version),
-                Position(line, column)
-            )
-            print(initial_goal)
 
             rewards = []
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name]
             ) as coq_file:
+                initial_goal = coq_file.coq_lsp_client.proof_goals(
+                    VersionedTextDocumentIdentifier(uri, coq_file.version),
+                    Position(line, column)
+                )
+                print(initial_goal)
                 reward_cache = {}
 
                 for completion in completions:
