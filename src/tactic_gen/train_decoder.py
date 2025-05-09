@@ -328,7 +328,7 @@ def get_trainer(
                         Position(line, column)
                     )
                     print(goal)
-                    
+
                     reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
                     reward_cache[completion.strip()] = reward
                     rewards.append(reward)
@@ -341,7 +341,6 @@ def get_trainer(
     trainer = GRPOTrainer(
         model=model,
         processing_class=train_dataset.tokenizer,
-        reward_funcs=[check_reward],
         reward_funcs=[check_reward],
         args=training_args,
         train_dataset=train_dataset,
