@@ -57,6 +57,8 @@ import torch
 
 from trl import GRPOTrainer
 
+from tactic_gen.reward_utils import compare_goals
+
 from util.train_utils import (
     get_optional_arg,
     get_required_arg,
@@ -291,7 +293,6 @@ def get_trainer(
             file_basename = os.path.basename(file_name)
             random_id = str(uuid.uuid4())[:8]
             temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
-            uri = f"file://{temp_file_name}"
 
             line, column = get_last_point(prefix)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
@@ -302,11 +303,12 @@ def get_trainer(
                 temp_file_name, 
                 workspace=valid_files[file_name]
             ) as coq_file:
-                initial_goal = coq_file.coq_lsp_client.proof_goals(
+                uri = f"file://{coq_file.path}"
+                initial_goals = coq_file.coq_lsp_client.proof_goals(
                     TextDocumentIdentifier(uri),
                     Position(line, column)
                 )
-                print(initial_goal)
+                print(initial_goals)
                 reward_cache = {}
 
                 for completion in completions:
@@ -323,15 +325,18 @@ def get_trainer(
                     )
 
                     line, column = get_last_point(prefix + "\n" + completion)
-                    goal = coq_file.coq_lsp_client.proof_goals(
+                    goals = coq_file.coq_lsp_client.proof_goals(
                         TextDocumentIdentifier(uri),
                         Position(line, column)
                     )
-                    print(goal)
-
-                    reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
-                    reward_cache[completion.strip()] = reward
-                    rewards.append(reward)
+                    print("Initial: ", initial_goals, "Final: ", goals)
+                    unchanged_reward = -1 if compare_goals(initial_goals, goals) else 1
+                    valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
+                    print("Unchanged: ", unchanged_reward)
+                    print("Valid: ", valid_reward)
+                    final_reward = unchanged_reward + valid_reward
+                    #reward_cache[completion.strip()] = final_reward
+                    rewards.append(final_reward)
             return rewards
         finally:
             if temp_file_name:
