@@ -57,7 +57,7 @@ import torch
 
 from trl import GRPOTrainer
 
-from tactic_gen.reward_utils import compare_goals
+from tactic_gen.reward_utils import reward_goals
 
 from util.train_utils import (
     get_optional_arg,
@@ -308,7 +308,6 @@ def get_trainer(
                     TextDocumentIdentifier(uri),
                     Position(line, column)
                 )
-                print(initial_goals)
                 reward_cache = {}
 
                 for completion in completions:
@@ -324,20 +323,17 @@ def get_trainer(
                         [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
                     )
 
-                    line, column = get_last_point(prefix + "\n" + completion)
-                    goals = coq_file.coq_lsp_client.proof_goals(
-                        TextDocumentIdentifier(uri),
-                        Position(line, column)
-                    )
-                    print("Initial: ", initial_goals, "Final: ", goals)
-                    unchanged_reward = -1 if compare_goals(initial_goals, goals) else 1
                     valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
-                    print("Unchanged: ", unchanged_reward)
-                    print("Valid: ", valid_reward)
-                    try:
-                        print("goals: ", goals.goals.goals)
-                    except:
-                        print("there is no goals: ", goals)
+                    if valid_reward:
+                        line, column = get_last_point(prefix + "\n" + completion)
+                        goals = coq_file.coq_lsp_client.proof_goals(
+                            TextDocumentIdentifier(uri),
+                            Position(line, column)
+                        )
+                        unchanged_reward = reward_goals(initial_goals, goals)
+                    else:
+                        unchanged_reward = 0
+                    
                     final_reward = unchanged_reward + valid_reward
                     #reward_cache[completion.strip()] = final_reward
                     rewards.append(final_reward)
@@ -383,7 +379,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Train code llama by providing a .yaml config file. As an example, see src/tactic_gen/confs/basic_train.yaml"
     )
-    print(f"<ARGV>{sys.argv}</ARGV")
+    #print(f"<ARGV>{sys.argv}</ARGV")
     parser.add_argument(
         "--local_rank",
         type=int,
