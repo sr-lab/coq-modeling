@@ -14,7 +14,8 @@ from coqpyt.coq.exceptions import InvalidAddException
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
     TextDocumentContentChangeEvent,
-    Position
+    Position,
+    TextDocumentIdentifier
 )
 
 from peft import LoraConfig, get_peft_model
@@ -302,7 +303,7 @@ def get_trainer(
                 workspace=valid_files[file_name]
             ) as coq_file:
                 initial_goal = coq_file.coq_lsp_client.proof_goals(
-                    VersionedTextDocumentIdentifier(uri, coq_file.version),
+                    TextDocumentIdentifier(uri),
                     Position(line, column)
                 )
                 print(initial_goal)
@@ -323,7 +324,7 @@ def get_trainer(
 
                     line, column = get_last_point(prefix + "\n" + completion)
                     goal = coq_file.coq_lsp_client.proof_goals(
-                        VersionedTextDocumentIdentifier(uri, coq_file.version),
+                        TextDocumentIdentifier(uri),
                         Position(line, column)
                     )
                     print(goal)
