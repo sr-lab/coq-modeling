@@ -339,6 +339,9 @@ def get_trainer(
                     #reward_cache[completion.strip()] = final_reward
                     rewards.append(final_reward)
             return rewards
+        except TimeoutError as e:
+            print("error", e, temp_file_name, file=sys.stderr)
+            return [-1] * len(completions)
         finally:
             if temp_file_name:
                 os.remove(temp_file_name)
