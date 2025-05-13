@@ -304,7 +304,6 @@ def get_trainer(
                 workspace=valid_files[file_name],
                 timeout=120
             ) as coq_file:
-                coq_file.coq_lsp_client.set_memory_limit(1000000000)
                 uri = f"file://{coq_file.path}"
                 initial_goals = coq_file.coq_lsp_client.proof_goals(
                     TextDocumentIdentifier(uri),
