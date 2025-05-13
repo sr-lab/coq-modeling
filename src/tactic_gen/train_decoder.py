@@ -294,8 +294,7 @@ def get_trainer(
             file_basename = os.path.basename(file_name)
             random_id = str(uuid.uuid4())[:8]
             temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
-            print("temp_file_name", temp_file_name)
-
+            
             line, column = get_last_point(prefix)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                 temp_file.write(prefix)
