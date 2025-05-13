@@ -302,8 +302,9 @@ def get_trainer(
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name],
-                timeout=120,
+                timeout=120
             ) as coq_file:
+                coq_file.coq_lsp_client.set_memory_limit(1000000000)
                 uri = f"file://{coq_file.path}"
                 initial_goals = coq_file.coq_lsp_client.proof_goals(
                     TextDocumentIdentifier(uri),
@@ -312,41 +313,44 @@ def get_trainer(
                 reward_cache = {}
 
                 for completion in completions:
-                    if completion.strip() in reward_cache:
-                        rewards.append(reward_cache[completion.strip()])
-                        continue
+                    try:
+                        if completion.strip() in reward_cache:
+                            rewards.append(reward_cache[completion.strip()])
+                            continue
 
-                    with open(temp_file_name, "w") as temp_file:
-                        temp_file.write(prefix + "\n" + completion)
-                    coq_file.version += 1
-                    coq_file.coq_lsp_client.didChange(
-                        VersionedTextDocumentIdentifier(uri, coq_file.version),
-                        [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
-                    )
-
-                    valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
-                    if valid_reward:
-                        line, column = get_last_point(prefix + "\n" + completion)
-                        goals = coq_file.coq_lsp_client.proof_goals(
-                            TextDocumentIdentifier(uri),
-                            Position(line, column+1)
+                        with open(temp_file_name, "w") as temp_file:
+                            temp_file.write(prefix + "\n" + completion)
+                        coq_file.version += 1
+                        coq_file.coq_lsp_client.didChange(
+                            VersionedTextDocumentIdentifier(uri, coq_file.version),
+                            [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
                         )
-                        unchanged_reward = reward_goals(initial_goals, goals)
-                    else:
-                        unchanged_reward = 0
-                    
-                    final_reward = unchanged_reward + valid_reward
-                    #reward_cache[completion.strip()] = final_reward
+
+                        valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
+                        if valid_reward:
+                            line, column = get_last_point(prefix + "\n" + completion)
+                            goals = coq_file.coq_lsp_client.proof_goals(
+                                TextDocumentIdentifier(uri),
+                                Position(line, column+1)
+                            )
+                            unchanged_reward = reward_goals(initial_goals, goals)
+                        else:
+                            unchanged_reward = 0
+                        
+                        final_reward = unchanged_reward + valid_reward
+                    except TimeoutError as e:
+                        print("error", e, temp_file_name, file=sys.stderr)
+                        final_reward = -1
                     rewards.append(final_reward)
             return rewards
-        except TimeoutError as e:
+        except Exception as e:
             print("error", e, temp_file_name, file=sys.stderr)
-            return [-1] * len(completions)
+            return [0] * len(completions)
         finally:
             if temp_file_name:
                 os.remove(temp_file_name)
     
-    test_subset = Subset(train_dataset, range(70, 120))
+    test_subset = Subset(train_dataset, range(50, 120))
     trainer = GRPOTrainer(
         model=model,
         processing_class=train_dataset.tokenizer,
