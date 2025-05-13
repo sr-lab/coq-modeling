@@ -346,13 +346,13 @@ def get_trainer(
             if temp_file_name:
                 os.remove(temp_file_name)
     
-
+    test_subset = Subset(train_dataset, range(70, 120))
     trainer = GRPOTrainer(
         model=model,
         processing_class=train_dataset.tokenizer,
         reward_funcs=[check_reward],
         args=training_args,
-        train_dataset=train_dataset,
+        train_dataset=test_subset,
         eval_dataset=val_dataset
     )
     
