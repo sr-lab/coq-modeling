@@ -18,6 +18,7 @@ from coqpyt.lsp.structs import (
     TextDocumentIdentifier
 )
 
+from accelerate import Accelerator
 from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import (
@@ -134,18 +135,19 @@ def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
 
 
 def get_model(model_name: str) -> PreTrainedModel:
-    # bnb_config = BitsAndBytesConfig(
-    #     load_in_4bit=True,
-    #     bnb_4bit_quant_type="nf4",
-    #     bnb_4bit_compute_dtype=torch.bfloat16,
-    #     bnb_4bit_use_double_quant=True,
-    #     bnb_4bit_quant_storage=torch.bfloat16,
-    # )
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.bfloat16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_storage=torch.bfloat16,
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        #quantization_config=bnb_config,
+        quantization_config=bnb_config,
         torch_dtype=torch.bfloat16,
+        device_map="auto"
     )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
@@ -383,6 +385,7 @@ def get_last_point(s: str) -> tuple[int, int]:
 
 
 if __name__ == "__main__":
+    accelerator = Accelerator()
     parser = argparse.ArgumentParser(
         description="Train code llama by providing a .yaml config file. As an example, see src/tactic_gen/confs/basic_train.yaml"
     )
