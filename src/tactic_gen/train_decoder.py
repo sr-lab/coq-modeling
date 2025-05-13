@@ -147,7 +147,7 @@ def get_model(model_name: str) -> PreTrainedModel:
         model_name,
         quantization_config=bnb_config,
         torch_dtype=torch.bfloat16,
-        device_map="auto"
+        #device_map="auto"
     )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
