@@ -379,7 +379,7 @@ def get_last_point(s: str) -> tuple[int, int]:
     if last_line.endswith('\n') or last_line.endswith('\r'):
         return (last_line_idx + 1, 0)
     else:
-        return (last_line_idx, len(last_line) - 1)
+        return (last_line_idx, len(last_line))
 
 
 if __name__ == "__main__":
