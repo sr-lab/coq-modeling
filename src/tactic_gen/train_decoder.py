@@ -358,7 +358,8 @@ def get_trainer(
         reward_funcs=[check_reward],
         args=training_args,
         train_dataset=train_dataset,
-        eval_dataset=val_dataset
+        eval_dataset=val_dataset,
+        accelerator_config="/root/.cache/huggingface/accelerate/default_config.yaml"
     )
     
     return trainer
