@@ -280,7 +280,7 @@ def get_trainer(
         file_name = kwargs["file_name"][0]
         proof_script = kwargs["proof_script"][0]
         temp_file_name = None
-        
+        print("reward")
         try:
             with open(os.path.join(conf["repos_path"], file_name), "r") as f:
                 file_contents = f.read()
