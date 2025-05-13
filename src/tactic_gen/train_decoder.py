@@ -305,21 +305,16 @@ def get_trainer(
                 timeout=120,
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
-                print("file", coq_file.path, temp_file_name)
-                print("proof_script", proof_script)
                 initial_goals = coq_file.coq_lsp_client.proof_goals(
                     TextDocumentIdentifier(uri),
                     Position(line, column+1)
                 )
-                print("prev line", line, "prev column", column)
                 reward_cache = {}
 
                 for completion in completions:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
                         continue
-                    
-                    print("completion", completion)
 
                     with open(temp_file_name, "w") as temp_file:
                         temp_file.write(prefix + "\n" + completion)
@@ -332,7 +327,6 @@ def get_trainer(
                     valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
                     if valid_reward:
                         line, column = get_last_point(prefix + "\n" + completion)
-                        print("line", line, "column", column)
                         goals = coq_file.coq_lsp_client.proof_goals(
                             TextDocumentIdentifier(uri),
                             Position(line, column+1)
