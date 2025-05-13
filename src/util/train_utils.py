@@ -173,5 +173,6 @@ def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> G
         local_rank=(local_rank if local_rank else -1),
         ddp_find_unused_parameters=False,
         temperature=get_optional_arg("temperature", conf, 0.9),
+        accelerator_config="/root/.cache/huggingface/accelerate/default_config.yaml"
     )
 

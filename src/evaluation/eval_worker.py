@@ -121,7 +121,8 @@ if __name__ == "__main__":
 
     strikes = 0
     MAX_STRIKES_IN_A_ROW = 3
-    while True:
+    NUM_THEOREMS = 500
+    for i in range(NUM_THEOREMS):
         try:
             eval_thm = q.get()
         except EmptyFileQueueError:
