@@ -10,12 +10,10 @@
 #SBATCH --no-requeue
 
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --job-name=TRAIN 	# create a short name for your job
+#SBATCH --job-name=TRAIN        # create a short name for your job
 #SBATCH --mem=50GB               # total memory per node
 
 
 source venv/bin/activate
 # python3 scripts/move_data.py confs/train/conf.yaml
-CUDA_VISIBLE_DEVICES=5 torchrun --nproc-per-node=1 --rdzv-backend=c10d --rdzv-endpoint=localhost:0 src/tactic_gen/train_decoder.py confs/train/conf.yaml
-
-
+CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch src/tactic_gen/train_decoder.py confs/train/conf.yaml
