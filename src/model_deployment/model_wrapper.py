@@ -1,19 +1,13 @@
 from __future__ import annotations
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 from pathlib import Path
 import yaml
-import ipdb
-import functools
 
-import sys, os
-import re
 from enum import Enum
 
 from transformers import (
-    AutoTokenizer,
     PreTrainedTokenizer,
     PreTrainedModel,
-    BitsAndBytesConfig,
 )
 import torch
 
@@ -23,7 +17,6 @@ from tactic_gen.lm_example import (
     LmExample,
 )
 from tactic_gen.train_decoder import (
-    load_config,
     get_tokenizer,
     get_model,
 )
@@ -121,28 +114,6 @@ def transform_attention_mask(
     return changed_mask
 
 
-_next_cuda_device = 0
-def get_next_cuda_device() -> torch.device:
-    """
-    Get the next CUDA device in a circular fashion.
-    
-    Returns:
-        torch.device: The next CUDA device in rotation
-    """
-    global _next_cuda_device
-    
-    if not torch.cuda.is_available():
-        return torch.device('cpu')
-    
-    device_count = torch.cuda.device_count()
-    if device_count == 1:
-        return torch.device('cuda:0')
-    device = torch.device(f'cuda:{_next_cuda_device}')
-    _next_cuda_device = (_next_cuda_device + 1) % device_count
-    
-    return device
-
-
 class DecoderLocalWrapper:
     ALIAS = "decoder-local"
 
@@ -157,7 +128,6 @@ class DecoderLocalWrapper:
         self.tokenizer = tokenizer
         self.collator = collator
         self.hard_seq_len = hard_seq_len
-        self.device = next(model.parameters()).device
 
     def get_recs(
         self,
@@ -171,7 +141,6 @@ class DecoderLocalWrapper:
         if token_mask_str is not None:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
-        print(collated_input)
         inputs = self.tokenizer(
             collated_input,
             max_length=self.hard_seq_len,
@@ -187,7 +156,7 @@ class DecoderLocalWrapper:
         )
         with torch.no_grad():
             outputs = self.model.generate(
-                inputs["input_ids"].to(self.device),
+                inputs["input_ids"].cuda(),
                 max_new_tokens=128,
                 return_dict_in_generate=True,
                 output_scores=True,
@@ -196,7 +165,7 @@ class DecoderLocalWrapper:
                 temperature=None if beam else 1,
                 do_sample=not beam,
                 num_beams=n if beam and 1 < n else None,
-                attention_mask=attention_mask.to(self.device),
+                attention_mask=attention_mask.cuda(),
             )
         input_num_tokens = inputs["input_ids"].shape[1]
         generated_seqs = outputs.sequences[:, input_num_tokens:]
@@ -242,8 +211,7 @@ class DecoderLocalWrapper:
             get_required_arg("model_name", training_conf), add_eos=False
         )
         model = get_model(str(checkpoint_loc.resolve()))
-        device = get_next_cuda_device()
-        model.to(device)
+        model.to("cuda")
         return cls(model, tokenizer, example_collator, hard_seq_length)
 
     @classmethod
