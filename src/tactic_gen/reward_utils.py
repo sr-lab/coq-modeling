@@ -25,15 +25,22 @@ def reward_goals(ground_truth_goals, final_goals):
         and not goals_exist(final_goals)
     ):
         return 2
+    elif len(ground_truth_goals.goals.goals) < len(final_goals.goals.goals):
+        return 2
+    elif len(ground_truth_goals.goals.goals) > len(final_goals.goals.goals):
+        return 0
     else:
         goals_reward_ty = 0
         goals_reward_hyps = 0
-        for goal in ground_truth_goals.goals.goals:
-            embedding1_ty = model.encode(goal.ty, convert_to_tensor=True)
-            embedding2_ty = model.encode(final_goals.goals.goals[0].ty, convert_to_tensor=True)
+        for i in enumerate(ground_truth_goals.goals.goals):
+            embedding1_ty = model.encode(ground_truth_goals.goals.goals[i].ty, convert_to_tensor=True)
+            embedding2_ty = model.encode(final_goals.goals.goals[i].ty, convert_to_tensor=True)
             similarity_ty = util.cos_sim(embedding1_ty, embedding2_ty).item()
-            embedding1_hyps = model.encode(goal.hyps, convert_to_tensor=True)
-            embedding2_hyps = model.encode(final_goals.goals.goals[0].hyps, convert_to_tensor=True)
+
+            hyps = list(map(lambda hyp: repr(hyp), ground_truth_goals.goals.goals[i].hyps))
+            embedding1_hyps = model.encode("".join(hyps), convert_to_tensor=True)
+            hyps = list(map(lambda hyp: repr(hyp), final_goals.goals.goals[i].hyps))
+            embedding2_hyps = model.encode("".join(hyps), convert_to_tensor=True)
             similarity_hyps = util.cos_sim(embedding1_hyps, embedding2_hyps).item()
 
             goals_reward_ty += similarity_ty
