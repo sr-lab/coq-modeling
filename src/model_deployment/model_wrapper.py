@@ -121,6 +121,36 @@ def transform_attention_mask(
     return changed_mask
 
 
+def get_cuda_device_with_least_memory() -> torch.device:
+    """
+    Get the CUDA device with the least memory usage.
+    
+    Returns:
+        torch.device: The CUDA device with the least memory usage
+    """
+    if not torch.cuda.is_available():
+        return torch.device('cpu')
+    
+    # Get number of CUDA devices
+    device_count = torch.cuda.device_count()
+    if device_count == 1:
+        return torch.device('cuda:0')
+    
+    # Find device with minimum memory usage
+    min_memory_used = float('inf')
+    min_memory_device = 0
+    
+    for device_idx in range(device_count):
+        torch.cuda.set_device(device_idx)
+        torch.cuda.empty_cache()
+        memory_used = torch.cuda.memory_allocated()
+        if memory_used < min_memory_used:
+            min_memory_used = memory_used
+            min_memory_device = device_idx
+    
+    return torch.device(f'cuda:{min_memory_device}')
+
+
 class DecoderLocalWrapper:
     ALIAS = "decoder-local"
 
@@ -135,6 +165,7 @@ class DecoderLocalWrapper:
         self.tokenizer = tokenizer
         self.collator = collator
         self.hard_seq_len = hard_seq_len
+        self.device = next(model.parameters()).device
 
     def get_recs(
         self,
@@ -164,7 +195,7 @@ class DecoderLocalWrapper:
         )
         with torch.no_grad():
             outputs = self.model.generate(
-                inputs["input_ids"].cuda(),
+                inputs["input_ids"].to(self.device),
                 max_new_tokens=128,
                 return_dict_in_generate=True,
                 output_scores=True,
@@ -173,7 +204,7 @@ class DecoderLocalWrapper:
                 temperature=None if beam else 1,
                 do_sample=not beam,
                 num_beams=n if beam and 1 < n else None,
-                attention_mask=attention_mask.cuda(),
+                attention_mask=attention_mask.to(self.device),
             )
         input_num_tokens = inputs["input_ids"].shape[1]
         generated_seqs = outputs.sequences[:, input_num_tokens:]
@@ -219,7 +250,8 @@ class DecoderLocalWrapper:
             get_required_arg("model_name", training_conf), add_eos=False
         )
         model = get_model(str(checkpoint_loc.resolve()))
-        model.to("cuda")
+        device = get_cuda_device_with_least_memory()
+        model.to(device)
         return cls(model, tokenizer, example_collator, hard_seq_length)
 
     @classmethod
