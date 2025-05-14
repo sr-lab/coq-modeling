@@ -121,34 +121,26 @@ def transform_attention_mask(
     return changed_mask
 
 
-def get_cuda_device_with_least_memory() -> torch.device:
+_next_cuda_device = 0
+def get_next_cuda_device() -> torch.device:
     """
-    Get the CUDA device with the least memory usage.
+    Get the next CUDA device in a circular fashion.
     
     Returns:
-        torch.device: The CUDA device with the least memory usage
+        torch.device: The next CUDA device in rotation
     """
+    global _next_cuda_device
+    
     if not torch.cuda.is_available():
         return torch.device('cpu')
     
-    # Get number of CUDA devices
     device_count = torch.cuda.device_count()
     if device_count == 1:
         return torch.device('cuda:0')
+    device = torch.device(f'cuda:{_next_cuda_device}')
+    _next_cuda_device = (_next_cuda_device + 1) % device_count
     
-    # Find device with minimum memory usage
-    min_memory_used = float('inf')
-    min_memory_device = 0
-    
-    for device_idx in range(device_count):
-        torch.cuda.set_device(device_idx)
-        torch.cuda.empty_cache()
-        memory_used = torch.cuda.memory_allocated()
-        if memory_used < min_memory_used:
-            min_memory_used = memory_used
-            min_memory_device = device_idx
-    
-    return torch.device(f'cuda:{min_memory_device}')
+    return device
 
 
 class DecoderLocalWrapper:
@@ -250,7 +242,7 @@ class DecoderLocalWrapper:
             get_required_arg("model_name", training_conf), add_eos=False
         )
         model = get_model(str(checkpoint_loc.resolve()))
-        device = get_cuda_device_with_least_memory()
+        device = get_next_cuda_device()
         model.to(device)
         return cls(model, tokenizer, example_collator, hard_seq_length)
 
