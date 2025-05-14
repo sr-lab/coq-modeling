@@ -101,12 +101,30 @@ def slurm_conf_from_yaml(yaml_data: Any) -> SlurmConf:
 
 
 def run_local(command: str, n_workers: int):
+    import torch
+    n_cuda_devices = torch.cuda.device_count()
+    if n_cuda_devices == 0:
+        print("No CUDA devices available, running on CPU")
+        n_cuda_devices = 1
+    
     open_procs: list[subprocess.Popen[bytes]] = []
-    for _ in range(n_workers):
+    for worker_id in range(n_workers):
+        # Assign devices circularly
+        cuda_device = worker_id % n_cuda_devices
+        
+        # Create environment with CUDA_VISIBLE_DEVICES set
+        worker_env = os.environ.copy()
+        worker_env["CUDA_VISIBLE_DEVICES"] = str(cuda_device)
+        
         p = subprocess.Popen(
-            command, shell=True, stdout=sys.stdout, stderr=sys.stderr, env=os.environ
+            command, 
+            shell=True, 
+            stdout=sys.stdout, 
+            stderr=sys.stderr, 
+            env=worker_env
         )
         open_procs.append(p)
+    
     for p in open_procs:
         p.wait()
 
@@ -186,3 +204,4 @@ class JobOption(Enum):
                 return cls.STOP
             case _:
                 return cls.STOP
+
