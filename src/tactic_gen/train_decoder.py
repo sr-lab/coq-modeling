@@ -318,6 +318,7 @@ def get_trainer(
                         ground_truth_goals
                     )
                     rewards.append(final_reward)
+            print("Rewards", rewards)
             return rewards
         except Exception as e:
             print("error", e, temp_file_name, file=sys.stderr)
