@@ -23,7 +23,6 @@ from tactic_gen.lm_example import (
     LmExample,
 )
 from tactic_gen.train_decoder import (
-    TRAINING_CONF_NAME,
     load_config,
     get_tokenizer,
     get_model,
@@ -203,7 +202,7 @@ class DecoderLocalWrapper:
 
     @classmethod
     def get_training_conf(cls, checkpoint_loc: Path) -> Any:
-        training_conf_loc = checkpoint_loc.parent / TRAINING_CONF_NAME
+        training_conf_loc = checkpoint_loc.parent / "conf.yaml"
         with training_conf_loc.open("r") as f:
             training_conf = yaml.safe_load(f)
         return training_conf
