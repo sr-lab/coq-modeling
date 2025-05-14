@@ -305,6 +305,7 @@ def get_trainer(
                     temp_file.write(prefix)
 
                 reward_cache = {}
+                print(completions)
                 for completion in completions:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
