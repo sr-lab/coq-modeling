@@ -219,6 +219,7 @@ class DecoderLocalWrapper:
             get_required_arg("model_name", training_conf), add_eos=False
         )
         model = get_model(str(checkpoint_loc.resolve()))
+        model.to("cuda")
         return cls(model, tokenizer, example_collator, hard_seq_length)
 
     @classmethod
