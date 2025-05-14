@@ -151,7 +151,7 @@ def get_training_args(
 
 def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> GRPOConfig:
     with open("/root/.cache/huggingface/accelerate/default_config.yaml", "r") as f:
-        conf = yaml.safe_load(f)
+        accelerate_conf = yaml.safe_load(f)
     return GRPOConfig(
         output_dir=get_required_arg("output_dir", conf),
         per_device_train_batch_size=get_required_arg(
@@ -176,6 +176,6 @@ def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> G
         local_rank=(local_rank if local_rank else -1),
         ddp_find_unused_parameters=False,
         temperature=get_optional_arg("temperature", conf, 0.9),
-        accelerator_config=conf
+        accelerator_config=accelerate_conf
     )
 
