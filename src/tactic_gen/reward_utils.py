@@ -46,6 +46,7 @@ def reward_goals(ground_truth_goals, final_goals):
             goals_reward_ty += similarity_ty
             goals_reward_hyps += similarity_hyps
 
+        print(goals_reward_ty, goals_reward_hyps)
         return (
             goals_reward_ty / len(ground_truth_goals.goals.goals) + 
             goals_reward_hyps / len(ground_truth_goals.goals.goals)
