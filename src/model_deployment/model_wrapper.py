@@ -202,7 +202,7 @@ class DecoderLocalWrapper:
 
     @classmethod
     def get_training_conf(cls, checkpoint_loc: Path) -> Any:
-        training_conf_loc = checkpoint_loc.parent / "conf.yaml"
+        training_conf_loc = checkpoint_loc.parent / "training_conf.yaml"
         with training_conf_loc.open("r") as f:
             training_conf = yaml.safe_load(f)
         return training_conf
