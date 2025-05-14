@@ -58,7 +58,12 @@ import torch
 
 from trl import GRPOTrainer
 
-from tactic_gen.reward_utils import reward_goals
+from tactic_gen.reward_utils import (
+    reward_goals,
+    get_file_info,
+    get_last_point,
+    get_proof_goals
+)
 
 from util.train_utils import (
     get_optional_arg,
@@ -281,66 +286,37 @@ def get_trainer(
         proof_script = kwargs["proof_script"][0]
         temp_file_name = None
         try:
-            with open(os.path.join(conf["repos_path"], file_name), "r") as f:
-                file_contents = f.read()
-                theorem_split = file_contents.split(proof_script.split(":")[0])
-                if len(theorem_split) == 0:
-                    logging.error("Proof script not found in file %s", file_name)
-                    exit(-1)
-                prefix = theorem_split[0] + "\n" + proof_script
-            
-            original_file_path = os.path.join(conf["repos_path"], file_name)
-            dir_path = os.path.dirname(original_file_path)
-            file_basename = os.path.basename(file_name)
-            random_id = str(uuid.uuid4())[:8]
-            temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
-            
-            line, column = get_last_point(prefix)
+            temp_file_name, prefix = get_file_info(conf, file_name, proof_script)
+            line, column = get_last_point(prefix + "\n" + proof_script)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
-                temp_file.write(prefix)
-
+                temp_file.write(prefix + "\n" + proof_script)
             rewards = []
+
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name],
                 timeout=120
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
-                initial_goals = coq_file.coq_lsp_client.proof_goals(
-                    TextDocumentIdentifier(uri),
-                    Position(line, column+1)
-                )
+                ground_truth_goals = get_proof_goals(coq_file, line, column+1, uri)
+
+                # Rewrite the file with only the prefix
+                with open(temp_file_name, "w", encoding="utf-8") as temp_file:
+                    temp_file.write(prefix)
+
                 reward_cache = {}
-
                 for completion in completions:
-                    try:
-                        if completion.strip() in reward_cache:
-                            rewards.append(reward_cache[completion.strip()])
-                            continue
-
-                        with open(temp_file_name, "w") as temp_file:
-                            temp_file.write(prefix + "\n" + completion)
-                        coq_file.version += 1
-                        coq_file.coq_lsp_client.didChange(
-                            VersionedTextDocumentIdentifier(uri, coq_file.version),
-                            [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
-                        )
-
-                        valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
-                        if valid_reward:
-                            line, column = get_last_point(prefix + "\n" + completion)
-                            goals = coq_file.coq_lsp_client.proof_goals(
-                                TextDocumentIdentifier(uri),
-                                Position(line, column+1)
-                            )
-                            unchanged_reward = reward_goals(initial_goals, goals)
-                        else:
-                            unchanged_reward = 0
-                        
-                        final_reward = unchanged_reward + valid_reward
-                    except TimeoutError as e:
-                        print("error", e, temp_file_name, file=sys.stderr)
-                        final_reward = -1
+                    if completion.strip() in reward_cache:
+                        rewards.append(reward_cache[completion.strip()])
+                        continue
+                    final_reward = calculate_reward(
+                        completion, 
+                        prefix, 
+                        temp_file_name, 
+                        uri, 
+                        coq_file, 
+                        ground_truth_goals
+                    )
                     rewards.append(final_reward)
             return rewards
         except Exception as e:
@@ -350,6 +326,7 @@ def get_trainer(
             if temp_file_name:
                 os.remove(temp_file_name)
     
+
     # test_subset = Subset(train_dataset, range(50, 120))
     trainer = GRPOTrainer(
         model=model,
@@ -362,26 +339,35 @@ def get_trainer(
     
     return trainer
 
-
-def get_last_point(s: str) -> tuple[int, int]:
-    """
-    Returns the (line, column) of the last character in the string.
-    Lines and columns are 0-based.
-    If the string is empty, returns (0, 0).
-    """
-    if not s:
-        return (0, 0)
-    lines = s.splitlines(keepends=True)
-    if not lines:
-        return (0, 0)
-    last_line_idx = len(lines) - 1
-    last_line = lines[-1]
-    # If the string ends with a newline, the last character is at column 0 of the next line
-    if last_line.endswith('\n') or last_line.endswith('\r'):
-        return (last_line_idx + 1, 0)
-    else:
-        return (last_line_idx, len(last_line))
-
+def calculate_reward(
+    completion, 
+    prefix, 
+    temp_file_name, 
+    uri, 
+    coq_file, 
+    ground_truth_goals
+):
+    try:
+        with open(temp_file_name, "w") as temp_file:
+            temp_file.write(prefix + "\n" + completion)
+        coq_file.version += 1
+        coq_file.coq_lsp_client.didChange(
+            VersionedTextDocumentIdentifier(uri, coq_file.version),
+            [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
+        )
+        valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
+        if valid_reward:
+            line, column = get_last_point(prefix + "\n" + completion)
+            goals = get_proof_goals(coq_file, line, column+1, uri)
+            unchanged_reward = reward_goals(ground_truth_goals, goals)
+        else:
+            unchanged_reward = 0
+        
+        final_reward = unchanged_reward + valid_reward
+    except TimeoutError as e:
+        print("error", e, temp_file_name, file=sys.stderr)
+        final_reward = -1
+    return final_reward
 
 if __name__ == "__main__":
     accelerator = Accelerator()

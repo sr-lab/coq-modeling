@@ -1,16 +1,78 @@
+import os
+import logging
+import uuid
+
+from sentence_transformers import SentenceTransformer, util
+from coqpyt.lsp.structs import (
+    VersionedTextDocumentIdentifier,
+    TextDocumentContentChangeEvent,
+    Position,
+    TextDocumentIdentifier
+)
+
+model = SentenceTransformer('all-MiniLM-L6-v2').to('cpu')
+
+
 def goals_exist(goals):
     return goals is not None and goals.goals is not None and goals.goals.goals is not None
 
-def reward_goals(initial_goals, final_goals):
+def reward_goals(ground_truth_goals, final_goals):
     """
     Compare the initial goals with the final goals.
     """
-    if (not goals_exist(initial_goals) or goals_exist(initial_goals)) and not goals_exist(final_goals):
+    if (
+        (not goals_exist(ground_truth_goals) or goals_exist(ground_truth_goals)) 
+        and not goals_exist(final_goals)
+    ):
         return 1
-    elif not goals_exist(initial_goals) and goals_exist(final_goals):
-        print("issue")
-        return -1
     else:
-        initial_goals_ty = [goal.ty for goal in initial_goals.goals.goals]
-        final_goals_ty = [goal.ty for goal in final_goals.goals.goals]
-        return -1 if initial_goals_ty == final_goals_ty else 1
+        ground_truth_goals = repr(ground_truth_goals.goals)
+        final_goals = repr(final_goals.goals)
+        embedding1 = model.encode(ground_truth_goals, convert_to_tensor=True)
+        embedding2 = model.encode(final_goals, convert_to_tensor=True)
+        similarity = util.cos_sim(embedding1, embedding2).item()
+        return similarity
+
+
+def get_last_point(s: str) -> tuple[int, int]:
+    """
+    Returns the (line, column) of the last character in the string.
+    Lines and columns are 0-based.
+    If the string is empty, returns (0, 0).
+    """
+    if not s:
+        return (0, 0)
+    lines = s.splitlines(keepends=True)
+    if not lines:
+        return (0, 0)
+    last_line_idx = len(lines) - 1
+    last_line = lines[-1]
+    # If the string ends with a newline, the last character is at column 0 of the next line
+    if last_line.endswith('\n') or last_line.endswith('\r'):
+        return (last_line_idx + 1, 0)
+    else:
+        return (last_line_idx, len(last_line))
+    
+def get_file_info(conf, file_name, proof_script):
+    with open(os.path.join(conf["repos_path"], file_name), "r") as f:
+        file_contents = f.read()
+        theorem_split = file_contents.split(proof_script.split(":")[0])
+        if len(theorem_split) == 0:
+            logging.error("Proof script not found in file %s", file_name)
+            exit(-1)
+        prefix = theorem_split[0] + "\n" + proof_script
+    
+    original_file_path = os.path.join(conf["repos_path"], file_name)
+    dir_path = os.path.dirname(original_file_path)
+    file_basename = os.path.basename(file_name)
+    random_id = str(uuid.uuid4())[:8]
+    temp_file_name = os.path.join(dir_path, f"temp_{random_id}_{file_basename}")
+    
+    return temp_file_name, prefix
+
+def get_proof_goals(coq_file, line, column, uri):
+    goals = coq_file.coq_lsp_client.proof_goals(
+            TextDocumentIdentifier(uri),
+            Position(line, column+1)
+        )
+    return goals
