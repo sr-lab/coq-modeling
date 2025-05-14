@@ -14,6 +14,8 @@
 #SBATCH --mem=50GB               # total memory per node
 
 
+export OPENAI_API_KEY=""
+eval $(opam env)
 source venv/bin/activate
 # python3 scripts/move_data.py confs/train/conf.yaml
 CUDA_VISIBLE_DEVICES=0,1,2,3 accelerate launch src/tactic_gen/train_decoder.py confs/train/conf.yaml

@@ -24,14 +24,25 @@ def reward_goals(ground_truth_goals, final_goals):
         (not goals_exist(ground_truth_goals) or goals_exist(ground_truth_goals)) 
         and not goals_exist(final_goals)
     ):
-        return 1
+        return 2
     else:
-        ground_truth_goals = repr(ground_truth_goals.goals)
-        final_goals = repr(final_goals.goals)
-        embedding1 = model.encode(ground_truth_goals, convert_to_tensor=True)
-        embedding2 = model.encode(final_goals, convert_to_tensor=True)
-        similarity = util.cos_sim(embedding1, embedding2).item()
-        return similarity
+        goals_reward_ty = 0
+        goals_reward_hyps = 0
+        for goal in ground_truth_goals.goals.goals:
+            embedding1_ty = model.encode(goal.ty, convert_to_tensor=True)
+            embedding2_ty = model.encode(final_goals.goals.goals[0].ty, convert_to_tensor=True)
+            similarity_ty = util.cos_sim(embedding1_ty, embedding2_ty).item()
+            embedding1_hyps = model.encode(goal.hyps, convert_to_tensor=True)
+            embedding2_hyps = model.encode(final_goals.goals.goals[0].hyps, convert_to_tensor=True)
+            similarity_hyps = util.cos_sim(embedding1_hyps, embedding2_hyps).item()
+
+            goals_reward_ty += similarity_ty
+            goals_reward_hyps += similarity_hyps
+
+        return (
+            goals_reward_ty / len(ground_truth_goals.goals.goals) + 
+            goals_reward_hyps / len(ground_truth_goals.goals.goals)
+        ) / 2
 
 
 def get_last_point(s: str) -> tuple[int, int]:
