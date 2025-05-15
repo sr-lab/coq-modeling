@@ -292,7 +292,7 @@ def get_trainer(
                 temp_file.write(prefix + "\n" + proof_script)
             rewards = []
 
-            print("GROUND_TRUTH", proof_script)
+            print("GROUND_TRUTH", temp_file_name, proof_script)
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name],
@@ -306,7 +306,7 @@ def get_trainer(
                     temp_file.write(prefix)
 
                 reward_cache = {}
-                print(completions)
+                #print(completions)
                 for completion in [completions[0]]:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
@@ -361,10 +361,10 @@ def calculate_reward(
         )
         valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
         if valid_reward:
-            print("completion", completion)
+            print("completion", temp_file_name, completion)
             line, column = get_last_point(prefix + "\n" + completion)
             goals = get_proof_goals(coq_file, line, column+1, uri)
-            unchanged_reward = reward_goals(ground_truth_goals, goals)
+            unchanged_reward = reward_goals(ground_truth_goals, goals, temp_file_name)
         else:
             unchanged_reward = 0
         
