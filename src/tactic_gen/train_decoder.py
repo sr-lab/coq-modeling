@@ -292,7 +292,7 @@ def get_trainer(
                 temp_file.write(prefix + "\n" + proof_script)
             rewards = []
 
-            print("ground truth", proof_script)
+            print("GROUND_TRUTH", proof_script)
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name],
