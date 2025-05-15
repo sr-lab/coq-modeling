@@ -10,7 +10,7 @@ from coqpyt.lsp.structs import (
     TextDocumentIdentifier
 )
 
-model = SentenceTransformer('all-MiniLM-L6-v2').to('cpu')
+model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
 
 
 def goals_exist(goals):

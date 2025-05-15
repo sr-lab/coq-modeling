@@ -367,7 +367,6 @@ def calculate_reward(
             goals = get_proof_goals(coq_file, line, column, uri)
             unchanged_reward = reward_goals(ground_truth_goals, goals)
         else:
-            print("ERROR:", list(filter(lambda x: x.severity == 1, coq_file.diagnostics))[0].message)
             unchanged_reward = -1
         
         final_reward = unchanged_reward
