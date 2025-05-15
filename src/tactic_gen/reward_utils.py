@@ -23,23 +23,19 @@ def reward_goals(ground_truth_goals, final_goals):
     """
     Compare the initial goals with the final goals.
     """
-    if (
-        (not goals_exist(ground_truth_goals) or goals_exist(ground_truth_goals)) 
-        and not goals_exist(final_goals)
-    ):
+    if (not goals_exist(final_goals)):
         return 2
     elif ((goals_exist(ground_truth_goals) and len(ground_truth_goals.goals.goals) == 0) 
-          and goals_exist(final_goals) and len(final_goals.goals.goals) == 0
+          and len(final_goals.goals.goals) == 0
           ):
         return 2
     elif ((goals_exist(ground_truth_goals) and len(ground_truth_goals.goals.goals) == 0) 
-          and goals_exist(final_goals) and len(final_goals.goals.goals) != 0
+          and len(final_goals.goals.goals) != 0
           ):
-        print("No more goals", ground_truth_goals.goals)
-        return -1
-    elif len(ground_truth_goals.goals.goals) < len(final_goals.goals.goals):
-        return 2
+        return 0
     elif len(ground_truth_goals.goals.goals) > len(final_goals.goals.goals):
+        return 2
+    elif len(ground_truth_goals.goals.goals) < len(final_goals.goals.goals):
         return 0
     else:
         goals_reward_ty = 0
