@@ -307,7 +307,7 @@ def get_trainer(
 
                 reward_cache = {}
                 print(completions)
-                for completion in completions:
+                for completion in [completions[0]]:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
                         continue
@@ -320,6 +320,7 @@ def get_trainer(
                         ground_truth_goals
                     )
                     rewards.append(final_reward)
+
             print("Rewards", rewards)
             return rewards
         except Exception as e:
