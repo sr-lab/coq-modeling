@@ -105,19 +105,6 @@ def init_valid_files(repo_path: Path) -> set[Path]:
                         valid_files[os.path.join("repos", repo.name, row[0])] = row[1]
 
     return valid_files
-# {file_path: workspace_path}
-valid_files = {}
-
-def init_valid_files(repo_path: Path) -> set[Path]:
-    for repo in Path(os.path.join(repo_path, "repos")).iterdir():
-        if repo.is_dir():
-            if (repo / "valid_files.csv").exists():
-                with open(repo / "valid_files.csv", "r") as f:
-                    reader = csv.reader(f)
-                    for row in reader:
-                        valid_files[os.path.join("repos", repo.name, row[0])] = row[1]
-
-    return valid_files
 
 
 # This doc details how to finetune codellama:
@@ -225,13 +212,11 @@ def get_datasets(
             else:
                 _logger.info(f"Creating filtered training database at {filtered_train_path}")
                 create_filtered_db(orig_train_path, filtered_train_path)
-                create_filtered_db(orig_train_path, filtered_train_path)
             
             if filtered_val_path.exists():
                 print(f"Reusing existing filtered validation database at {filtered_val_path}")
             else:
                 _logger.info(f"Creating filtered validation database at {filtered_val_path}")
-                create_filtered_db(orig_val_path, filtered_val_path)
                 create_filtered_db(orig_val_path, filtered_val_path)
         else:
             _logger.info("No valid files specified, using original databases")
@@ -387,8 +372,6 @@ if __name__ == "__main__":
     args = parser.parse_args(sys.argv[1:])
     set_rango_logger(__file__, logging.DEBUG)
     conf = load_config(args.yaml_config)
-    if "repos_path" in conf:
-        init_valid_files(conf["repos_path"])
     if "repos_path" in conf:
         init_valid_files(conf["repos_path"])
     train_from_checkpoint = (
