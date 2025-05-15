@@ -306,7 +306,7 @@ def get_trainer(
                     rewards.append(final_reward)
             return rewards
         except Exception as e:
-            print("error", e, temp_file_name, file=sys.stderr)
+            print("Exception error", e, temp_file_name, file=sys.stderr)
             return [0] * len(completions)
         finally:
             if temp_file_name:
@@ -352,7 +352,7 @@ def calculate_reward(
         
         final_reward = unchanged_reward
     except TimeoutError as e:
-        print("error", e, temp_file_name, file=sys.stderr)
+        print("Timeout error", e, temp_file_name, file=sys.stderr)
         final_reward = -1
     return final_reward
 
