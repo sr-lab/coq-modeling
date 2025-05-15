@@ -284,7 +284,7 @@ def get_trainer(
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
                 ground_truth_goals = get_proof_goals(coq_file, line, column, uri)
-                print("ground_truth", next_steps[0], ground_truth_goals)
+                print("ground_truth", next_steps[0], ground_truth_goals, temp_file_name)
                 # Rewrite the file with only the prefix
                 with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                     temp_file.write(prefix)
@@ -294,7 +294,6 @@ def get_trainer(
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
                         continue
-                    print("Calculating reward", completion, temp_file_name)
                     final_reward = calculate_reward(
                         completion, 
                         prefix, 
@@ -303,7 +302,6 @@ def get_trainer(
                         coq_file, 
                         ground_truth_goals
                     )
-                    print("Reward", final_reward, temp_file_name)
                     rewards.append(final_reward)
             return rewards
         except Exception as e:
