@@ -320,7 +320,9 @@ def get_trainer(
                     )
                     rewards.append(final_reward)
 
+            print("temp_file_name", temp_file_name)
             print("Rewards", rewards)
+            print("Completions", completions)
             return rewards
         except Exception as e:
             print("error", e, temp_file_name, file=sys.stderr)
