@@ -14,7 +14,10 @@ model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to
 
 
 def goals_exist(goals):
-    return goals is not None and goals.goals is not None and goals.goals.goals is not None
+    return (
+        (goals is not None and goals.goals is not None and goals.goals.goals is not None)
+    )
+
 
 def reward_goals(ground_truth_goals, final_goals):
     """
@@ -25,6 +28,14 @@ def reward_goals(ground_truth_goals, final_goals):
         and not goals_exist(final_goals)
     ):
         return 2
+    elif ((goals_exist(ground_truth_goals) and len(ground_truth_goals.goals.goals) == 0) 
+          and goals_exist(final_goals) and len(final_goals.goals.goals) == 0
+          ):
+        return 2
+    elif ((goals_exist(ground_truth_goals) and len(ground_truth_goals.goals.goals) == 0) 
+          and goals_exist(final_goals) and len(final_goals.goals.goals) != 0
+          ):
+        return 1
     elif len(ground_truth_goals.goals.goals) < len(final_goals.goals.goals):
         return 2
     elif len(ground_truth_goals.goals.goals) > len(final_goals.goals.goals):

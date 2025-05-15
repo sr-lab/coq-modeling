@@ -284,7 +284,7 @@ def get_trainer(
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
                 ground_truth_goals = get_proof_goals(coq_file, line, column, uri)
-
+                print("ground_truth", next_steps[0], ground_truth_goals)
                 # Rewrite the file with only the prefix
                 with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                     temp_file.write(prefix)
