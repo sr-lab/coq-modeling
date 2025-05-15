@@ -299,7 +299,7 @@ def get_trainer(
                 timeout=120
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
-                ground_truth_goals = get_proof_goals(coq_file, line, column+1, uri)
+                ground_truth_goals = get_proof_goals(coq_file, line, column, uri)
 
                 # Rewrite the file with only the prefix
                 with open(temp_file_name, "w", encoding="utf-8") as temp_file:
@@ -361,10 +361,11 @@ def calculate_reward(
             VersionedTextDocumentIdentifier(uri, coq_file.version),
             [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
         )
+        print("ERROR:", list(filter(lambda x: x.severity == 1, coq_file.diagnostics))[0].message)
         valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
         if valid_reward:
             line, column = get_last_point(prefix + "\n" + completion)
-            goals = get_proof_goals(coq_file, line, column+1, uri)
+            goals = get_proof_goals(coq_file, line, column, uri)
             unchanged_reward = reward_goals(ground_truth_goals, goals)
         else:
             unchanged_reward = 0
