@@ -361,13 +361,13 @@ def calculate_reward(
             VersionedTextDocumentIdentifier(uri, coq_file.version),
             [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
         )
-        print("ERROR:", list(filter(lambda x: x.severity == 1, coq_file.diagnostics))[0].message)
         valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
         if valid_reward:
             line, column = get_last_point(prefix + "\n" + completion)
             goals = get_proof_goals(coq_file, line, column, uri)
             unchanged_reward = reward_goals(ground_truth_goals, goals)
         else:
+            print("ERROR:", list(filter(lambda x: x.severity == 1, coq_file.diagnostics))[0].message)
             unchanged_reward = 0
         
         final_reward = unchanged_reward + valid_reward
