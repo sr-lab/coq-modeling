@@ -30,6 +30,7 @@ def reward_goals(ground_truth_goals, final_goals):
     elif len(ground_truth_goals.goals.goals) > len(final_goals.goals.goals):
         return 0
     else:
+        print("len ground truth goals", len(ground_truth_goals.goals.goals))
         goals_reward_ty = 0
         goals_reward_hyps = 0
         for i in range(len(ground_truth_goals.goals.goals)):
