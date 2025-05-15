@@ -324,7 +324,7 @@ def get_trainer(
             return rewards
         except Exception as e:
             print("error", e, temp_file_name, file=sys.stderr)
-            return [0] * len(completions)
+            return [0] * len(completions[0:3])
         finally:
             if temp_file_name:
                 os.remove(temp_file_name)
