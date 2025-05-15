@@ -279,75 +279,69 @@ def get_trainer(
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf)
 
-    for i in range(7):
-        print("Example", i)
-        print(train_dataset[i])
-        print("\n ================ \n")
+    print("\n\nBuilding Trainer...")
 
-    # print("\n\nBuilding Trainer...")
+    def check_reward(prompts, completions, answer, **kwargs):
+        file_name = kwargs["file_name"][0]
+        proof_script = kwargs["proof_script"][0]
+        next_steps = kwargs["next_steps"][0]
+        temp_file_name = None
+        try:
+            temp_file_name, prefix = get_file_info(conf, file_name, proof_script)
+            line, column = get_last_point(prefix + "\n" + proof_script)
+            with open(temp_file_name, "w", encoding="utf-8") as temp_file:
+                temp_file.write(prefix + "\n" + next_steps[0])
+            rewards = []
 
-    # def check_reward(prompts, completions, answer, **kwargs):
-    #     file_name = kwargs["file_name"][0]
-    #     proof_script = kwargs["proof_script"][0]
-    #     temp_file_name = None
-    #     try:
-    #         temp_file_name, prefix = get_file_info(conf, file_name, proof_script)
-    #         line, column = get_last_point(prefix + "\n" + proof_script)
-    #         with open(temp_file_name, "w", encoding="utf-8") as temp_file:
-    #             temp_file.write(prefix + "\n" + proof_script)
-    #         rewards = []
+            with CoqFile(
+                temp_file_name, 
+                workspace=valid_files[file_name],
+                timeout=120
+            ) as coq_file:
+                uri = f"file://{coq_file.path}"
+                ground_truth_goals = get_proof_goals(coq_file, line, column+1, uri)
 
-    #         print("GROUND_TRUTH", temp_file_name, proof_script)
-    #         with CoqFile(
-    #             temp_file_name, 
-    #             workspace=valid_files[file_name],
-    #             timeout=120
-    #         ) as coq_file:
-    #             uri = f"file://{coq_file.path}"
-    #             ground_truth_goals = get_proof_goals(coq_file, line, column+1, uri)
+                # Rewrite the file with only the prefix
+                with open(temp_file_name, "w", encoding="utf-8") as temp_file:
+                    temp_file.write(prefix)
 
-    #             # Rewrite the file with only the prefix
-    #             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
-    #                 temp_file.write(prefix)
+                reward_cache = {}
+                for completion in completions[0:3]:
+                    if completion.strip() in reward_cache:
+                        rewards.append(reward_cache[completion.strip()])
+                        continue
+                    final_reward = calculate_reward(
+                        completion, 
+                        prefix, 
+                        temp_file_name, 
+                        uri, 
+                        coq_file, 
+                        ground_truth_goals
+                    )
+                    rewards.append(final_reward)
 
-    #             reward_cache = {}
-    #             #print(completions)
-    #             for completion in [completions[0]]:
-    #                 if completion.strip() in reward_cache:
-    #                     rewards.append(reward_cache[completion.strip()])
-    #                     continue
-    #                 final_reward = calculate_reward(
-    #                     completion, 
-    #                     prefix, 
-    #                     temp_file_name, 
-    #                     uri, 
-    #                     coq_file, 
-    #                     ground_truth_goals
-    #                 )
-    #                 rewards.append(final_reward)
-
-    #         print("Rewards", rewards)
-    #         return rewards
-    #     except Exception as e:
-    #         print("error", e, temp_file_name, file=sys.stderr)
-    #         return [0] * len(completions)
-    #     finally:
-    #         if temp_file_name:
-    #             os.remove(temp_file_name)
+            print("Rewards", rewards)
+            return rewards
+        except Exception as e:
+            print("error", e, temp_file_name, file=sys.stderr)
+            return [0] * len(completions)
+        finally:
+            if temp_file_name:
+                os.remove(temp_file_name)
     
 
-    # # test_subset = Subset(train_dataset, range(50, 120))
-    # trainer = GRPOTrainer(
-    #     model=model,
-    #     processing_class=train_dataset.tokenizer,
-    #     reward_funcs=[check_reward],
-    #     args=training_args,
-    #     train_dataset=train_dataset,
-    #     eval_dataset=val_dataset
-    # )
+    # test_subset = Subset(train_dataset, range(50, 120))
+    trainer = GRPOTrainer(
+        model=model,
+        processing_class=train_dataset.tokenizer,
+        reward_funcs=[check_reward],
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=val_dataset
+    )
     
-    # return trainer
-    return None
+    return trainer
+
 
 def calculate_reward(
     completion, 
@@ -367,10 +361,9 @@ def calculate_reward(
         )
         valid_reward = int(len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
         if valid_reward:
-            print("completion", temp_file_name, completion)
             line, column = get_last_point(prefix + "\n" + completion)
             goals = get_proof_goals(coq_file, line, column+1, uri)
-            unchanged_reward = reward_goals(ground_truth_goals, goals, temp_file_name)
+            unchanged_reward = reward_goals(ground_truth_goals, goals)
         else:
             unchanged_reward = 0
         
@@ -404,13 +397,13 @@ if __name__ == "__main__":
         conf["checkpoint_name"] if "checkpoint_name" in conf else None
     )
     trainer = get_trainer(conf, args.local_rank, train_from_checkpoint)
-    # if train_from_checkpoint:
-    #     checkpoint_name = conf["checkpoint_name"]
-    #     print(f"Training from checkpoint {checkpoint_name}")
-    #     transformers.logging.set_verbosity_info()
-    #     trainer.train(checkpoint_name)
-    # else:
-    #     make_output_dir(conf)
-    #     copy_configs(args.yaml_config, conf, TrainType.TACTIC)
-    #     print("Training from scratch")
-    #     trainer.train()
+    if train_from_checkpoint:
+        checkpoint_name = conf["checkpoint_name"]
+        print(f"Training from checkpoint {checkpoint_name}")
+        transformers.logging.set_verbosity_info()
+        trainer.train(checkpoint_name)
+    else:
+        make_output_dir(conf)
+        copy_configs(args.yaml_config, conf, TrainType.TACTIC)
+        print("Training from scratch")
+        trainer.train()

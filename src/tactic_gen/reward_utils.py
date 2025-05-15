@@ -16,7 +16,7 @@ model = SentenceTransformer('all-MiniLM-L6-v2').to('cpu')
 def goals_exist(goals):
     return goals is not None and goals.goals is not None and goals.goals.goals is not None
 
-def reward_goals(ground_truth_goals, final_goals, temp_file_name):
+def reward_goals(ground_truth_goals, final_goals):
     """
     Compare the initial goals with the final goals.
     """
@@ -33,8 +33,6 @@ def reward_goals(ground_truth_goals, final_goals, temp_file_name):
         goals_reward_ty = 0
         goals_reward_hyps = 0
         for i in range(len(ground_truth_goals.goals.goals)):
-            print(">> ground truth goals", temp_file_name, ground_truth_goals.goals.goals[i].ty)
-            print(">> final goals", temp_file_name, final_goals.goals.goals[i].ty)
             embedding1_ty = model.encode(ground_truth_goals.goals.goals[i].ty, convert_to_tensor=True)
             embedding2_ty = model.encode(final_goals.goals.goals[i].ty, convert_to_tensor=True)
             similarity_ty = util.cos_sim(embedding1_ty, embedding2_ty).item()
