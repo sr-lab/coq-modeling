@@ -306,7 +306,7 @@ def get_trainer(
                         coq_file, 
                         ground_truth_goals
                     )
-                    print("Reward", final_reward)
+                    print("Reward", final_reward, temp_file_name)
                     rewards.append(final_reward)
             return rewards
         except Exception as e:
