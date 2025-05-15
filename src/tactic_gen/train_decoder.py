@@ -272,18 +272,20 @@ def get_trainer(
         next_steps = kwargs["next_steps"][0]
         temp_file_name = None
         try:
+            print("Getting file info", temp_file_name)
             temp_file_name, prefix = get_file_info(conf, file_name, proof_script)
             line, column = get_last_point(prefix + "\n" + proof_script)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                 temp_file.write(prefix + "\n" + next_steps[0])
             rewards = []
-
+            print("Getting Coq File", temp_file_name)
             with CoqFile(
                 temp_file_name, 
                 workspace=valid_files[file_name],
                 timeout=120
             ) as coq_file:
                 uri = f"file://{coq_file.path}"
+                print("Getting ground truth goals", temp_file_name)
                 ground_truth_goals = get_proof_goals(coq_file, line, column, uri)
 
                 # Rewrite the file with only the prefix
@@ -295,6 +297,7 @@ def get_trainer(
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
                         continue
+                    print("Calculating reward", completion, temp_file_name)
                     final_reward = calculate_reward(
                         completion, 
                         prefix, 
