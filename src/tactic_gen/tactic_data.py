@@ -674,6 +674,8 @@ class LmProcessedDataset(Dataset):
             "proof_idx": target_lm_example.proof_idx,
             "step_idx": target_lm_example.step_idx,
             "proof_script": target_lm_example.proof_script,
+            "proof_state": target_lm_example.proof_state,
+            "next_steps": target_lm_example.next_steps,
         }
 
 
