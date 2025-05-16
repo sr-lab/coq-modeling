@@ -150,6 +150,7 @@ class SlurmJobConf:
 class LocalJobConf:
     conf_loc: Path
     n_processes: int
+    continue_if_exists: bool
 
 
 JobConf = SlurmJobConf | LocalJobConf
@@ -167,6 +168,9 @@ def main_get_conf_slurm_conf() -> JobConf:
     parser.add_argument(
         "--n_workers", type=int, help="Number of workers to use for local processing."
     )
+    parser.add_argument(
+        "--continue-if-exists", action="store_true", help="Continue without prompting if save_loc exists"
+    )
     args = parser.parse_args()
     if not ((args.slurm_conf is not None) ^ (args.n_workers is not None)):
         raise ValueError("Exactly one of slurm_conf and n_workers must be provided.")
@@ -179,7 +183,7 @@ def main_get_conf_slurm_conf() -> JobConf:
         assert args.n_workers is not None
         opt_n_workers = args.n_workers
         assert 0 < opt_n_workers
-        return LocalJobConf(conf_loc, opt_n_workers)
+        return LocalJobConf(conf_loc, opt_n_workers, args.continue_if_exists)
     else:
         opt_slurm_conf = Path(args.slurm_conf)
         assert opt_slurm_conf.exists()
