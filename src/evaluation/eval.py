@@ -5,6 +5,8 @@ import os
 import yaml
 import shutil
 import subprocess
+import argparse
+import sys
 from pathlib import Path
 from evaluation.eval_utils import EvalConf
 from data_management.splits import DataSplit, get_all_files, FileInfo
@@ -55,13 +57,21 @@ def fill_queue(
 
 
 if __name__ == "__main__":
+    # Parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--continue-if-exists", action="store_true", help="Continue without prompting if save_loc exists")
+    args, unknown_args = parser.parse_known_args()
+    
+    # Pass remaining args to main_get_conf_slurm_conf
+    sys.argv = [sys.argv[0]] + unknown_args
     job_conf = main_get_conf_slurm_conf()
+    
     set_rango_logger(__file__, logging.DEBUG)
     assert job_conf.conf_loc.exists()
     with job_conf.conf_loc.open("r") as fin:
         yaml_conf = yaml.safe_load(fin)
     conf = EvalConf.from_yaml(yaml_conf)
-    if conf.save_loc.exists():
+    if conf.save_loc.exists() and not args.continue_if_exists:
         choice = JobOption.from_user(f"{conf.save_loc} exists")
         match choice:
             case JobOption.CONTINUE:
