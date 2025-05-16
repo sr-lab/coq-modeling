@@ -108,13 +108,12 @@ def run_local(command: str, n_workers: int):
         n_cuda_devices = 1
     
     open_procs: list[subprocess.Popen[bytes]] = []
+    devices = os.environ["CUDA_VISIBLE_DEVICES"].split(",")
+
     for worker_id in range(n_workers):
-        # Assign devices circularly
-        cuda_device = worker_id % n_cuda_devices
-        
-        # Create environment with CUDA_VISIBLE_DEVICES set
+        cuda_device = devices[worker_id % len(devices)]
         worker_env = os.environ.copy()
-        worker_env["CUDA_VISIBLE_DEVICES"] = str(cuda_device)
+        worker_env["CUDA_VISIBLE_DEVICES"] = cuda_device
         
         p = subprocess.Popen(
             command, 
