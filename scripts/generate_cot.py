@@ -20,11 +20,12 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
     The premises ([PREMISES]) are possible auxiliary premises to the current proof.
     The tactic ([TACTIC]) is the tactic that you have to get to after reasoning about the state, script, proofs and premises.
     
-    Generate the reasoning a person would have to decide which tactic to apply next.
-    During the reasoning, ignore that you already know the [TACTIC] field. 
+    Generate the reasoning a human would have to decide which tactic to apply next.
+    During the reasoning, ignore that you already know the tactic in the [TACTIC] field. 
 
     Your reasoning should end with:
-    'Therefore, the next tactic is [TACTIC].'
+    'Therefore, the next tactic is <TACTIC>.'
+    <TACTIC> should be replaced by the tactic that follows the [TACTIC] field in the prompt.
 
     As an example, if the original prompt is:
     [STATE]
