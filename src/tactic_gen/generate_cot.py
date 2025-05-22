@@ -20,7 +20,8 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
     The premises ([PREMISES]) are possible auxiliary premises to the current proof.
     The tactic ([TACTIC]) is the next tactic to apply.
     
-    Generate a step-by-step reasoning for how we can deduce the next tactic from the state, script, proofs and premises.
+    Generate the reasoning a person would have to decide which tactic to apply next.
+    Do not mention the next tactic until the end of the reasoning.
     """
 
     return system_prompt, f"{original_prompt}{first_next_step}"
