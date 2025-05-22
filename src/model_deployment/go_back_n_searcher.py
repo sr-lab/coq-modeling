@@ -1,0 +1,201 @@
+from __future__ import annotations
+from typing import Optional, Any
+from dataclasses import dataclass
+import time
+import random
+
+from data_management.dataset_file import Proof
+from model_deployment.proof_manager import ProofManager, TacticResult
+from model_deployment.tactic_gen_client import TacticGenClient
+
+import logging
+from util.constants import RANGO_LOGGER
+
+_logger = logging.getLogger(RANGO_LOGGER)
+
+
+@dataclass
+class GoBackNSuccess:
+    time: float
+    model_time: float
+    successful_proof: Proof
+    attempted_proofs: list[str]
+
+
+@dataclass
+class GoBackNFailure:
+    time: float
+    model_time: float
+    attempted_proofs: list[str]
+
+
+@dataclass
+class GoBackNSearcherConf:
+    timeout: int
+    print_proofs: bool
+    initial_proof: Optional[str]
+    token_mask: Optional[str]
+    ALIAS = "go_back_n"
+
+    @classmethod
+    def from_yaml(cls, yaml_data: Any) -> GoBackNSearcherConf:
+        return cls(
+            yaml_data["timeout"],
+            yaml_data["print_proofs"],
+            yaml_data.get("initial_proof", None),
+            yaml_data.get("token_mask", None),
+        )
+
+
+class GoBackNSearcher:
+    def __init__(
+        self,
+        tactic_clients: list[TacticGenClient],
+        proof_manager: ProofManager,
+        timeout: int,
+        print_proofs: bool,
+        initial_proof: Optional[str],
+        token_mask: Optional[str],
+    ):
+        self.tactic_clients = tactic_clients
+        self.proof_manager = proof_manager
+        self.timeout = timeout
+        self.print_proofs = print_proofs
+        self.initial_proof = initial_proof
+        self.token_mask = token_mask
+
+        initial_dset_file = proof_manager.get_initial_context()
+        if initial_dset_file is None:
+            raise ValueError("Could not get initial datasetfile")
+        self.initial_dset_file = initial_dset_file
+
+        if initial_proof is None:
+            initial_proof = ""
+        self.need_goal_record = False
+        self.total_model_time = 0
+
+        self.initial_proof_obj = self.initial_dset_file.proofs[-1]
+        self.initial_check_result = proof_manager.check_proof(
+            initial_proof, self.initial_proof_obj.theorem
+        )
+        # print(initial_check_result)
+        assert self.initial_check_result.tactic_result == TacticResult.VALID
+        assert self.initial_check_result.current_goals is not None
+        assert self.initial_check_result.new_proof is not None
+
+    @classmethod
+    def from_conf(
+        cls,
+        conf: GoBackNSearcherConf,
+        tactic_clients: list[TacticGenClient],
+        proof_manager: ProofManager,
+    ) -> GoBackNSearcher:
+        return cls(
+            tactic_clients,
+            proof_manager,
+            conf.timeout,
+            conf.print_proofs,
+            conf.initial_proof,
+            conf.token_mask,
+        )
+
+    def search(self, **kwargs) -> GoBackNSuccess | GoBackNFailure:
+        start_time = time.time()
+        attempts: list[str] = []
+        cur_time = time.time() - start_time
+        while cur_time < self.timeout:
+            maybe_complete, attempt = self.search_step(
+                start_time,
+                self.tactic_clients[len(attempts) % len(self.tactic_clients)],
+            )
+            if self.print_proofs:
+                print(attempt)
+            attempts.append(attempt)
+            if maybe_complete is not None:
+                total_time = time.time() - start_time
+                return GoBackNSuccess(
+                    total_time,
+                    self.total_model_time,
+                    maybe_complete,
+                    attempts,
+                )
+            cur_time = time.time() - start_time
+        return GoBackNFailure(cur_time, self.total_model_time, attempts)
+
+    def search_step(
+        self, start_time: float, client: TacticGenClient
+    ) -> tuple[Optional[Proof], str]:
+        cur_proof_result = self.initial_check_result
+        cur_time = time.time() - start_time
+        last_proof_script = ""
+        while (
+            cur_time < self.timeout
+        ):
+            if cur_proof_result.tactic_result == TacticResult.INVALID:
+                # Go back a random number of steps between 1 and the length of the current proof
+                assert cur_proof_result.new_proof is not None
+                cur_dset_file = self.proof_manager.build_dset_file(
+                    cur_proof_result.new_proof
+                )
+                last_proof = cur_dset_file.proofs[-1]
+                proof_length = len(last_proof.steps)
+                
+                if proof_length == 0:
+                    cur_proof_result = self.initial_check_result
+                    last_proof_script = ""
+                    continue
+                
+                steps_back = random.randint(1, proof_length)
+                
+                if steps_back >= proof_length:
+                    cur_proof_result = self.initial_check_result
+                    last_proof_script = ""
+                else:
+                    back_step = last_proof.steps[-(steps_back + 1)]
+                    back_proof_script = last_proof.proof_prefix_to_string(
+                        back_step, include_theorem=False
+                    )
+                    
+                    cur_proof_result = self.proof_manager.check_proof(
+                        back_proof_script,
+                        cur_proof_result.new_proof.theorem,
+                    )
+                    last_proof_script = back_proof_script
+                continue
+            
+            if cur_proof_result.tactic_result == TacticResult.COMPLETE:
+                assert cur_proof_result.new_proof is not None
+                return cur_proof_result.new_proof, last_proof_script
+            
+            assert cur_proof_result.tactic_result == TacticResult.VALID
+            assert cur_proof_result.new_proof is not None
+            cur_dset_file = self.proof_manager.build_dset_file(
+                cur_proof_result.new_proof
+            )
+            admitted_step = cur_dset_file.proofs[-1].steps[-1]
+            cur_proof_script = cur_dset_file.proofs[-1].proof_prefix_to_string(
+                admitted_step, include_theorem=False
+            )
+            start_model_time = time.time()
+            last_proof = cur_dset_file.proofs[-1]
+            result = client.get_recs(
+                len(last_proof.steps) - 1,
+                last_proof,
+                cur_dset_file,
+                1,
+                token_mask=self.token_mask,
+                file_prefix=self.proof_manager.file_prefix,
+            )
+            end_model_time = time.time()
+            assert len(result.next_tactic_list) == 1
+            next_tactic = result.next_tactic_list[0]
+            self.total_model_time += end_model_time - start_model_time
+            proof_check_result = self.proof_manager.check_proof(
+                cur_proof_script + next_tactic,
+                cur_proof_result.new_proof.theorem,
+            )
+            last_proof_script = cur_proof_script + next_tactic
+            cur_proof_result = proof_check_result
+            cur_time = time.time() - start_time
+
+        return None, last_proof_script
