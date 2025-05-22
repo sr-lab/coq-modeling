@@ -18,7 +18,7 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
     The script ([SCRIPT]) is the sequence of tactics applied to the proof until the current step.
     The proofs ([PROOFS]) are similar proofs.
     The premises ([PREMISES]) are possible auxiliary premises to the current proof.
-    The tactic ([TACTIC]) is the next tactic to apply.
+    The tactic ([TACTIC]) is the tactic that you have to get to after reasoning about the state, script, proofs and premises.
     
     Generate the reasoning a person would have to decide which tactic to apply next.
     Do not mention the next tactic until the end of the reasoning.
