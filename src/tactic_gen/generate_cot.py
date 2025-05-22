@@ -22,6 +22,9 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
     
     Generate the reasoning a person would have to decide which tactic to apply next.
     During the reasoning, ignore that you already know the [TACTIC] field. 
+
+    Your reasoning should end with:
+    'Therefore, the next tactic is [TACTIC].'
     """
 
     return system_prompt, f"{original_prompt}{first_next_step}"
