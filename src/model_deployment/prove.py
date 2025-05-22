@@ -21,6 +21,10 @@ from model_deployment.straight_line_searcher import (
 )
 from model_deployment.whole_proof_searcher import WholeProofSuccess, WholeProofFailure
 from model_deployment.classical_searcher import ClassicalSuccess, ClassicalFailure
+from model_deployment.go_back_n_searcher import (
+    GoBackNSuccess,
+    GoBackNFailure,
+)
 from model_deployment.searcher import (
     SearcherConf,
     SuccessfulSearch,
@@ -198,6 +202,15 @@ class RangoResult(Result):
                     len(result.attempted_proofs),
                 )
             case WholeProofFailure():
+                return cls(thm, None, result.time, len(result.attempted_proofs))
+            case GoBackNSuccess():
+                return cls(
+                    thm, 
+                    result.successful_proof.proof_text_to_string(include_theorem=False), 
+                    result.time, 
+                    len(result.attempted_proofs)
+                )
+            case GoBackNFailure():
                 return cls(thm, None, result.time, len(result.attempted_proofs))
 
 
