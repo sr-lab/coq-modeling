@@ -1,6 +1,7 @@
 import argparse
-from tactic_gen.train_decoder import get_datasets
+from tactic_gen.train_decoder import (get_datasets, init_valid_files)
 from util.train_utils import load_config
+
 
 import openai
 
@@ -39,8 +40,10 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=str, required=True)
     args = parser.parse_args()
 
+    
     config = load_config(args.config)
-
+    if "repos_path" in config:
+        init_valid_files(config["repos_path"])
     train_dataset, val_dataset = get_datasets(config)
 
     for proof in train_dataset:
