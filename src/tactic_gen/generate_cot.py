@@ -21,7 +21,7 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
     The tactic ([TACTIC]) is the tactic that you have to get to after reasoning about the state, script, proofs and premises.
     
     Generate the reasoning a person would have to decide which tactic to apply next.
-    Do not mention the next tactic until the end of the reasoning.
+    During the reasoning, ignore that you already know the [TACTIC] field. 
     """
 
     return system_prompt, f"{original_prompt}{first_next_step}"
