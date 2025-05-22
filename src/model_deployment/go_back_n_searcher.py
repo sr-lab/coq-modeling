@@ -102,28 +102,30 @@ class GoBackNSearcher:
     def search(self, **kwargs) -> GoBackNSuccess | GoBackNFailure:
         start_time = time.time()
         attempts: list[str] = []
-        cur_time = time.time() - start_time
-        while cur_time < self.timeout:
-            maybe_complete, attempt = self.search_step(
-                start_time,
-                self.tactic_clients[len(attempts) % len(self.tactic_clients)],
+
+        maybe_complete, attempt = self.search_step(
+            start_time,
+            self.tactic_clients[len(attempts) % len(self.tactic_clients)],
+            attempts,
+        )
+        if self.print_proofs:
+            print(attempt)
+        
+        attempts.append(attempt)
+        if maybe_complete is not None:
+            return GoBackNSuccess(
+                time.time() - start_time,
+                self.total_model_time,
+                maybe_complete,
+                attempts,
             )
-            if self.print_proofs:
-                print(attempt)
-            attempts.append(attempt)
-            if maybe_complete is not None:
-                total_time = time.time() - start_time
-                return GoBackNSuccess(
-                    total_time,
-                    self.total_model_time,
-                    maybe_complete,
-                    attempts,
-                )
-            cur_time = time.time() - start_time
-        return GoBackNFailure(cur_time, self.total_model_time, attempts)
+    
+        return GoBackNFailure(
+            time.time() - start_time, self.total_model_time, attempts
+        )
 
     def search_step(
-        self, start_time: float, client: TacticGenClient
+        self, start_time: float, client: TacticGenClient, attempts: list[str]
     ) -> tuple[Optional[Proof], str]:
         prev_proof_result = None
         cur_proof_result = self.initial_check_result
@@ -134,6 +136,10 @@ class GoBackNSearcher:
             cur_time < self.timeout
         ):
             if cur_proof_result.tactic_result == TacticResult.INVALID:
+                attempts.append(last_proof_script)
+                if self.print_proofs:
+                    print(last_proof_script)
+                    
                 # Go back a random number of steps between 1 and the length of the current proof
                 cur_dset_file = self.proof_manager.build_dset_file(
                     prev_proof_result.new_proof
@@ -144,6 +150,7 @@ class GoBackNSearcher:
                 if proof_length == 0:
                     cur_proof_result = self.initial_check_result
                     last_proof_script = ""
+                    cur_time = time.time() - start_time
                     continue
                 
                 steps_back = random.randint(0, proof_length)
@@ -162,9 +169,9 @@ class GoBackNSearcher:
                         prev_proof_result.new_proof.theorem,
                     )
                     last_proof_script = back_proof_script
+                cur_time = time.time() - start_time
                 continue
-            
-            if cur_proof_result.tactic_result == TacticResult.COMPLETE:
+            elif cur_proof_result.tactic_result == TacticResult.COMPLETE:
                 assert cur_proof_result.new_proof is not None
                 return cur_proof_result.new_proof, last_proof_script
             
