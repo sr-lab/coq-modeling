@@ -159,7 +159,7 @@ class GoBackNSearcher:
                     
                     cur_proof_result = self.proof_manager.check_proof(
                         back_proof_script,
-                        cur_proof_result.new_proof.theorem,
+                        prev_proof_result.new_proof.theorem,
                     )
                     last_proof_script = back_proof_script
                 continue
