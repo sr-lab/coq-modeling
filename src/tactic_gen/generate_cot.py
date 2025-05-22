@@ -25,6 +25,26 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
 
     Your reasoning should end with:
     'Therefore, the next tactic is [TACTIC].'
+
+    As an example, if the original prompt is:
+    [STATE]
+    A: Type
+    ∀ (x : A) (l : list A), rev (l ++ [x]) = x :: rev l
+    [SCRIPT]
+    Lemma rev_snoc_cons A :
+    forall (x : A) (l : list A), rev (l ++ [x]) = x :: rev l.
+    Proof.
+    [PROOFS]
+    [PREMISES]
+    [TACTIC]
+    induction l.
+
+    [REASONING]
+    The current state is a lemma about the reverse of a list.
+    The current script shows the definition of the lemma and the start of the proof.
+    I need to prove that the reverse of a list with an element at the end is the element followed by the reverse of the list without the element.
+    I can do this by induction on the list.
+    Therefore, the next tactic is "induction l."
     """
 
     return system_prompt, f"{original_prompt}{first_next_step}"
