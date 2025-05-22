@@ -20,7 +20,7 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
     The premises ([PREMISES]) are possible auxiliary premises to the current proof.
     The tactic ([TACTIC]) is the next tactic to apply.
     
-    Your task is to generate a chain of thought for the next tactic.
+    Generate a step-by-step reasoning for how we can deduce the next tactic from the state, script, proofs and premises.
     """
 
     return system_prompt, f"{original_prompt}{first_next_step}"
