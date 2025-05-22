@@ -125,17 +125,18 @@ class GoBackNSearcher:
     def search_step(
         self, start_time: float, client: TacticGenClient
     ) -> tuple[Optional[Proof], str]:
+        prev_proof_result = None
         cur_proof_result = self.initial_check_result
         cur_time = time.time() - start_time
         last_proof_script = ""
+
         while (
             cur_time < self.timeout
         ):
             if cur_proof_result.tactic_result == TacticResult.INVALID:
                 # Go back a random number of steps between 1 and the length of the current proof
-                assert cur_proof_result.new_proof is not None
                 cur_dset_file = self.proof_manager.build_dset_file(
-                    cur_proof_result.new_proof
+                    prev_proof_result.new_proof
                 )
                 last_proof = cur_dset_file.proofs[-1]
                 proof_length = len(last_proof.steps)
@@ -145,7 +146,7 @@ class GoBackNSearcher:
                     last_proof_script = ""
                     continue
                 
-                steps_back = random.randint(1, proof_length)
+                steps_back = random.randint(0, proof_length)
                 
                 if steps_back >= proof_length:
                     cur_proof_result = self.initial_check_result
@@ -195,6 +196,7 @@ class GoBackNSearcher:
                 cur_proof_result.new_proof.theorem,
             )
             last_proof_script = cur_proof_script + next_tactic
+            prev_proof_result = cur_proof_result
             cur_proof_result = proof_check_result
             cur_time = time.time() - start_time
 
