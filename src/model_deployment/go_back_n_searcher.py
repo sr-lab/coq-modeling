@@ -140,7 +140,7 @@ class GoBackNSearcher:
                 if self.print_proofs:
                     print(last_proof_script)
                     
-                # Go back a random number of steps between 1 and the length of the current proof
+                # Go back a random number of steps between 0 and the length of the current proof
                 cur_dset_file = self.proof_manager.build_dset_file(
                     prev_proof_result.new_proof
                 )
@@ -153,7 +153,10 @@ class GoBackNSearcher:
                     cur_time = time.time() - start_time
                     continue
                 
-                steps_back = random.randint(0, proof_length)
+                weights = [1 / (i + 1) for i in range(proof_length + 1)]
+                total = sum(weights)
+                probs = [w / total for w in weights]
+                steps_back = random.choices(range(proof_length + 1), weights=probs, k=1)[0]
                 
                 if steps_back >= proof_length:
                     cur_proof_result = self.initial_check_result
