@@ -1,6 +1,7 @@
 import argparse
 import threading
 import concurrent.futures
+import json
 from tactic_gen.train_decoder import (get_datasets, init_valid_files)
 from util.train_utils import load_config
 from data_management.jsonl_utils import ExampleDB
@@ -98,7 +99,7 @@ if __name__ == "__main__":
         
         examples = []
         for future in concurrent.futures.as_completed(futures):
-            examples.append(future.result())
+            examples.append(json.dumps(future.result()))
             if len(examples) > 100:
                 db.insert_examples(examples)
                 examples = []
