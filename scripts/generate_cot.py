@@ -1,12 +1,14 @@
 import argparse
+import threading
+import concurrent.futures
 from tactic_gen.train_decoder import (get_datasets, init_valid_files)
 from util.train_utils import load_config
-
+from data_management.jsonl_utils import ExampleDB
 
 from openai import OpenAI
 
-client = OpenAI()
 
+client = OpenAI()
 model = "gpt-4.1-mini"
 
 
@@ -50,6 +52,7 @@ def generate_prompt(original_prompt: str, first_next_step: str) -> str:
 
     return system_prompt, f"{original_prompt}{first_next_step}"
 
+
 def call_openai(system_prompt: str, prompt: str) -> str:
     response = client.chat.completions.create(model=model,
     messages=[
@@ -60,9 +63,22 @@ def call_openai(system_prompt: str, prompt: str) -> str:
     return response.choices[0].message.content
 
 
+def process_example(proof):
+    original_prompt = proof["prompt"]
+    first_next_step = proof["next_steps"][0]
+
+    system_prompt, prompt = generate_prompt(original_prompt, first_next_step)
+    cot = call_openai(system_prompt, prompt)
+    proof["cot"] = cot
+    return proof
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True)
+    parser.add_argument("--db_output", type=str, required=True)
+    parser.add_argument("--num_examples", type=int, required=True)
+    parser.add_argument("--num_threads", type=int, default=1, help="Number of threads to use")
     args = parser.parse_args()
 
 
@@ -71,14 +87,19 @@ if __name__ == "__main__":
         init_valid_files(config["repos_path"])
     train_dataset, val_dataset = get_datasets(config)
 
-    for proof in train_dataset:
-        original_prompt = proof["prompt"]
-        first_next_step = proof["next_steps"][0]
+    db = ExampleDB.create(args.db_output)
 
-        system_prompt, prompt = generate_prompt(original_prompt, first_next_step)
-        cot = call_openai(system_prompt, prompt)
-        print(prompt)
-        print(first_next_step)
-        print("-------------")
-        print(cot)
-        break
+    with concurrent.futures.ThreadPoolExecutor(max_workers=args.num_threads) as executor:
+        futures = []
+        for i in range(args.num_examples):
+            proof = train_dataset[i]
+            futures.append(executor.submit(process_example, proof))
+        
+        examples = []
+        for future in concurrent.futures.as_completed(futures):
+            examples.append(future.result())
+            if len(examples) > 100:
+                db.insert_examples(examples)
+                examples = []
+            
+        db.insert_examples(examples)
