@@ -90,11 +90,16 @@ if __name__ == "__main__":
         init_valid_files(config["repos_path"])
     train_dataset, val_dataset = get_datasets(config)
 
-    db = ExampleDB.create(Path(args.db_output))
-
+    db_output = Path(args.db_output)
+    if not db_output.exists():
+        db = ExampleDB.create(db_output)
+    else:
+        db = ExampleDB.load(db_output)
+    db_size = db.size()
+    
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.num_threads) as executor:
         futures = []
-        for i in range(args.num_examples):
+        for i in range(db_size, db_size + args.num_examples):
             proof = train_dataset[i]
             futures.append(executor.submit(process_example, proof))
         
