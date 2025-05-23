@@ -99,7 +99,7 @@ if __name__ == "__main__":
         
         examples = []
         for future in concurrent.futures.as_completed(futures):
-            examples.append(json.dumps(future.result()))
+            examples.append((json.dumps(future.result()),))
             if len(examples) > 100:
                 db.insert_examples(examples)
                 examples = []
