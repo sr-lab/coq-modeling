@@ -4,6 +4,7 @@ import concurrent.futures
 from tactic_gen.train_decoder import (get_datasets, init_valid_files)
 from util.train_utils import load_config
 from data_management.jsonl_utils import ExampleDB
+from pathlib import Path
 
 from openai import OpenAI
 
@@ -87,7 +88,7 @@ if __name__ == "__main__":
         init_valid_files(config["repos_path"])
     train_dataset, val_dataset = get_datasets(config)
 
-    db = ExampleDB.create(args.db_output)
+    db = ExampleDB.create(Path(args.db_output))
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.num_threads) as executor:
         futures = []
