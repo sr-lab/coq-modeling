@@ -72,6 +72,7 @@ def process_example(proof):
     system_prompt, prompt = generate_prompt(original_prompt, first_next_step)
     cot = call_openai(system_prompt, prompt)
     proof["cot"] = cot
+    del proof["prompt"]
     return proof
 
 
