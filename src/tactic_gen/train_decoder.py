@@ -33,6 +33,7 @@ from util.train_utils import (
     get_optional_arg,
     get_required_arg,
     get_grpo_training_args,
+    get_training_args,
     load_config,
     make_output_dir,
     copy_configs,
@@ -223,7 +224,10 @@ def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
 ) -> Trainer:
     print("\n\nBuilding Training Config...")
-    training_args = get_grpo_training_args(conf, local_rank)
+    if conf["train_type"] == "grpo":
+        training_args = get_grpo_training_args(conf, local_rank)
+    else:
+        training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     raw_model = get_model(model_name)
