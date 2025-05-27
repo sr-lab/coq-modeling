@@ -163,7 +163,7 @@ def get_datasets(
         example_collator_yaml_conf = get_required_arg("example_collator", conf)
         data_path = Path(get_required_arg("data_path", conf))
         num_eval_examples = int(get_optional_arg("num_eval_examples", conf, None))
-        hard_seq_len = int(get_required_arg("hard_seq_len", conf))
+        hard_seq_len = get_required_arg("hard_seq_len", conf)
         orig_train_path, orig_val_path = get_train_val_path(data_path)
         
         filtered_train_path = orig_train_path.parent / orig_train_path.name.replace(".db", "_tmp.db")

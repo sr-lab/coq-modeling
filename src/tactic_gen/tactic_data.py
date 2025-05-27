@@ -682,8 +682,8 @@ class LmProcessedDataset(Dataset):
     
     def __len__(self) -> int:
         if self.max_n_examples is not None:
-            return self.max_n_examples
-        return self.edb.size()
+            return int(self.max_n_examples)
+        return int(self.edb.size())
 
     def __getitem__(self, idx: int) -> Any:
         target_idx = self.edb_map[idx]
