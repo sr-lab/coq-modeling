@@ -10,18 +10,14 @@ import yaml
 
 from yaml import load, Loader
 from transformers import TrainingArguments, PreTrainedTokenizer
-from trl import SFTConfig
 
 
 from util.constants import (
     DATA_CONF_NAME,
-    GOAL_DATA_CONF_NAME,
     PREMISE_DATA_CONF_NAME,
     RERANK_DATA_CONF_NAME,
     REQS_NAME,
-    GIT_NAME,
     TRAINING_CONF_NAME,
-    TMP_LOC,
 )
 from util.util import get_basic_logger
 from trl import GRPOConfig
@@ -123,8 +119,8 @@ def get_train_val_path(data_path: Path) -> tuple[Path, Path]:
 
 def get_training_args(
     conf: dict[str, Any], local_rank: Optional[int]
-) -> SFTConfig:
-    return SFTConfig(
+) -> TrainingArguments:
+    return TrainingArguments(
         output_dir=get_required_arg("output_dir", conf),
         per_device_train_batch_size=get_required_arg(
             "per_device_train_batch_size", conf

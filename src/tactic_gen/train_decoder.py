@@ -20,7 +20,7 @@ from transformers import (
     Trainer,
 )
 import torch
-from trl import GRPOTrainer, SFTTrainer
+from trl import GRPOTrainer
 
 from tactic_gen.reward_utils import (
     reward_goals,
@@ -226,8 +226,10 @@ def get_trainer(
     print("\n\nBuilding Training Config...")
     if conf["train_type"] == "grpo":
         training_args = get_grpo_training_args(conf, local_rank)
-    else:
+    elif conf["train_type"] == "sft":
         training_args = get_training_args(conf, local_rank)
+    else:
+        raise ValueError(f"Invalid train type: {conf['train_type']}")
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     raw_model = get_model(model_name)
@@ -296,8 +298,9 @@ def get_trainer(
             eval_dataset=val_dataset
         )
     elif conf["train_type"] == "sft":
-        trainer = SFTTrainer(
+        trainer = Trainer(
             model=model,
+            tokenizer=train_dataset.tokenizer,
             args=training_args,
             data_collator=train_dataset.collator,
             train_dataset=train_dataset,
