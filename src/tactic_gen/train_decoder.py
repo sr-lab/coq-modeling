@@ -162,7 +162,7 @@ def get_datasets(
     if "data_path" in conf:
         example_collator_yaml_conf = get_required_arg("example_collator", conf)
         data_path = Path(get_required_arg("data_path", conf))
-        num_eval_examples = int(get_optional_arg("num_eval_examples", conf, None))
+        num_eval_examples = get_optional_arg("num_eval_examples", conf, None)
         hard_seq_len = get_required_arg("hard_seq_len", conf)
         orig_train_path, orig_val_path = get_train_val_path(data_path)
         
@@ -197,7 +197,7 @@ def get_datasets(
             tokenizer, 
             example_collator, 
             hard_seq_len, 
-            conf["train_type"]
+            train_type=conf["train_type"]
         )
         val_dataset = LmProcessedDataset(
             filtered_val_path,
@@ -205,7 +205,7 @@ def get_datasets(
             example_collator,
             hard_seq_len,
             num_eval_examples,
-            conf["train_type"]
+            train_type=conf["train_type"]
         )
         return train_dataset, val_dataset
     else:
