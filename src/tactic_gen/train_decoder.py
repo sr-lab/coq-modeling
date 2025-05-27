@@ -16,11 +16,9 @@ from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import (
     AutoModelForCausalLM,
-    PreTrainedModel,
-    Trainer,
+    PreTrainedModel
 )
 import torch
-from trl import GRPOTrainer
 
 from tactic_gen.reward_utils import (
     reward_goals,
@@ -289,6 +287,7 @@ def get_trainer(
                 os.remove(temp_file_name)
     
     if conf["train_type"] == "grpo":
+        from trl import GRPOTrainer
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
@@ -298,6 +297,7 @@ def get_trainer(
             eval_dataset=val_dataset
         )
     elif conf["train_type"] == "sft":
+        from transformers import Trainer
         trainer = Trainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
