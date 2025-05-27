@@ -20,7 +20,7 @@ from transformers import (
     Trainer,
 )
 import torch
-from trl import GRPOTrainer
+from trl import GRPOTrainer, SFTTrainer
 
 from tactic_gen.reward_utils import (
     reward_goals,
@@ -296,7 +296,7 @@ def get_trainer(
             eval_dataset=val_dataset
         )
     elif conf["train_type"] == "sft":
-        trainer = Trainer(
+        trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,

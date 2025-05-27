@@ -9,7 +9,8 @@ from enum import Enum
 import yaml
 
 from yaml import load, Loader
-from transformers import TrainingArguments, PreTrainedTokenizer
+from transformers import TrainingArguments, PreTrainedTokenizer, 
+from trl import SFTConfig
 
 
 from util.constants import (
@@ -122,8 +123,8 @@ def get_train_val_path(data_path: Path) -> tuple[Path, Path]:
 
 def get_training_args(
     conf: dict[str, Any], local_rank: Optional[int]
-) -> TrainingArguments:
-    return TrainingArguments(
+) -> SFTConfig:
+    return SFTConfig(
         output_dir=get_required_arg("output_dir", conf),
         per_device_train_batch_size=get_required_arg(
             "per_device_train_batch_size", conf
