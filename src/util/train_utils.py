@@ -9,8 +9,7 @@ from enum import Enum
 import yaml
 
 from yaml import load, Loader
-from transformers import TrainingArguments, PreTrainedTokenizer
-
+from transformers import PreTrainedTokenizer
 
 from util.constants import (
     DATA_CONF_NAME,
@@ -20,7 +19,7 @@ from util.constants import (
     TRAINING_CONF_NAME,
 )
 from util.util import get_basic_logger
-from trl import GRPOConfig
+
 
 
 _logger = get_basic_logger(__name__)
@@ -119,7 +118,8 @@ def get_train_val_path(data_path: Path) -> tuple[Path, Path]:
 
 def get_training_args(
     conf: dict[str, Any], local_rank: Optional[int]
-) -> TrainingArguments:
+) -> "TrainingArguments":
+    from transformers import TrainingArguments
     return TrainingArguments(
         output_dir=get_required_arg("output_dir", conf),
         per_device_train_batch_size=get_required_arg(
@@ -146,7 +146,8 @@ def get_training_args(
         ddp_find_unused_parameters=False,
     )
 
-def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> GRPOConfig:
+def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> "GRPOConfig":
+    from trl import GRPOConfig
     return GRPOConfig(
         output_dir=get_required_arg("output_dir", conf),
         per_device_train_batch_size=get_required_arg(
