@@ -31,7 +31,7 @@ example_collator:
    script_tokens: 512
    proof_tokens: 1024 
    premise_tokens: 512 
-   out_tokens: 128 
+   out_tokens: 1024 
 
 # Premises only
 # example_collator:
