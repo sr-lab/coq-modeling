@@ -16,7 +16,8 @@ from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import (
     AutoModelForCausalLM,
-    PreTrainedModel
+    PreTrainedModel,
+    BitsAndBytesConfig
 )
 import torch
 
@@ -89,21 +90,27 @@ def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
     return peft_config
 
 
-def get_model(model_name: str) -> PreTrainedModel:
-    # bnb_config = BitsAndBytesConfig(
-    #     load_in_4bit=True,
-    #     bnb_4bit_quant_type="nf4",
-    #     bnb_4bit_compute_dtype=torch.bfloat16,
-    #     bnb_4bit_use_double_quant=True,
-    #     bnb_4bit_quant_storage=torch.bfloat16,
-    # )
+def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
+    if conf["train_type"] == "grpo":
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.bfloat16,
+        )
+    elif conf["train_type"] == "sft":
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_storage=torch.bfloat16,
+        )
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        #quantization_config=bnb_config,
-        torch_dtype=torch.bfloat16,
-        #device_map="auto"
-    )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            quantization_config=bnb_config,
+            torch_dtype=torch.bfloat16,
+            device_map="auto"
+        )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
@@ -230,7 +237,7 @@ def get_trainer(
         raise ValueError(f"Invalid train type: {conf['train_type']}")
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
-    raw_model = get_model(model_name)
+    raw_model = get_model(model_name, conf)
     lora_config = get_lora_conf(conf)
     model = get_peft_model(raw_model, lora_config)
 
