@@ -9,7 +9,7 @@ from enum import Enum
 import yaml
 
 from yaml import load, Loader
-from transformers import TrainingArguments, PreTrainedTokenizer, 
+from transformers import TrainingArguments, PreTrainedTokenizer
 from trl import SFTConfig
 
 
