@@ -183,7 +183,7 @@ class ExampleDB:
             raise ValueError("Problem executing size query.")
         (count,) = result[0]
         self.__size = count
-        return int(count)
+        return count
 
     def retrieve(self, id: int) -> str:
         result = self.cursor.execute(
