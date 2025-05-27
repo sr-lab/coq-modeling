@@ -660,6 +660,7 @@ class LmProcessedDataset(Dataset):
         example_collator: ExampleCollator,
         hard_seq_len: int,
         max_n_examples: Optional[int] = None,
+        train_type: str = "sft",
     ) -> None:
         super(LmProcessedDataset, self).__init__()
         self.edb = ExampleDB.load(data_path)
@@ -677,7 +678,8 @@ class LmProcessedDataset(Dataset):
         self.tokenizer = tokenizer
         self.example_collator = example_collator
         self.max_n_examples = max_n_examples
-
+        self.train_type = train_type
+    
     def __len__(self) -> int:
         if self.max_n_examples is not None:
             return self.max_n_examples
@@ -689,19 +691,32 @@ class LmProcessedDataset(Dataset):
         target_lm_example = LmExample.from_json(
             json.loads(self.edb.retrieve(target_idx + 1))
         )
-        clean_example = self.example_collator.collate_input(self.tokenizer, target_lm_example)
-        return {
-            "prompt": clean_example,
-            "answer": None,
-            "file_name": target_lm_example.file_name,
-            "proof_idx": target_lm_example.proof_idx,
-            "step_idx": target_lm_example.step_idx,
-            "proof_script": target_lm_example.proof_script,
-            "proof_state": target_lm_example.proof_state,
-            "next_steps": target_lm_example.next_steps,
-            "premises": target_lm_example.premises,
-            "proofs": target_lm_example.proofs,
-        }
+        if self.train_type == "grpo":
+            clean_example = self.example_collator.collate_input(
+                self.tokenizer, target_lm_example
+            )
+            return {
+                "prompt": clean_example,
+                "answer": None,
+                "file_name": target_lm_example.file_name,
+                "proof_idx": target_lm_example.proof_idx,
+                "step_idx": target_lm_example.step_idx,
+                "proof_script": target_lm_example.proof_script,
+                "proof_state": target_lm_example.proof_state,
+                "next_steps": target_lm_example.next_steps,
+                "premises": target_lm_example.premises,
+                "proofs": target_lm_example.proofs,
+            }
+        else:
+            clean_example = self.example_collator.collate(
+                self.tokenizer, target_lm_example
+            )
+            return self.tokenizer(
+                clean_example,
+                max_length=self.hard_seq_len,
+                truncation=True,
+                padding="max_length",
+            )
 
 
 @dataclass

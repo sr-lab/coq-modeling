@@ -194,7 +194,11 @@ def get_datasets(
         _logger.info("EXAMPLE COLLATOR: %s", example_collator)
         tokenizer = get_tokenizer(get_required_arg("model_name", conf))
         train_dataset = LmProcessedDataset(
-            filtered_train_path, tokenizer, example_collator, hard_seq_len
+            filtered_train_path, 
+            tokenizer, 
+            example_collator, 
+            hard_seq_len, 
+            conf["train_type"]
         )
         val_dataset = LmProcessedDataset(
             filtered_val_path,
@@ -202,6 +206,7 @@ def get_datasets(
             example_collator,
             hard_seq_len,
             num_eval_examples,
+            conf["train_type"]
         )
         return train_dataset, val_dataset
     else:
