@@ -14,9 +14,6 @@
 # Temporary
 /tmp/
 
-# Config Files
-/confs/
-
 # Python files
 /venv/
 *.egg-info

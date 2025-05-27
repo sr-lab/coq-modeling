@@ -1,0 +1,34 @@
+alias: tactic
+data_split_locs: 
+  - splits/official-split-icse.json
+data_loc: raw-data/coq-dataset
+sentence_db_loc: raw-data/coq-dataset/sentences.db
+output_dataset_loc: data/tf-idf-all
+
+# Goal proof retrieval models:
+lm_formatters:
+  - alias: general 
+    #num_proofs: 20
+    num_premises: 50
+    
+    # proof_ret:
+    #   alias: deep  
+    #   model_name: microsoft/codebert-base  
+    #   vector_db_loc: data/vector-dbs/codebert-proof-state-vector-db
+    #   max_seq_len: 512
+    #   max_num_proofs: 20
+    #   data_loc: raw-data/coq-dataset
+    #   sentence_db_loc: raw-data/coq-dataset/sentences.db
+    
+    premise:
+      alias: sparse
+      kind: tfidf
+      sentence_db_loc: raw-data/coq-dataset/sentences.db
+      context_format_alias: basic
+      premise_format_alias: basic
+      premise_filter:
+        coq_excludes: []
+        non_coq_excludes: []
+        general_excludes: []
+
+
