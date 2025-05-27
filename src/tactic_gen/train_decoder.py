@@ -1,61 +1,25 @@
 from typing import Optional, Any
 
 import os
-import time
 import csv
 import sys
 import argparse
 from pathlib import Path
 import shutil
 import json
-import uuid
 from coqpyt.coq.base_file import CoqFile
-from coqpyt.coq.exceptions import InvalidAddException
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
     TextDocumentContentChangeEvent,
-    Position,
-    TextDocumentIdentifier
 )
-
-from accelerate import Accelerator
 from peft import LoraConfig, get_peft_model
 import transformers
 from transformers import (
     AutoModelForCausalLM,
     PreTrainedModel,
-    BitsAndBytesConfig,
     Trainer,
 )
 import torch
-from typing import Optional, Any
-
-import os
-import time
-import csv
-import sys
-import argparse
-from pathlib import Path
-import shutil
-import json
-import uuid
-from coqpyt.coq.base_file import CoqFile
-from coqpyt.coq.exceptions import InvalidAddException
-from coqpyt.lsp.structs import (
-    VersionedTextDocumentIdentifier,
-    TextDocumentContentChangeEvent,
-)
-
-from peft import LoraConfig, get_peft_model
-import transformers
-from transformers import (
-    AutoModelForCausalLM,
-    PreTrainedModel,
-    BitsAndBytesConfig,
-    Trainer,
-)
-import torch
-
 from trl import GRPOTrainer
 
 from tactic_gen.reward_utils import (
@@ -313,16 +277,26 @@ def get_trainer(
             if temp_file_name:
                 os.remove(temp_file_name)
     
-
-    # test_subset = Subset(train_dataset, range(50, 120))
-    trainer = GRPOTrainer(
-        model=model,
-        processing_class=train_dataset.tokenizer,
-        reward_funcs=[check_reward],
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=val_dataset
-    )
+    if conf["train_type"] == "grpo":
+        trainer = GRPOTrainer(
+            model=model,
+            processing_class=train_dataset.tokenizer,
+            reward_funcs=[check_reward],
+            args=training_args,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset
+        )
+    elif conf["train_type"] == "sft":
+        trainer = Trainer(
+            model=model,
+            tokenizer=train_dataset.tokenizer,
+            args=training_args,
+            data_collator=train_dataset.collator,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+        )
+    else:
+        raise ValueError(f"Invalid train type: {conf['train_type']}")
     
     return trainer
 

@@ -59,6 +59,7 @@ class LmExample:
         file_name: Optional[str] = None,
         proof_idx: Optional[int] = None,
         step_idx: Optional[int] = None,
+        cot: Optional[str] = None,
     ) -> None:
         self.proof_script = proof_script
         self.proof_state = proof_state
@@ -68,7 +69,8 @@ class LmExample:
         self.file_name = file_name
         self.proof_idx = proof_idx
         self.step_idx = step_idx
-
+        self.cot = cot
+    
     def __hash__(self) -> int:
         next_step_str = "<NEXT_SEP>".join(self.next_steps)
         proof_str = "<PROOF_SEP>".join(self.proofs) if self.proofs is not None else ""
@@ -110,6 +112,7 @@ class LmExample:
             "file_name": self.file_name,
             "proof_idx": self.proof_idx,
             "step_idx": self.step_idx,
+            "cot": self.cot,
         }
 
     @classmethod
@@ -124,6 +127,7 @@ class LmExample:
         file_name = json_data["file_name"] if "file_name" in json_data else None
         proof_idx = json_data["proof_idx"] if "proof_idx" in json_data else None
         step_idx = json_data["step_idx"] if "step_idx" in json_data else None
+        cot = json_data["cot"] if "cot" in json_data else None
         return cls(
             json_data["proof_script"],
             json_data["proof_state"],
@@ -133,6 +137,7 @@ class LmExample:
             file_name,
             proof_idx,
             step_idx,
+            cot,
         )
 
 

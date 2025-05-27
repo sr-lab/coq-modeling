@@ -396,6 +396,23 @@ class ProofPremiseCollator:
 
 
 @dataclass
+class ReasoningCollatorConf(ProofPremiseCollatorConf):
+    ALIAS = "reasoning"
+
+
+@dataclass
+class ReasoningCollator(ProofPremiseCollator):
+    def collate(self, tokenizer: PreTrainedTokenizer, example: LmExample) -> str:
+        input_str = self.collate_input(tokenizer, example)
+        target = f"<think>{example.cot}</think>\n{example.next_steps[0]}"
+        out_str, _ = allocate_tokens(
+            tokenizer, target, self.out_tokens, truncate_front=False
+        )
+        combined_str = input_str + out_str
+        return combined_str
+
+
+@dataclass
 class NoScriptCollatorConf:
     state_tokens: int
     proof_tokens: int
@@ -582,6 +599,7 @@ ExampleCollator = (
     | ProofPremiseCollator
     | NPrevLineCollator
     | NoScriptCollator
+    | ReasoningCollator
 )
 
 ExampleCollatorConf = (
@@ -591,6 +609,7 @@ ExampleCollatorConf = (
     | ProofPremiseCollatorConf
     | NPrevLineCollatorConf
     | NoScriptCollatorConf
+    | ReasoningCollatorConf
 )
 
 
@@ -609,6 +628,8 @@ def example_collator_conf_from_yaml(yaml_data: Any) -> ExampleCollatorConf:
             return NPrevLineCollatorConf.from_yaml(yaml_data)
         case NoScriptCollatorConf.ALIAS:
             return NoScriptCollatorConf.from_yaml(yaml_data)
+        case ReasoningCollatorConf.ALIAS:
+            return ReasoningCollatorConf.from_yaml(yaml_data)
         case _:
             raise ValueError(f"Could not find example collator: {attempted_alias}")
 
@@ -627,6 +648,8 @@ def example_collator_from_conf(conf: ExampleCollatorConf) -> ExampleCollator:
             return NPrevLineCollator.from_conf(conf)
         case NoScriptCollatorConf():
             return NoScriptCollator.from_conf(conf)
+        case ReasoningCollatorConf():
+            return ReasoningCollator.from_conf(conf)
 
 
 class LmProcessedDataset(Dataset):
