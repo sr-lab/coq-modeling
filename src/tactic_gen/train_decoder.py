@@ -298,7 +298,6 @@ def get_trainer(
     elif conf["train_type"] == "sft":
         trainer = SFTTrainer(
             model=model,
-            tokenizer=train_dataset.tokenizer,
             args=training_args,
             data_collator=train_dataset.collator,
             train_dataset=train_dataset,
