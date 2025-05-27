@@ -220,7 +220,7 @@ def get_datasets(
 
 def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
-) -> Trainer:
+) -> "Trainer | GRPOTrainer":
     print("\n\nBuilding Training Config...")
     if conf["train_type"] == "grpo":
         training_args = get_grpo_training_args(conf, local_rank)
