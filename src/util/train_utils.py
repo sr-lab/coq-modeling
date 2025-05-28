@@ -177,6 +177,7 @@ def get_training_args(
     elif conf["train_type"] == "unsloth-sft":
         from trl import SFTConfig
         return SFTConfig(
+            num_train_epochs = get_optional_arg("num_train_epochs", conf, 1),
             learning_rate = get_required_arg("learning_rate", conf),
             max_seq_length = get_required_arg("hard_seq_len", conf),
             per_device_train_batch_size = get_required_arg("per_device_train_batch_size", conf),

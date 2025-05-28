@@ -60,8 +60,8 @@ example_collator:
 #   line_dict_loc: data/line-dict.json
 
 # Evaluation Args
-eval_steps: 100 
-save_steps: 1000
+eval_steps: 3000 
+save_steps: 3000
 eval_accumulation_steps: 1
 per_device_eval_batch_size: 8
 num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting this
