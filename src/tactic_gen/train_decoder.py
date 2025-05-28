@@ -23,6 +23,8 @@ from transformers import (
 )
 import torch
 
+torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct])
+
 from tactic_gen.reward_utils import (
     reward_goals,
     get_file_info,
@@ -338,7 +340,6 @@ def get_trainer(
                 os.remove(temp_file_name)
     
     if conf["train_type"] == "grpo":
-        torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct])
         from trl import GRPOTrainer
         trainer = GRPOTrainer(
             model=model,
