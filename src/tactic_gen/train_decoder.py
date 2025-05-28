@@ -360,9 +360,9 @@ def get_trainer(
         from trl import SFTTrainer
 
         processed_train_dataset = []
-        for example in train_dataset:
+        for i in range(len(train_dataset)):
             processed_train_dataset.append({
-                "text": example,
+                "text": train_dataset[i],
             })
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
