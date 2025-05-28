@@ -229,12 +229,7 @@ def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
 ) -> "Trainer | GRPOTrainer":
     print("\n\nBuilding Training Config...")
-    if conf["train_type"] == "grpo":
-        training_args = get_grpo_training_args(conf, local_rank)
-    elif conf["train_type"] == "sft":
-        training_args = get_training_args(conf, local_rank)
-    else:
-        raise ValueError(f"Invalid train type: {conf['train_type']}")
+    training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     raw_model = get_model(model_name, conf)

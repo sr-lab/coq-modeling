@@ -54,6 +54,7 @@ class FidTacticGenConf:
     ALIAS = "fid"
     checkpoint_loc: Path
     formatter_confs: Optional[list[FormatterConf]]
+    train_type: str
 
     @classmethod
     def from_yaml(cls, yaml_data: Any) -> FidTacticGenConf:
@@ -65,6 +66,7 @@ class FidTacticGenConf:
         return cls(
             Path(yaml_data["checkpoint_loc"]),
             formatter_confs,
+            yaml_data["train_type"],
         )
 
 
@@ -73,7 +75,7 @@ class DecoderTacticGenConf:
     ALIAS = "decoder"
     checkpoint_loc: Path
     formatter_confs: Optional[list[FormatterConf]]
-
+    train_type: str
     @classmethod
     def from_yaml(cls, yaml_data: Any) -> DecoderTacticGenConf:
         formatter_confs = None
@@ -84,6 +86,7 @@ class DecoderTacticGenConf:
         return cls(
             Path(yaml_data["checkpoint_loc"]),
             formatter_confs,
+            yaml_data["train_type"],
         )
 
 

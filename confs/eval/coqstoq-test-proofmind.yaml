@@ -4,7 +4,6 @@ save_loc: evaluations/coqstoq-results/test-proofmindrl
 data_loc: raw-data/coqstoq-test
 coqstoq_loc: /app/coq-modeling/CoqStoq
 sentence_db_loc: raw-data/coqstoq-test/coqstoq-test-sentences.db
-train_type: grpo
 
 search:
   alias: straight_line
@@ -14,6 +13,7 @@ search:
 tactic_gen:
   alias: decoder 
   checkpoint_loc: models/proofmindrl/checkpoint-55500
+  train_type: grpo
 
   formatters:
   - alias: general 

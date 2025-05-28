@@ -119,59 +119,60 @@ def get_train_val_path(data_path: Path) -> tuple[Path, Path]:
 def get_training_args(
     conf: dict[str, Any], local_rank: Optional[int]
 ) -> "TrainingArguments":
-    from transformers import TrainingArguments
-    return TrainingArguments(
-        output_dir=get_required_arg("output_dir", conf),
-        per_device_train_batch_size=get_required_arg(
-            "per_device_train_batch_size", conf
-        ),
-        gradient_accumulation_steps=get_optional_arg(
-            "gradient_accumulation_steps", conf, 2
-        ),
-        # optim="paged_adamw_8bit", # causes problems retraining ?
-        learning_rate=get_required_arg("learning_rate", conf),
-        logging_steps=get_required_arg("logging_steps", conf),
-        num_train_epochs=get_required_arg("num_train_epochs", conf),
-        max_steps=get_optional_arg("max_steps", conf, -1),
-        save_strategy="epoch",
-        save_steps=get_required_arg("save_steps", conf),
-        save_total_limit=get_required_arg("save_total_limit", conf),
-        evaluation_strategy="epoch",
-        eval_steps=get_required_arg("eval_steps", conf),
-        per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
-        eval_accumulation_steps=get_optional_arg("eval_accumulation_steps", conf, 1),
-        load_best_model_at_end=True,
-        # deepspeed=__get_required_arg("deepspeed", conf),
-        local_rank=(local_rank if local_rank else -1),
-        ddp_find_unused_parameters=False,
-    )
-
-def get_grpo_training_args(conf: dict[str, Any], local_rank: Optional[int]) -> "GRPOConfig":
-    from trl import GRPOConfig
-    return GRPOConfig(
-        output_dir=get_required_arg("output_dir", conf),
-        per_device_train_batch_size=get_required_arg(
-            "per_device_train_batch_size", conf
-        ),
-        gradient_accumulation_steps=get_optional_arg(
-            "gradient_accumulation_steps", conf, 2
-        ),
-        num_generations=get_optional_arg("num_generations", conf, 8),
-        learning_rate=get_required_arg("learning_rate", conf),
-        logging_steps=get_required_arg("logging_steps", conf),
-        num_train_epochs=get_required_arg("num_train_epochs", conf),
-        max_steps=get_optional_arg("max_steps", conf, -1),
-        save_strategy="epoch",
-        save_steps=get_required_arg("save_steps", conf),
-        save_total_limit=get_required_arg("save_total_limit", conf),
-        eval_strategy="epoch",
-        eval_steps=get_required_arg("eval_steps", conf),
-        per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
-        eval_accumulation_steps=get_optional_arg("eval_accumulation_steps", conf, 1),
-        load_best_model_at_end=True,
-        # deepspeed=__get_required_arg("deepspeed", conf),
-        local_rank=(local_rank if local_rank else -1),
-        ddp_find_unused_parameters=False,
-        temperature=get_optional_arg("temperature", conf, 0.9),
-    )
-
+    if conf["train_type"] == "grpo":
+        from trl import GRPOConfig
+        return GRPOConfig(
+            output_dir=get_required_arg("output_dir", conf),
+            per_device_train_batch_size=get_required_arg(
+                "per_device_train_batch_size", conf
+            ),
+            gradient_accumulation_steps=get_optional_arg(
+                "gradient_accumulation_steps", conf, 2
+            ),
+            num_generations=get_optional_arg("num_generations", conf, 8),
+            learning_rate=get_required_arg("learning_rate", conf),
+            logging_steps=get_required_arg("logging_steps", conf),
+            num_train_epochs=get_required_arg("num_train_epochs", conf),
+            max_steps=get_optional_arg("max_steps", conf, -1),
+            save_strategy="epoch",
+            save_steps=get_required_arg("save_steps", conf),
+            save_total_limit=get_required_arg("save_total_limit", conf),
+            eval_strategy="epoch",
+            eval_steps=get_required_arg("eval_steps", conf),
+            per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
+            eval_accumulation_steps=get_optional_arg("eval_accumulation_steps", conf, 1),
+            load_best_model_at_end=True,
+            # deepspeed=__get_required_arg("deepspeed", conf),
+            local_rank=(local_rank if local_rank else -1),
+            ddp_find_unused_parameters=False,
+            temperature=get_optional_arg("temperature", conf, 0.9),
+        )
+    elif conf["train_type"] == "sft":
+        from transformers import TrainingArguments
+        return TrainingArguments(
+            output_dir=get_required_arg("output_dir", conf),
+            per_device_train_batch_size=get_required_arg(
+                "per_device_train_batch_size", conf
+            ),
+            gradient_accumulation_steps=get_optional_arg(
+                "gradient_accumulation_steps", conf, 2
+            ),
+            # optim="paged_adamw_8bit", # causes problems retraining ?
+            learning_rate=get_required_arg("learning_rate", conf),
+            logging_steps=get_required_arg("logging_steps", conf),
+            num_train_epochs=get_required_arg("num_train_epochs", conf),
+            max_steps=get_optional_arg("max_steps", conf, -1),
+            save_strategy="epoch",
+            save_steps=get_required_arg("save_steps", conf),
+            save_total_limit=get_required_arg("save_total_limit", conf),
+            evaluation_strategy="epoch",
+            eval_steps=get_required_arg("eval_steps", conf),
+            per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
+            eval_accumulation_steps=get_optional_arg("eval_accumulation_steps", conf, 1),
+            load_best_model_at_end=True,
+            # deepspeed=__get_required_arg("deepspeed", conf),
+            local_rank=(local_rank if local_rank else -1),
+            ddp_find_unused_parameters=False,
+        )
+    else:
+        raise ValueError(f"Invalid train type: {conf['train_type']}")
