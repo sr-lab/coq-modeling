@@ -241,8 +241,9 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         model = get_peft_model(raw_model, lora_config)
     elif conf["train_type"] == "unsloth-sft":
         from unsloth import FastLanguageModel
+        raw_model = get_model(model_name, conf)
         model = FastLanguageModel.get_peft_model(
-            model,
+            raw_model,
             r = conf["peft_lora_r"],
             target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
                             "gate_proj", "up_proj", "down_proj",],
