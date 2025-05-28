@@ -6,7 +6,6 @@ import shutil
 import subprocess
 from pathlib import Path
 from enum import Enum
-import yaml
 
 from yaml import load, Loader
 from transformers import PreTrainedTokenizer
