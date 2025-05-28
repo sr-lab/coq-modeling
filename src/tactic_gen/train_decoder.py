@@ -51,6 +51,7 @@ from tactic_gen.tactic_data import (
     example_collator_from_conf,
     get_tokenizer,
 )
+import datasets
 
 from torch.utils.data import Subset
 import logging
@@ -177,9 +178,28 @@ def get_datasets(
 ) -> tuple[LmDataset | LmProcessedDataset, LmDataset | LmProcessedDataset]:
     if "data_path" in conf:
         example_collator_yaml_conf = get_required_arg("example_collator", conf)
+        example_collator_conf = example_collator_conf_from_yaml(
+            example_collator_yaml_conf
+        )
+        example_collator = example_collator_from_conf(example_collator_conf)
+        _logger.info("EXAMPLE COLLATOR: %s", example_collator)
+        tokenizer = get_tokenizer(get_required_arg("model_name", conf))
+
         data_path = Path(get_required_arg("data_path", conf))
         num_eval_examples = get_optional_arg("num_eval_examples", conf, None)
         hard_seq_len = get_required_arg("hard_seq_len", conf)
+
+        if conf["example_collator"]["alias"] == "reasoning":
+            cot_train_path = data_path / "cot.db"
+            train_dataset = LmProcessedDataset(
+                cot_train_path, 
+                tokenizer, 
+                example_collator, 
+                hard_seq_len, 
+                train_type=conf["train_type"]
+            )
+            return train_dataset, None
+
         orig_train_path, orig_val_path = get_train_val_path(data_path)
         
         filtered_train_path = orig_train_path.parent / orig_train_path.name.replace(".db", "_tmp.db")
@@ -202,12 +222,6 @@ def get_datasets(
             shutil.copy(orig_train_path, filtered_train_path)
             shutil.copy(orig_val_path, filtered_val_path)
         
-        example_collator_conf = example_collator_conf_from_yaml(
-            example_collator_yaml_conf
-        )
-        example_collator = example_collator_from_conf(example_collator_conf)
-        _logger.info("EXAMPLE COLLATOR: %s", example_collator)
-        tokenizer = get_tokenizer(get_required_arg("model_name", conf))
         train_dataset = LmProcessedDataset(
             filtered_train_path, 
             tokenizer, 
@@ -344,13 +358,21 @@ def get_trainer(
         )
     elif conf["train_type"] == "unsloth-sft":
         from trl import SFTTrainer
+
+        processed_train_dataset = []
+        for example in train_dataset:
+            processed_train_dataset.append({
+                "text": example,
+            })
+        processed_train_dataset = datasets.Dataset.from_list(
+            processed_train_dataset
+        )
+
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,
-            data_collator=train_dataset.collator,
-            train_dataset=train_dataset,
-            eval_dataset=val_dataset,
+            train_dataset=processed_train_dataset,
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")

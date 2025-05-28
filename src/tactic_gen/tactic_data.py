@@ -708,14 +708,8 @@ class LmProcessedDataset(Dataset):
                 "proofs": target_lm_example.proofs,
             }
         else:
-            clean_example = self.example_collator.collate(
+            return self.example_collator.collate(
                 self.tokenizer, target_lm_example
-            )
-            return self.tokenizer(
-                clean_example,
-                max_length=self.hard_seq_len,
-                truncation=True,
-                padding="max_length",
             )
 
 
