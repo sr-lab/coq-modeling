@@ -200,7 +200,7 @@ class DecoderLocalWrapper:
         return training_conf
 
     @classmethod
-    def from_checkpoint(cls, checkpoint_loc: Path) -> DecoderLocalWrapper:
+    def from_checkpoint(cls, checkpoint_loc: Path, conf: dict[str, Any]) -> DecoderLocalWrapper:
         training_conf = cls.get_training_conf(checkpoint_loc)
         hard_seq_length = get_required_arg("hard_seq_len", training_conf)
         example_collator_conf = example_collator_conf_from_yaml(
@@ -210,14 +210,14 @@ class DecoderLocalWrapper:
         tokenizer = get_tokenizer(
             get_required_arg("model_name", training_conf), add_eos=False
         )
-        model = get_model(str(checkpoint_loc.resolve()))
+        model = get_model(str(checkpoint_loc.resolve()), conf)
         model.to("cuda")
         return cls(model, tokenizer, example_collator, hard_seq_length)
 
     @classmethod
     def from_conf(cls, json_data: Any) -> DecoderLocalWrapper:
         name = json_data["checkpoint_loc"]
-        return cls.from_checkpoint(Path(name))
+        return cls.from_checkpoint(Path(name), json_data)
 
 
 class StubWrapper:
