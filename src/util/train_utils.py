@@ -192,7 +192,6 @@ def get_training_args(
             load_best_model_at_end = True,
             local_rank = (local_rank if local_rank else -1),
             ddp_find_unused_parameters = False,
-            max_steps = get_optional_arg("max_steps", conf, -1),
             logging_steps = get_required_arg("logging_steps", conf),
             output_dir = get_required_arg("output_dir", conf),
             optim = "adamw_8bit",
