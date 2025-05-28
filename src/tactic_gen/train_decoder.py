@@ -23,8 +23,6 @@ from transformers import (
 )
 import torch
 
-torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct])
-
 from tactic_gen.reward_utils import (
     reward_goals,
     get_file_info,
@@ -439,6 +437,7 @@ if __name__ == "__main__":
         checkpoint_name = conf["checkpoint_name"]
         print(f"Training from checkpoint {checkpoint_name}")
         transformers.logging.set_verbosity_info()
+        torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct])
         trainer.train(checkpoint_name)
     else:
         make_output_dir(conf)
