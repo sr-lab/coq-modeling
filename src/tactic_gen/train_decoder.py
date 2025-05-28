@@ -79,9 +79,9 @@ def init_valid_files(repo_path: Path) -> set[Path]:
 
 def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
     peft_config = LoraConfig(
-        lora_alpha=16,
+        lora_alpha=conf["peft_lora_alpha"],
         lora_dropout=0.1,
-        r=64,
+        r=conf["peft_lora_r"],
         bias="none",
         task_type="CAUSAL_LM",
         target_modules="all-linear",
@@ -109,6 +109,15 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             quantization_config=bnb_config,
             torch_dtype=torch.bfloat16,
             device_map="auto"
+        )
+    elif conf["train_type"] == "unsloth-sft":
+        from unsloth import FastModel
+        model, _ = FastModel.from_pretrained(
+            model_name = model_name,
+            max_seq_length = conf["hard_seq_len"],
+            load_in_4bit = True,
+            load_in_8bit = False,
+            full_finetuning = False,
         )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
@@ -224,6 +233,32 @@ def get_datasets(
         return train_dataset, val_dataset
 
 
+def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
+    if conf["train_type"] == "grpo" or conf["train_type"] == "sft":
+        raw_model = get_model(model_name, conf)
+        lora_config = get_lora_conf(conf)
+        model = get_peft_model(raw_model, lora_config)
+    elif conf["train_type"] == "unsloth-sft":
+        from unsloth import FastLanguageModel
+        model = FastLanguageModel.get_peft_model(
+            model,
+            r = conf["peft_lora_r"],
+            target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
+                            "gate_proj", "up_proj", "down_proj",],
+            lora_alpha = conf["peft_lora_alpha"],
+            lora_dropout = 0,
+            bias = "none",
+            use_gradient_checkpointing = "unsloth",
+            random_state = 3407,
+            max_seq_length = conf["hard_seq_len"],
+            use_rslora = False,
+            loftq_config = None
+        )
+    else:
+        raise ValueError(f"Invalid train type: {conf['train_type']}")
+    return model
+
+
 def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
 ) -> "Trainer | GRPOTrainer":
@@ -231,9 +266,7 @@ def get_trainer(
     training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
-    raw_model = get_model(model_name, conf)
-    lora_config = get_lora_conf(conf)
-    model = get_peft_model(raw_model, lora_config)
+    model = process_model(model_name, conf)
 
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf)
@@ -300,6 +333,16 @@ def get_trainer(
     elif conf["train_type"] == "sft":
         from transformers import Trainer
         trainer = Trainer(
+            model=model,
+            tokenizer=train_dataset.tokenizer,
+            args=training_args,
+            data_collator=train_dataset.collator,
+            train_dataset=train_dataset,
+            eval_dataset=val_dataset,
+        )
+    elif conf["train_type"] == "unsloth-sft":
+        from trl import SFTTrainer
+        trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,

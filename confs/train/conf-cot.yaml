@@ -1,9 +1,9 @@
 # File Paths
 data_path: "data/split-dataset"
 repos_path: "data/"
-model_name: "deepseek-ai/deepseek-coder-1.3b-instruct"
+model_name: "unsloth/Qwen3-8B-unsloth-bnb-4bit"
 output_dir: "models/proofmindrl-cot"
-train_type: sft
+train_type: unsloth-sft
 
 # Training Args
 hard_seq_len: 4096
@@ -69,6 +69,3 @@ num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting 
 # Logging Args
 logging_steps: 100
 save_total_limit: 2
-
-# Train from checkpoint
-checkpoint_name: models/deepseek-bm25-proof-tfidf-proj-thm-prem-final/checkpoint-54500
