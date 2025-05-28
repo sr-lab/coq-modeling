@@ -8,6 +8,7 @@ import argparse
 from pathlib import Path
 import shutil
 import json
+import numpy.core.multiarray
 from coqpyt.coq.base_file import CoqFile
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
@@ -337,7 +338,7 @@ def get_trainer(
                 os.remove(temp_file_name)
     
     if conf["train_type"] == "grpo":
-        torch.serialization.add_safe_globals(['numpy.core.multiarray._reconstruct'])
+        torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct])
         from trl import GRPOTrainer
         trainer = GRPOTrainer(
             model=model,
