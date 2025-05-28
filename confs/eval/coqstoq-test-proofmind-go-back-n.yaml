@@ -4,6 +4,7 @@ save_loc: evaluations/coqstoq-results/test-proofmindrl-go-back-n
 data_loc: raw-data/coqstoq-test
 coqstoq_loc: /app/coq-modeling/CoqStoq
 sentence_db_loc: raw-data/coqstoq-test/coqstoq-test-sentences.db
+train_type: grpo
 
 search:
   alias: go_back_n
