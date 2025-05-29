@@ -424,7 +424,7 @@ class ReasoningCollator(ProofPremiseCollator):
     
     @classmethod
     def from_conf(cls, conf: ReasoningCollatorConf) -> ReasoningCollator:
-        return cls(
+        return ReasoningCollator(
             conf.script_tokens,
             conf.state_tokens,
             conf.proof_tokens,
@@ -664,14 +664,14 @@ def example_collator_from_conf(conf: ExampleCollatorConf) -> ExampleCollator:
             return PremiseCollator.from_conf(conf)
         case ProofCollatorConf():
             return ProofCollator.from_conf(conf)
+        case ReasoningCollatorConf():
+            return ReasoningCollator.from_conf(conf)
         case ProofPremiseCollatorConf():
             return ProofPremiseCollator.from_conf(conf)
         case NPrevLineCollatorConf():
             return NPrevLineCollator.from_conf(conf)
         case NoScriptCollatorConf():
             return NoScriptCollator.from_conf(conf)
-        case ReasoningCollatorConf():
-            return ReasoningCollator.from_conf(conf)
 
 
 class LmProcessedDataset(Dataset):
