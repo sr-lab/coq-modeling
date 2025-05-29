@@ -193,7 +193,6 @@ def get_training_args(
             ddp_find_unused_parameters = False,
             logging_steps = get_required_arg("logging_steps", conf),
             output_dir = get_required_arg("output_dir", conf),
-            optim = "adamw_8bit",
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
