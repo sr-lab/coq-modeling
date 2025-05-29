@@ -419,6 +419,7 @@ class ReasoningCollator(ProofPremiseCollator):
         out_str, _ = allocate_tokens(
             tokenizer, target, self.out_tokens, truncate_front=False
         )
+        out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
         combined_str = input_str + out_str
         return combined_str
     
