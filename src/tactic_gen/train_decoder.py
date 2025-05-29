@@ -57,6 +57,8 @@ import datasets
 from torch.utils.data import Subset
 import logging
 
+os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
+
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
 valid_files = {}
@@ -373,6 +375,7 @@ def get_trainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,
+            data_collator=train_dataset.collator,
             train_dataset=processed_train_dataset,
         )
     else:
@@ -437,8 +440,8 @@ if __name__ == "__main__":
         checkpoint_name = conf["checkpoint_name"]
         print(f"Training from checkpoint {checkpoint_name}")
         transformers.logging.set_verbosity_info()
-        torch.serialization.add_safe_globals([numpy.core.multiarray._reconstruct])
         trainer.train(checkpoint_name)
+        trainer.save_model()
     else:
         make_output_dir(conf)
         copy_configs(args.yaml_config, conf, TrainType.TACTIC)
