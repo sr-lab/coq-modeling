@@ -442,6 +442,7 @@ if __name__ == "__main__":
         transformers.logging.set_verbosity_info()
         trainer.train(checkpoint_name)
         trainer.save_model()
+        trainer.save_state()
     else:
         make_output_dir(conf)
         copy_configs(args.yaml_config, conf, TrainType.TACTIC)
