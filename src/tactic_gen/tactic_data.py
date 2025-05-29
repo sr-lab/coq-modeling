@@ -399,6 +399,17 @@ class ProofPremiseCollator:
 class ReasoningCollatorConf(ProofPremiseCollatorConf):
     ALIAS = "reasoning"
 
+    @classmethod
+    def from_conf(cls, conf: ReasoningCollatorConf) -> ProofPremiseCollator:
+        return cls(
+            conf.script_tokens,
+            conf.state_tokens,
+            conf.proof_tokens,
+            conf.premise_tokens,
+            conf.out_tokens,
+            conf.whole_proof,
+        )
+
 
 @dataclass
 class ReasoningCollator(ProofPremiseCollator):
