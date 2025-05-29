@@ -57,8 +57,6 @@ import datasets
 from torch.utils.data import Subset
 import logging
 
-os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
-
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
 valid_files = {}
