@@ -169,12 +169,20 @@ class DecoderLocalWrapper:
             )
         input_num_tokens = inputs["input_ids"].shape[1]
         generated_seqs = outputs.sequences[:, input_num_tokens:]
-        tactics = self.tokenizer.batch_decode(generated_seqs, skip_special_tokens=True)
+        aux_tactics = self.tokenizer.batch_decode(generated_seqs, skip_special_tokens=True)
         non_special_tokens = torch.concat(
             [(generated_seqs != t)[:, :, None] for t in self.tokenizer.all_special_ids],
             axis=2,
         ).all(dim=2)
         lengths = non_special_tokens.sum(axis=1).tolist()
+
+        tactics = []
+        for tactic in aux_tactics:
+            if "<think>" in tactic and "</think>" in tactic:
+                tactics.append(tactic.split("</think>")[1])   
+            else:
+                tactics.append(tactic)
+
         if beam and 1 < n:
             scores = outputs.sequences_scores.tolist()
             return ModelResult(tactics, scores, lengths)
