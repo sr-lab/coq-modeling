@@ -84,7 +84,7 @@ class StartTacticModelCommand:
             f"{self.id}",
             f"{os.getpid()}",
             self.train_type,
-            self.hard_seq_len,
+            str(self.hard_seq_len),
         ]
 
     def to_list_slurm(self, env_var_name: str, commands_per_task: int) -> list[str]:
@@ -97,7 +97,7 @@ class StartTacticModelCommand:
             f"$(expr ${env_var_name} \\* {commands_per_task} + {self.id})",
             f"{os.getpid()}",
             self.train_type,
-            self.hard_seq_len,
+            str(self.hard_seq_len),
         ]
 
 
