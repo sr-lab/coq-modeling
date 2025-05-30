@@ -369,12 +369,60 @@ def get_trainer(
             processed_train_dataset
         )
 
+        class BatchDebugCallback(TrainerCallback):
+            def __init__(self, log_every_n_steps=10):
+                self.log_every_n_steps = log_every_n_steps
+            
+            def on_step_begin(self, args, state, control, model=None, **kwargs):
+                print("=" * 50 + "ON_STEP_BEGIN" + "=" * 50)
+                # This gets called for each batch during training
+                if hasattr(kwargs, 'inputs') and kwargs['inputs'] is not None:
+                    inputs = kwargs['inputs']
+                    self._print_batch_info(inputs, state.global_step)
+            
+            def _print_batch_info(self, batch, step):
+                if step % self.log_every_n_steps != 0:
+                    return
+                    
+                print(f"Batch info at step {step}:")
+                
+                # Print batch size (assuming batch is a dict with tensors)
+                if isinstance(batch, dict):
+                    # Get batch size from any tensor in the batch
+                    batch_size = None
+                    for key, value in batch.items():
+                        if isinstance(value, torch.Tensor) and value.dim() > 0:
+                            batch_size = value.shape[0]
+                            break
+                    
+                    print(f"  Batch size: {batch_size}")
+                    
+                    # Print shape of each element in the batch
+                    for key, value in batch.items():
+                        if isinstance(value, torch.Tensor):
+                            print(f"  {key}: shape {value.shape}, dtype {value.dtype}, numel {value.numel()}")
+                            
+                            # Check for empty tensors
+                            if value.numel() == 0:
+                                print(f"    ⚠️  WARNING: {key} is empty!")
+                                
+                            # Print first few values if tensor is small enough
+                            if value.numel() > 0 and value.numel() <= 20:
+                                print(f"    Values: {value.flatten()[:10]}")
+                        else:
+                            print(f"  {key}: {type(value)} = {value}")
+                else:
+                    print(f"  Batch type: {type(batch)}")
+                    if hasattr(batch, 'shape'):
+                        print(f"  Batch shape: {batch.shape}")
+
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,
             data_collator=train_dataset.collator,
             train_dataset=processed_train_dataset,
+            callbacks=[BatchDebugCallback()],
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
