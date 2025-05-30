@@ -472,10 +472,10 @@ if __name__ == "__main__":
         print(f"Training from checkpoint {checkpoint_name}")
         transformers.logging.set_verbosity_info()
         trainer.train(checkpoint_name)
-        trainer.save_model()
-        trainer.save_state()
     else:
         make_output_dir(conf)
         copy_configs(args.yaml_config, conf, TrainType.TACTIC)
         print("Training from scratch")
         trainer.train()
+    trainer.save_model()
+    trainer.save_state()
