@@ -164,7 +164,7 @@ class DecoderLocalWrapper:
                 num_return_sequences=n,
                 temperature=None if beam else 1,
                 do_sample=not beam,
-                num_beams=n if beam and 1 < n else None,
+                num_beams=n if beam and 1 < n else 1,
                 attention_mask=attention_mask.cuda(),
             )
         input_num_tokens = inputs["input_ids"].shape[1]
