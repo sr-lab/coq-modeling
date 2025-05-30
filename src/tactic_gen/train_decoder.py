@@ -358,7 +358,7 @@ def get_trainer(
             eval_dataset=val_dataset,
         )
     elif conf["train_type"] == "unsloth-sft":
-        from trl import SFTTrainer
+        from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
         from unsloth.chat_templates import get_chat_template
 
         train_dataset.tokenizer = get_chat_template(
@@ -401,7 +401,9 @@ def get_trainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,
-            data_collator=train_dataset.collator,
+            data_collator=DataCollatorForCompletionOnlyLM(
+                tokenizer=train_dataset.tokenizer,
+            ),
             train_dataset=processed_train_dataset,
         )
     else:
