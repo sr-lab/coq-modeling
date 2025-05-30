@@ -362,31 +362,10 @@ def get_trainer(
 
         processed_train_dataset = []
         for i in range(len(train_dataset)):
-            processed_train_dataset.append({
-                "text": train_dataset[i],
-            })
+            processed_train_dataset.append(train_dataset[i])
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
         )
-
-        from transformers import TrainerCallback
-
-        class BatchDebugCallback(TrainerCallback):
-            def __init__(self, log_every_n_steps=10):
-                self.log_every_n_steps = log_every_n_steps
-            
-            def on_step_begin(self, args, state, control, **kwargs):
-                if hasattr(kwargs, 'train_dataloader'):
-                    print(f"Step {state.global_step} - Inspecting batch from train_dataloader:")
-                    for i, batch in enumerate(kwargs['train_dataloader']):
-                        print(f"Batch {i} structure:", batch)
-                        if isinstance(batch, dict):
-                            for key, value in batch.items():
-                                if hasattr(value, 'shape'):
-                                    print(f"  {key}: shape={value.shape}, dtype={value.dtype}")
-                                else:
-                                    print(f"  {key}: type={type(value)}")
-                        break  # Just print the first batch
 
         trainer = SFTTrainer(
             model=model,
@@ -394,7 +373,6 @@ def get_trainer(
             args=training_args,
             data_collator=train_dataset.collator,
             train_dataset=processed_train_dataset,
-            callbacks=[BatchDebugCallback()],
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")

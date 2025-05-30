@@ -420,8 +420,10 @@ class ReasoningCollator(ProofPremiseCollator):
             tokenizer, target, self.out_tokens, truncate_front=False
         )
         out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
-        combined_str = input_str + out_str
-        return combined_str
+        return {
+            "prompt": input_str,
+            "completion": out_str,
+        }
     
     @classmethod
     def from_conf(cls, conf: ReasoningCollatorConf) -> ReasoningCollator:
