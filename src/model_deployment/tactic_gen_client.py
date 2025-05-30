@@ -55,6 +55,7 @@ class FidTacticGenConf:
     checkpoint_loc: Path
     formatter_confs: Optional[list[FormatterConf]]
     train_type: str
+    hard_seq_len: int
 
     @classmethod
     def from_yaml(cls, yaml_data: Any) -> FidTacticGenConf:
@@ -76,6 +77,8 @@ class DecoderTacticGenConf:
     checkpoint_loc: Path
     formatter_confs: Optional[list[FormatterConf]]
     train_type: str
+    hard_seq_len: int
+
     @classmethod
     def from_yaml(cls, yaml_data: Any) -> DecoderTacticGenConf:
         formatter_confs = None
@@ -87,6 +90,7 @@ class DecoderTacticGenConf:
             Path(yaml_data["checkpoint_loc"]),
             formatter_confs,
             yaml_data["train_type"],
+            yaml_data["hard_seq_len"],
         )
 
 

@@ -72,6 +72,7 @@ class StartTacticModelCommand:
     checkpoint_loc: Path
     id: int
     train_type: str
+    hard_seq_len: int
     TACTIC_GEN_SERVER_SCRIPT = Path("src/model_deployment/tactic_gen_server.py")
 
     def to_list(self) -> list[str]:
@@ -83,6 +84,7 @@ class StartTacticModelCommand:
             f"{self.id}",
             f"{os.getpid()}",
             self.train_type,
+            self.hard_seq_len,
         ]
 
     def to_list_slurm(self, env_var_name: str, commands_per_task: int) -> list[str]:
@@ -95,6 +97,7 @@ class StartTacticModelCommand:
             f"$(expr ${env_var_name} \\* {commands_per_task} + {self.id})",
             f"{os.getpid()}",
             self.train_type,
+            self.hard_seq_len,
         ]
 
 
@@ -511,7 +514,11 @@ def get_tactic_gen_command(
     conf: FidTacticGenConf | DecoderTacticGenConf, start_server_num: int
 ) -> tuple[FlexibleUrl, int, StartTacticModelCommand]:
     command = StartTacticModelCommand(
-        get_tactic_server_alias(conf), conf.checkpoint_loc, start_server_num, conf.train_type
+        get_tactic_server_alias(conf), 
+        conf.checkpoint_loc, 
+        start_server_num, 
+        conf.train_type, 
+        conf.hard_seq_len
     )
     return get_flexible_url(start_server_num, get_ip()), start_server_num + 1, command
 
