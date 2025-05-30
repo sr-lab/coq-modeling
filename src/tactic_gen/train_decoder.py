@@ -369,6 +369,8 @@ def get_trainer(
             processed_train_dataset
         )
 
+        from transformers import TrainerCallback
+
         class BatchDebugCallback(TrainerCallback):
             def __init__(self, log_every_n_steps=10):
                 self.log_every_n_steps = log_every_n_steps
