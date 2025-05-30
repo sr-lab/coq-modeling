@@ -362,7 +362,10 @@ def get_trainer(
 
         processed_train_dataset = []
         for i in range(len(train_dataset)):
-            processed_train_dataset.append(train_dataset[i])
+            processed_train_dataset.append({
+                "Instruction": train_dataset[i]["input"],
+                "Output": train_dataset[i]["output"],
+            })
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
         )

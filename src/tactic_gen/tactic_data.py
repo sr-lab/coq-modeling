@@ -421,8 +421,8 @@ class ReasoningCollator(ProofPremiseCollator):
         )
         out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
         return {
-            "prompt": input_str,
-            "completion": out_str,
+            "input": input_str,
+            "output": out_str,
         }
     
     @classmethod
