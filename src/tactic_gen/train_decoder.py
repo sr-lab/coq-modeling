@@ -376,9 +376,9 @@ def get_trainer(
                 self.log_every_n_steps = log_every_n_steps
             
             def on_step_begin(self, args, state, control, **kwargs):
-                if hasattr(trainer, 'train_dataloader'):
+                if hasattr(kwargs, 'train_dataloader'):
                     print(f"Step {state.global_step} - Inspecting batch from train_dataloader:")
-                    for i, batch in enumerate(trainer.train_dataloader):
+                    for i, batch in enumerate(kwargs['train_dataloader']):
                         print(f"Batch {i} structure:", batch)
                         if isinstance(batch, dict):
                             for key, value in batch.items():
