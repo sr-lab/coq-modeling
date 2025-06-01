@@ -123,12 +123,13 @@ class DecoderLocalWrapper:
         tokenizer: PreTrainedTokenizer,
         collator: ExampleCollator,
         hard_seq_len: int,
+        max_new_tokens: int = 128,
     ):
         self.model = model
         self.tokenizer = tokenizer
         self.collator = collator
         self.hard_seq_len = hard_seq_len
-
+        self.max_new_tokens = max_new_tokens
     def get_recs(
         self,
         example: LmExample,
@@ -157,7 +158,7 @@ class DecoderLocalWrapper:
         with torch.no_grad():
             outputs = self.model.generate(
                 inputs["input_ids"].cuda(),
-                max_new_tokens=128,
+                max_new_tokens=self.max_new_tokens,
                 return_dict_in_generate=True,
                 output_scores=True,
                 length_penalty=0,
@@ -220,7 +221,18 @@ class DecoderLocalWrapper:
         )
         model, _ = get_model(str(checkpoint_loc.resolve()), conf)
         model.to("cuda")
-        return cls(model, tokenizer, example_collator, hard_seq_length)
+        
+        if "max_new_tokens" in conf:
+            max_new_tokens = conf["max_new_tokens"]
+        else:
+            max_new_tokens = 128
+        return cls(
+            model, 
+            tokenizer, 
+            example_collator, 
+            hard_seq_length, 
+            max_new_tokens
+        )
 
     @classmethod
     def from_conf(cls, json_data: Any) -> DecoderLocalWrapper:

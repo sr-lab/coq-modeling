@@ -65,6 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("pid", type=int, help="Id of the parent process.")
     parser.add_argument("train_type", help="Train type of the model wrapper")
     parser.add_argument("hard_seq_len", type=int, help="Hard sequence length of the model wrapper")
+    parser.add_argument("max_new_tokens", type=int, help="Max new tokens of the model wrapper")
     args = parser.parse_args(sys.argv[1:])
 
     conf = {
@@ -72,6 +73,7 @@ if __name__ == "__main__":
         "checkpoint_loc": args.checkpoint_loc,
         "train_type": args.train_type,
         "hard_seq_len": args.hard_seq_len,
+        "max_new_tokens": args.max_new_tokens,
     }
     log.info("loading model")
     wrapper = wrapper_from_conf(conf)

@@ -15,6 +15,7 @@ tactic_gen:
   checkpoint_loc: models/proofmindrl-cot/checkpoint
   train_type: unsloth-sft 
   hard_seq_len: 4096
+  max_new_tokens: 1024
 
   formatters:
   - alias: general 
