@@ -125,6 +125,10 @@ def get_training_args(
             per_device_train_batch_size=get_required_arg(
                 "per_device_train_batch_size", conf
             ),
+            gradient_accumulation_steps=get_optional_arg(
+                "gradient_accumulation_steps", conf, 2
+            ),
+            generation_batch_size=None,
             num_generations=get_optional_arg("num_generations", conf, 8),
             learning_rate=get_required_arg("learning_rate", conf),
             logging_steps=get_required_arg("logging_steps", conf),
