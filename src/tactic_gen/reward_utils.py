@@ -29,6 +29,7 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
                 rewards.append(0.0)
         else:
             rewards.append(-100.0)
+    print("Rewards reasoning format", rewards, len(rewards))
     return rewards
 
 def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
@@ -41,6 +42,7 @@ def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
             rewards.append(0.0)
         else:
             rewards.append(- (reasoning_length - DESIDER_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIDER_REASONING_LENGTH))
+    print("Rewards reasoning length", rewards, len(rewards))
     return rewards
 
 def calculate_tactic_format_reward(completion):
