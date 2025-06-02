@@ -260,25 +260,30 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         raw_model, tokenizer = get_model(model_name, conf)
         lora_config = get_lora_conf(conf)
         model = get_peft_model(raw_model, lora_config)
-    elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
+    elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":        
         from unsloth import FastLanguageModel
         raw_model, tokenizer = get_model(model_name, conf)
-        model = FastLanguageModel.get_peft_model(
-            raw_model,
-            r = conf["peft_lora_r"],
-            target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
-                            "gate_proj", "up_proj", "down_proj",],
-            lora_alpha = conf["peft_lora_alpha"],
-            lora_dropout = 0,
-            bias = "none",
-            use_gradient_checkpointing = "unsloth",
-            random_state = 3407,
-            max_seq_length = conf["hard_seq_len"],
-            use_rslora = False,
-            loftq_config = None
-        )
+        try:
+            model = FastLanguageModel.get_peft_model(
+                raw_model,
+                r = conf["peft_lora_r"],
+                target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
+                                "gate_proj", "up_proj", "down_proj",],
+                lora_alpha = conf["peft_lora_alpha"],
+                lora_dropout = 0,
+                bias = "none",
+                use_gradient_checkpointing = "unsloth",
+                random_state = 3407,
+                max_seq_length = conf["hard_seq_len"],
+                use_rslora = False,
+                loftq_config = None
+            )
+        except RuntimeError as e:
+            print(f"Warning: getting unsloth model: {e}")
+            model = raw_model
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
+    
     return model, tokenizer
 
 
