@@ -145,6 +145,8 @@ def get_training_args(
             local_rank=(local_rank if local_rank else -1),
             ddp_find_unused_parameters=False,
             temperature=get_optional_arg("temperature", conf, 0.9),
+            reward_weights=[1.0, 0.5, 1.0],
+            report_to = "tensorboard"
         )
     elif conf["train_type"] == "sft":
         from transformers import TrainingArguments

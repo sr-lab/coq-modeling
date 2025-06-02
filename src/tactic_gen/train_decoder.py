@@ -27,7 +27,11 @@ from tactic_gen.reward_utils import (
     reward_goals,
     get_file_info,
     get_last_point,
-    get_proof_goals
+    get_proof_goals,
+    calculate_reasoning_format_reward,
+    calculate_reasoning_length_reward,
+    calculate_tactic_format_reward,
+    calculate_admit_reward
 )
 
 from util.train_utils import (
@@ -328,9 +332,6 @@ def get_trainer(
                         ground_truth_goals
                     )
                     rewards.append(final_reward)
-                    
-            print("temp file name", temp_file_name)
-            print("Rewards", rewards)
             return rewards
         except Exception as e:
             print("Exception error", e, temp_file_name, file=sys.stderr)
@@ -344,7 +345,7 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[check_reward],
+            reward_funcs=[calculate_reasoning_format_reward, calculate_reasoning_length_reward, check_reward],
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset
@@ -424,16 +425,25 @@ def calculate_reward(
     ground_truth_goals
 ):
     try:
+        generated_tactic = completion.split("</think>")[-1].strip()
+        tactic_format_reward = calculate_tactic_format_reward(generated_tactic)
+        if tactic_format_reward == -1:
+            return -1
+        admit_reward = calculate_admit_reward(generated_tactic)
+        if admit_reward == -1:
+            return -1
+        
         with open(temp_file_name, "w") as temp_file:
-            temp_file.write(prefix + "\n" + completion)
+            temp_file.write(prefix + "\n" + generated_tactic)
         coq_file.version += 1
+
         coq_file.coq_lsp_client.didChange(
             VersionedTextDocumentIdentifier(uri, coq_file.version),
-            [TextDocumentContentChangeEvent(None, None, prefix + "\n" + completion)],
+            [TextDocumentContentChangeEvent(None, None, prefix + "\n" + generated_tactic)], 
         )
         has_errors = (len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
         if not has_errors:
-            line, column = get_last_point(prefix + "\n" + completion)
+            line, column = get_last_point(prefix + "\n" + generated_tactic)
             goals = get_proof_goals(coq_file, line, column, uri)
             unchanged_reward = reward_goals(ground_truth_goals, goals)
         else:

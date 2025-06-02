@@ -10,14 +10,46 @@ from coqpyt.lsp.structs import (
     TextDocumentIdentifier
 )
 
+DESIDER_REASONING_LENGTH = 1024
+MAX_REASONING_LENGTH = 4096
+
 model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
 
+def calculate_reasoning_format_reward(completion):
+    completion = completion.strip()
+    if '<think>' in completion and '</think>' in completion:
+        # Check if the tags are properly ordered
+        think_start = completion.find('<think>')
+        think_end = completion.find('</think>')
+        if think_start > think_end:
+            return -100.0
+        else:
+            return 0.0
+    return -100.0
+
+def calculate_reasoning_length_reward(completion):
+    completion = completion.strip()
+    reasoning = completion.split('<think>')[1].split('</think>')[0].strip()
+    reasoning_length = len(reasoning)
+    if reasoning_length < DESIDER_REASONING_LENGTH:
+        return 0.0
+    else:
+        return - (reasoning_length - DESIDER_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIDER_REASONING_LENGTH)
+
+def calculate_tactic_format_reward(completion):
+    completion = completion.strip()
+    return 0.0 if completion.endswith('.') else -1.0
+
+def calculate_admit_reward(completion):
+    completion = completion.strip()
+    if 'admit' in completion:
+        return -1.0
+    return 0.0
 
 def goals_exist(goals):
     return (
         (goals is not None and goals.goals is not None and goals.goals.goals is not None)
     )
-
 
 def reward_goals(ground_truth_goals, final_goals):
     """
