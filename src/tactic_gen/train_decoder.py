@@ -297,7 +297,8 @@ def get_trainer(
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     model, tokenizer = process_model(model_name, conf)
-
+    print("Model", model)
+    print("Tokenizer", tokenizer)
     print("\n\nConstructing Dataset...")
     train_dataset, val_dataset = get_datasets(conf, tokenizer)
 
