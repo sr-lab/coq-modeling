@@ -26,7 +26,7 @@ num_generations: 8
 
 # Proofs And Premises
 example_collator:
-   alias: reasoning
+   alias: proof-premise
    state_tokens: 1024 
    script_tokens: 512
    proof_tokens: 1024 
