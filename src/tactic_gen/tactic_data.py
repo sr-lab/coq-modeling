@@ -716,7 +716,7 @@ class LmProcessedDataset(Dataset):
         target_lm_example = LmExample.from_json(
             json.loads(self.edb.retrieve(target_idx + 1))
         )
-        if self.train_type == "grpo":
+        if self.train_type == "grpo" or self.train_type == "unsloth-grpo":
             clean_example = self.example_collator.collate_input(
                 self.tokenizer, target_lm_example
             )
