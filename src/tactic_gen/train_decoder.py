@@ -285,12 +285,6 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         except RuntimeError as e:
             print(f"Warning: getting unsloth model: {e}")
             model = raw_model
-            # Ensure tokenizer matches model's vocabulary size
-            tokenizer = AutoTokenizer.from_pretrained(model_name)
-            tokenizer.padding_side = "right"
-            tokenizer.truncation_side = "left"
-            if model_name.startswith("codellama") or model_name.startswith("openai-community/gpt"):
-                tokenizer.add_special_tokens({"pad_token": "[PAD]"})
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
     
