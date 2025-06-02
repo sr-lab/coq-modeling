@@ -15,26 +15,33 @@ MAX_REASONING_LENGTH = 4096
 
 model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
 
-def calculate_reasoning_format_reward(completion):
-    completion = completion.strip()
-    if '<think>' in completion and '</think>' in completion:
-        # Check if the tags are properly ordered
-        think_start = completion.find('<think>')
-        think_end = completion.find('</think>')
-        if think_start > think_end:
-            return -100.0
+def calculate_reasoning_format_reward(prompts, completions):
+    rewards = []
+    for prompt, completion in zip(prompts, completions):
+        completion = completion.strip()
+        if '<think>' in completion and '</think>' in completion:
+            # Check if the tags are properly ordered
+            think_start = completion.find('<think>')
+            think_end = completion.find('</think>')
+            if think_start > think_end:
+                rewards.append(-100.0)
+            else:
+                rewards.append(0.0)
         else:
-            return 0.0
-    return -100.0
+            rewards.append(-100.0)
+    return rewards
 
-def calculate_reasoning_length_reward(completion):
-    completion = completion.strip()
-    reasoning = completion.split('<think>')[1].split('</think>')[0].strip()
-    reasoning_length = len(reasoning)
-    if reasoning_length < DESIDER_REASONING_LENGTH:
-        return 0.0
-    else:
-        return - (reasoning_length - DESIDER_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIDER_REASONING_LENGTH)
+def calculate_reasoning_length_reward(prompts, completions):
+    rewards = []
+    for prompt, completion in zip(prompts, completions):
+        completion = completion.strip()
+        reasoning = completion.split('<think>')[1].split('</think>')[0].strip()
+        reasoning_length = len(reasoning)
+        if reasoning_length < DESIDER_REASONING_LENGTH:
+            rewards.append(0.0)
+        else:
+            rewards.append(- (reasoning_length - DESIDER_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIDER_REASONING_LENGTH))
+    return rewards
 
 def calculate_tactic_format_reward(completion):
     completion = completion.strip()
