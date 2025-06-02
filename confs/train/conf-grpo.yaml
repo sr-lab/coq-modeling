@@ -1,9 +1,9 @@
 # File Paths
 data_path: "data/split-dataset"
 repos_path: "data/"
-model_name: "models/proofmind-cot"
+model_name: "models/proofmindrl-cot"
 output_dir: "models/proofmindrl-cot-grpo"
-train_type: "grpo"
+train_type: "unsloth-grpo"
 
 # Training Args
 hard_seq_len: 4096

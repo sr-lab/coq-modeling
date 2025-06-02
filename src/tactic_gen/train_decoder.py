@@ -118,7 +118,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             torch_dtype=torch.bfloat16,
             device_map="auto"
         )
-    elif conf["train_type"] == "unsloth-sft":
+    elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastModel
         model, tokenizer = FastModel.from_pretrained(
             model_name = model_name,
@@ -260,7 +260,7 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         raw_model, tokenizer = get_model(model_name, conf)
         lora_config = get_lora_conf(conf)
         model = get_peft_model(raw_model, lora_config)
-    elif conf["train_type"] == "unsloth-sft":
+    elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastLanguageModel
         raw_model, tokenizer = get_model(model_name, conf)
         model = FastLanguageModel.get_peft_model(
@@ -340,7 +340,7 @@ def get_trainer(
             if temp_file_name:
                 os.remove(temp_file_name)
     
-    if conf["train_type"] == "grpo":
+    if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
         trainer = GRPOTrainer(
             model=model,

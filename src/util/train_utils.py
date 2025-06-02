@@ -118,7 +118,7 @@ def get_train_val_path(data_path: Path) -> tuple[Path, Path]:
 def get_training_args(
     conf: dict[str, Any], local_rank: Optional[int]
 ) -> "TrainingArguments":
-    if conf["train_type"] == "grpo":
+    if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOConfig
         return GRPOConfig(
             output_dir=get_required_arg("output_dir", conf),
