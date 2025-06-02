@@ -127,6 +127,9 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_8bit = False,
             full_finetuning = False,
         )
+        # Set generation config to match the defaults we want
+        model.generation_config.max_length = 4096
+        
 
     model.resize_token_embeddings(len(tokenizer))
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
