@@ -265,7 +265,9 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":        
         from unsloth import FastLanguageModel
         raw_model, tokenizer = get_model(model_name, conf)
+        print("[process_model] before tokenizer", tokenizer)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
+        print("[process_model] raw_model", raw_model.lm_head)
         try:
             model = FastLanguageModel.get_peft_model(
                 raw_model,
