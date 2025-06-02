@@ -356,6 +356,7 @@ def get_trainer(
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
+        print(training_args)
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
