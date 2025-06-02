@@ -17,7 +17,7 @@ peft_lora_alpha: 16
 
 temperature: 1.0
 num_generations: 8
-gradient_accumulation_steps: 1
+gradient_accumulation_steps: 2
 
 # Basic
 # example_collator:
