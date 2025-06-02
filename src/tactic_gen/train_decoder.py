@@ -22,7 +22,7 @@ from transformers import (
     BitsAndBytesConfig
 )
 import torch
-
+from transformers import AutoTokenizer
 from tactic_gen.reward_utils import (
     reward_goals,
     get_file_info,
@@ -265,6 +265,7 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":        
         from unsloth import FastLanguageModel
         raw_model, tokenizer = get_model(model_name, conf)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
         try:
             model = FastLanguageModel.get_peft_model(
                 raw_model,
@@ -287,7 +288,7 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
     
     print("[process_model] Tokenizer", tokenizer)
-    print("[process_model] Model", model)
+    print("[process_model] Model", model.lm_head)
 
     return model, tokenizer
 
