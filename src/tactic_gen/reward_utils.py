@@ -15,9 +15,9 @@ MAX_REASONING_LENGTH = 4096
 
 model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
 
-def calculate_reasoning_format_reward(prompts, completions):
+def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     rewards = []
-    for prompt, completion in zip(prompts, completions):
+    for completion in completions:
         completion = completion.strip()
         if '<think>' in completion and '</think>' in completion:
             # Check if the tags are properly ordered
@@ -31,9 +31,9 @@ def calculate_reasoning_format_reward(prompts, completions):
             rewards.append(-100.0)
     return rewards
 
-def calculate_reasoning_length_reward(prompts, completions):
+def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
     rewards = []
-    for prompt, completion in zip(prompts, completions):
+    for completion in completions:
         completion = completion.strip()
         reasoning = completion.split('<think>')[1].split('</think>')[0].strip()
         reasoning_length = len(reasoning)
