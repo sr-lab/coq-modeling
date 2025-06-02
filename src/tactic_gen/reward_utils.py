@@ -35,7 +35,7 @@ def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
     rewards = []
     for completion in completions:
         completion = completion.strip()
-        reasoning = completion.split('<think>')[1].split('</think>')[0].strip()
+        reasoning = completion.split('<think>')[-1].split('</think>')[0].strip()
         reasoning_length = len(reasoning)
         if reasoning_length < DESIDER_REASONING_LENGTH:
             rewards.append(0.0)
