@@ -128,8 +128,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             full_finetuning = False,
         )
 
-    print("[get_model] Tokenizer", tokenizer)
-    print("[get_model] Model", model.lm_head)
+    model.resize_token_embeddings(len(tokenizer))
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
     # https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/inference/quantization/quantization.py
