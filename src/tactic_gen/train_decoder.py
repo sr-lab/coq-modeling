@@ -126,6 +126,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_4bit = True,
             load_in_8bit = False,
             full_finetuning = False,
+            force_download = False if "force_download" not in conf else conf["force_download"]
         )
         
 

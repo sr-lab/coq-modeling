@@ -5,6 +5,7 @@ model_name: "unsloth/Mistral-Small-3.1-24B-Base-2503-unsloth-bnb-4bit"
 output_dir: "models/proofmindrl-cot"
 train_type: unsloth-sft
 tokenizer: "unsloth/Mistral-Small-3.1-24B-Base-2503-unsloth-bnb-4bit"
+force_download: true
 
 # Training Args
 hard_seq_len: 4096
