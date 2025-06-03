@@ -16,6 +16,7 @@ tactic_gen:
   train_type: unsloth-grpo
   hard_seq_len: 4096
   max_new_tokens: 1024
+  tokenizer: unsloth/Qwen3-8B-unsloth-bnb-4bit
 
   formatters:
   - alias: general 

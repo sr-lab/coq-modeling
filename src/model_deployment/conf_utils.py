@@ -74,6 +74,7 @@ class StartTacticModelCommand:
     train_type: str
     hard_seq_len: int
     max_new_tokens: int
+    tokenizer: str | None
     TACTIC_GEN_SERVER_SCRIPT = Path("src/model_deployment/tactic_gen_server.py")
 
     def to_list(self) -> list[str]:
@@ -87,6 +88,7 @@ class StartTacticModelCommand:
             self.train_type,
             str(self.hard_seq_len),
             str(self.max_new_tokens),
+            self.tokenizer,
         ]
 
     def to_list_slurm(self, env_var_name: str, commands_per_task: int) -> list[str]:
@@ -522,7 +524,8 @@ def get_tactic_gen_command(
         start_server_num, 
         conf.train_type, 
         conf.hard_seq_len,
-        conf.max_new_tokens
+        conf.max_new_tokens,
+        conf.tokenizer,
     )
     return get_flexible_url(start_server_num, get_ip()), start_server_num + 1, command
 
