@@ -4,6 +4,7 @@ repos_path: "data/"
 model_name: "unsloth/Qwen2.5-Coder-32B-Instruct-128K-GGUF"
 output_dir: "models/proofmindrl-cot"
 train_type: unsloth-sft
+tokenizer: "unsloth/Qwen2.5-Coder-32B-Instruct-128K-GGUF"
 
 # Training Args
 hard_seq_len: 4096
