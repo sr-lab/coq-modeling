@@ -15,7 +15,7 @@ peft_lora_r: 64
 peft_lora_alpha: 16
 
 temperature: 1.0
-num_generations: 8
+# num_generations: 8
 
 # Basic
 # example_collator:
@@ -67,7 +67,7 @@ per_device_eval_batch_size: 8
 num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting this
 
 # Logging Args
-logging_steps: 100
+logging_steps: 5
 save_total_limit: 2
 
 # Train from checkpoint
