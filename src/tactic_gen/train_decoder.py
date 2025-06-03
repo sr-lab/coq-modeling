@@ -129,15 +129,15 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_storage=torch.bfloat16,
             )
+
             model, tokenizer = FastModel.from_pretrained(
-                model_name = model_name,
-                quantization_config = bnb_config,
-                max_seq_length = conf["hard_seq_len"],
-                load_in_4bit = True,
-                load_in_8bit = False,
-                full_finetuning = False,
+                model_name=model_name,
+                quantization_config=bnb_config,
+                max_seq_length=conf["hard_seq_len"],
+                full_finetuning=False,
             )
         else:
+            print("Unquantized model")
             model, tokenizer = FastModel.from_pretrained(
                 model_name = model_name,
                 max_seq_length = conf["hard_seq_len"],
