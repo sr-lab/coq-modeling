@@ -66,7 +66,6 @@ if __name__ == "__main__":
     parser.add_argument("train_type", help="Train type of the model wrapper")
     parser.add_argument("hard_seq_len", type=int, help="Hard sequence length of the model wrapper")
     parser.add_argument("max_new_tokens", type=int, help="Max new tokens of the model wrapper")
-    parser.add_argument("--tokenizer", help="Tokenizer of the model wrapper", default=None, required=False)
     args = parser.parse_args(sys.argv[1:])
 
     conf = {
@@ -76,8 +75,6 @@ if __name__ == "__main__":
         "hard_seq_len": args.hard_seq_len,
         "max_new_tokens": args.max_new_tokens,
     }
-    if args.tokenizer is not None:
-        conf["tokenizer"] = args.tokenizer
     log.info("loading model")
     wrapper = wrapper_from_conf(conf)
 

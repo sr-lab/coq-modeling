@@ -57,7 +57,6 @@ class FidTacticGenConf:
     train_type: str
     hard_seq_len: int
     max_new_tokens: int
-    tokenizer: str | None
 
     @classmethod
     def from_yaml(cls, yaml_data: Any) -> FidTacticGenConf:
@@ -72,7 +71,6 @@ class FidTacticGenConf:
             yaml_data["train_type"],
             yaml_data["hard_seq_len"],
             yaml_data["max_new_tokens"],
-            yaml_data.get("tokenizer", None),
         )
 
 
@@ -84,7 +82,6 @@ class DecoderTacticGenConf:
     train_type: str
     hard_seq_len: int
     max_new_tokens: int
-    tokenizer: str | None
 
     @classmethod
     def from_yaml(cls, yaml_data: Any) -> DecoderTacticGenConf:
@@ -99,7 +96,6 @@ class DecoderTacticGenConf:
             yaml_data["train_type"],
             yaml_data["hard_seq_len"],
             yaml_data["max_new_tokens"],
-            yaml_data.get("tokenizer", None),
         )
 
 
