@@ -148,7 +148,6 @@ def get_training_args(
             temperature=get_optional_arg("temperature", conf, 0.9),
             reward_weights=[1.0, 0.5, 1.0],
             report_to = "tensorboard",
-            warmup_ratio=0
         )
     elif conf["train_type"] == "sft":
         from transformers import TrainingArguments

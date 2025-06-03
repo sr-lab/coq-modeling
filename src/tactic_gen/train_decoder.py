@@ -358,6 +358,7 @@ def get_trainer(
             train_dataset=train_dataset,
             eval_dataset=val_dataset
         )
+        trainer.args.warmup_ratio = 0
     elif conf["train_type"] == "sft":
         from transformers import Trainer
         trainer = Trainer(
