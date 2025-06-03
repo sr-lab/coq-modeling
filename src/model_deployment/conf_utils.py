@@ -90,6 +90,7 @@ class StartTacticModelCommand:
             str(self.max_new_tokens),
         ]
         if self.tokenizer is not None:
+            command.append("--tokenizer")
             command.append(self.tokenizer)
         return command
 
@@ -107,6 +108,7 @@ class StartTacticModelCommand:
             str(self.max_new_tokens),
         ]
         if self.tokenizer is not None:
+            command.append("--tokenizer")
             command.append(self.tokenizer)
         return command
 
