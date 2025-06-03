@@ -78,7 +78,7 @@ class StartTacticModelCommand:
     TACTIC_GEN_SERVER_SCRIPT = Path("src/model_deployment/tactic_gen_server.py")
 
     def to_list(self) -> list[str]:
-        return [
+        command = [
             "python3",
             f"{self.TACTIC_GEN_SERVER_SCRIPT}",
             self.alias,
@@ -88,11 +88,13 @@ class StartTacticModelCommand:
             self.train_type,
             str(self.hard_seq_len),
             str(self.max_new_tokens),
-            self.tokenizer,
         ]
+        if self.tokenizer is not None:
+            command.append(self.tokenizer)
+        return command
 
     def to_list_slurm(self, env_var_name: str, commands_per_task: int) -> list[str]:
-        return [
+        command = [
             "LOG_LEVEL=DEBUG",
             "python3",
             f"{self.TACTIC_GEN_SERVER_SCRIPT}",
@@ -104,6 +106,9 @@ class StartTacticModelCommand:
             str(self.hard_seq_len),
             str(self.max_new_tokens),
         ]
+        if self.tokenizer is not None:
+            command.append(self.tokenizer)
+        return command
 
 
 @dataclass
