@@ -9,7 +9,7 @@ tokenizer: "unsloth/Qwen3-8B-unsloth-bnb-4bit"
 # Training Args
 hard_seq_len: 4096
 per_device_train_batch_size: 4
-learning_rate: 1.0e-3
+learning_rate: 1.0e-4
 num_train_epochs: 1
 max_steps: 600
 peft_lora_r: 64
