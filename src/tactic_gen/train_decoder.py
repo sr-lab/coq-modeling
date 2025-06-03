@@ -120,24 +120,13 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         )
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastModel
-        if "quantized" in conf and conf["quantized"]:
-            print("Quantized model")
-            model, tokenizer = FastModel.from_pretrained(
-                model_name=model_name,
-                max_seq_length=conf["hard_seq_len"],
-                dtype=None,
-                #full_finetuning=False,
-                # Remove all quantization parameters - model is already quantized
-            )
-        else:
-            print("Unquantized model")
-            model, tokenizer = FastModel.from_pretrained(
-                model_name = model_name,
-                max_seq_length = conf["hard_seq_len"],
-                load_in_4bit = True,
-                load_in_8bit = False,
-                full_finetuning = False,
-            )
+        model, tokenizer = FastModel.from_pretrained(
+            model_name = model_name,
+            max_seq_length = conf["hard_seq_len"],
+            load_in_4bit = True,
+            load_in_8bit = False,
+            full_finetuning = False,
+        )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
