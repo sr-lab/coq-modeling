@@ -24,11 +24,11 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
             think_start = completion.find('<think>')
             think_end = completion.find('</think>')
             if think_start > think_end:
-                rewards.append(-100.0)
+                rewards.append(-1.0)
             else:
                 rewards.append(0.0)
         else:
-            rewards.append(-100.0)
+            rewards.append(-1.0)
     print("Rewards reasoning format", rewards, len(rewards))
     return rewards
 
