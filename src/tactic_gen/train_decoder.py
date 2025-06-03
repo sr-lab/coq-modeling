@@ -121,6 +121,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastModel
         if "quantized" in conf and conf["quantized"]:
+            print("Quantized model")
             bnb_config = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_quant_type="nf4",
