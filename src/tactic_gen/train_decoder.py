@@ -126,7 +126,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
                 model_name=model_name,
                 max_seq_length=conf["hard_seq_len"],
                 dtype=None,
-                full_finetuning=False,
+                #full_finetuning=False,
                 # Remove all quantization parameters - model is already quantized
             )
         else:
