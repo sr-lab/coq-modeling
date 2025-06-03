@@ -126,6 +126,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_4bit = True,
             load_in_8bit = False,
             full_finetuning = False,
+            fast_inference = True
         )
         
 
@@ -266,7 +267,6 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":        
         from unsloth import FastLanguageModel
         raw_model, tokenizer = get_model(model_name, conf)
-        print("[process_model] raw_model", raw_model.lm_head)
         try:
             model = FastLanguageModel.get_peft_model(
                 raw_model,
@@ -287,9 +287,6 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             model = raw_model
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
-    
-    print("[process_model] Tokenizer", tokenizer)
-    print("[process_model] Model", model.lm_head)
 
     return model, tokenizer
 
