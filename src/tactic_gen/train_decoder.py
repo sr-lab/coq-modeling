@@ -122,19 +122,12 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         from unsloth import FastModel
         if "quantized" in conf and conf["quantized"]:
             print("Quantized model")
-            bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.bfloat16,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_storage=torch.bfloat16,
-            )
-
             model, tokenizer = FastModel.from_pretrained(
                 model_name=model_name,
-                quantization_config=bnb_config,
                 max_seq_length=conf["hard_seq_len"],
+                dtype=None,
                 full_finetuning=False,
+                # Remove all quantization parameters - model is already quantized
             )
         else:
             print("Unquantized model")
