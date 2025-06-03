@@ -127,10 +127,8 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_8bit = False,
             full_finetuning = False,
         )
-        model.generation_config.max_length = conf["hard_seq_len"]
         
 
-    model.resize_token_embeddings(len(tokenizer))
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
     # https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/inference/quantization/quantization.py
@@ -356,7 +354,6 @@ def get_trainer(
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
-        print(training_args)
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
