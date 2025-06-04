@@ -322,6 +322,7 @@ def get_trainer(
                     temp_file.write(prefix)
 
                 reward_cache = {}
+                print("Completions length", len(completions))
                 for completion in completions:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
@@ -346,6 +347,7 @@ def get_trainer(
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
+        print("Training Args", training_args)
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
