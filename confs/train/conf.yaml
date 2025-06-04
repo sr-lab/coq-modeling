@@ -15,7 +15,7 @@ peft_lora_r: 64
 peft_lora_alpha: 16
 
 temperature: 1.0
-num_generations: 8
+num_generations: 4
 gradient_accumulation_steps: 2
 
 # Basic
