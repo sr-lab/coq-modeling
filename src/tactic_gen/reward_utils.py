@@ -19,9 +19,6 @@ model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to
 def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     rewards = []
     for completion in completions:
-        print("=============== Completion =================\n")
-        print(completion)
-        print("=============== End of Completion =================\n")
         completion = completion.strip()
         if '<think>' in completion and '</think>' in completion:
             think_start = completion.find('<think>')
