@@ -48,13 +48,13 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
 #     print("Rewards reasoning length", rewards, len(rewards))
 #     return rewards
 
-def calculate_tactic_format_reward(prompts, completions, answer, **kwargs):
-    rewards = []
-    for completion in completions:
-        completion = completion.split("</think>")[-1].strip()
-        rewards.append(0 if completion.endswith('.') and completion.count('.') == 1 else -1)
-    print("Rewards tactic format", rewards, len(rewards))
-    return rewards
+# def calculate_tactic_format_reward(prompts, completions, answer, **kwargs):
+#     rewards = []
+#     for completion in completions:
+#         completion = completion.split("</think>")[-1].strip()
+#         rewards.append(0 if completion.endswith('.') and completion.count('.') == 1 else -1)
+#     print("Rewards tactic format", rewards, len(rewards))
+#     return rewards
 
 # def calculate_tactic_length_reward(prompts, completions, answer, **kwargs):
 #     rewards = []

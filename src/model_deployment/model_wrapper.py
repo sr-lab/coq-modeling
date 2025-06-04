@@ -130,6 +130,7 @@ class DecoderLocalWrapper:
         self.collator = collator
         self.hard_seq_len = hard_seq_len
         self.max_new_tokens = max_new_tokens
+        
     def get_recs(
         self,
         example: LmExample,
