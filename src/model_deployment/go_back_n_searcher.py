@@ -35,6 +35,7 @@ class GoBackNSearcherConf:
     print_proofs: bool
     initial_proof: Optional[str]
     token_mask: Optional[str]
+    n: Optional[int]
     ALIAS = "go_back_n"
 
     @classmethod
@@ -44,6 +45,7 @@ class GoBackNSearcherConf:
             yaml_data["print_proofs"],
             yaml_data.get("initial_proof", None),
             yaml_data.get("token_mask", None),
+            yaml_data.get("n", None),
         )
 
 
@@ -56,6 +58,7 @@ class GoBackNSearcher:
         print_proofs: bool,
         initial_proof: Optional[str],
         token_mask: Optional[str],
+        n: Optional[int],
     ):
         self.tactic_clients = tactic_clients
         self.proof_manager = proof_manager
@@ -63,6 +66,7 @@ class GoBackNSearcher:
         self.print_proofs = print_proofs
         self.initial_proof = initial_proof
         self.token_mask = token_mask
+        self.n = n
 
         initial_dset_file = proof_manager.get_initial_context()
         if initial_dset_file is None:
@@ -97,6 +101,7 @@ class GoBackNSearcher:
             conf.print_proofs,
             conf.initial_proof,
             conf.token_mask,
+            conf.n,
         )
 
     def search(self, **kwargs) -> GoBackNSuccess | GoBackNFailure:
@@ -153,10 +158,14 @@ class GoBackNSearcher:
                     cur_time = time.time() - start_time
                     continue
                 
-                weights = [1 / (i + 1) for i in range(proof_length + 1)]
+                if self.n is not None:
+                    n = self.n
+                else:
+                    n = proof_length
+                weights = [1 / (i + 1) for i in range(n + 1)]
                 total = sum(weights)
                 probs = [w / total for w in weights]
-                steps_back = random.choices(range(proof_length + 1), weights=probs, k=1)[0]
+                steps_back = random.choices(range(n + 1), weights=probs, k=1)[0]
                 
                 if steps_back >= proof_length:
                     cur_proof_result = self.initial_check_result
