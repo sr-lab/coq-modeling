@@ -10,13 +10,16 @@ def monitor_results(eval_loc: Path, delete: bool):
     num_success = 0
     num_failure = 0
     num_incomplete = 0
-    attemps = []
+    attempts = []
 
     for p in eval_loc.glob("**/*.json"):
         with p.open() as fin:
             try:
                 data = json.load(fin)
-                attemps.append(data["n_attempts"])
+
+                if "n_attempts" in data and data["n_attempts"] is not None:
+                    attempts.append(data["n_attempts"])
+                
                 r = Result.from_json(data)
                 if r.proof is not None:
                     num_success += 1
@@ -41,10 +44,10 @@ def monitor_results(eval_loc: Path, delete: bool):
     )
     print(f"Success rate (w/o) incomplete: {num_success / (num_success + num_failure)}")
 
-    print(f"Average attempts: {sum(attemps) / len(attemps)}")
-    print(f"Median attempts: {sorted(attemps)[len(attemps) // 2]}")
-    print(f"Max attempts: {max(attemps)}")
-    print(f"Min attempts: {min(attemps)}")
+    print(f"Average attempts: {sum(attempts) / len(attempts)}")
+    print(f"Median attempts: {sorted(attempts)[len(attempts) // 2]}")
+    print(f"Max attempts: {max(attempts)}")
+    print(f"Min attempts: {min(attempts)}")
 
 
 if __name__ == "__main__":
