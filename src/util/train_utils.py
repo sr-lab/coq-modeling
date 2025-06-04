@@ -136,7 +136,7 @@ def get_training_args(
             max_steps=get_optional_arg("max_steps", conf, -1),
             save_strategy="steps",
             save_steps=get_required_arg("save_steps", conf),
-            save_total_limit=get_required_arg("save_total_limit", conf),
+            #save_total_limit=get_required_arg("save_total_limit", conf),
             eval_strategy="no",
             eval_steps=get_required_arg("eval_steps", conf),
             per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
