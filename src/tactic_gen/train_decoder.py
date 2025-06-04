@@ -29,8 +29,6 @@ from tactic_gen.reward_utils import (
     get_last_point,
     get_proof_goals,
     calculate_reasoning_format_reward,
-    calculate_tactic_format_reward,
-    
 )
 
 from util.train_utils import (
