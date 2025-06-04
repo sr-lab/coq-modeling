@@ -12,6 +12,7 @@ from coqpyt.lsp.structs import (
 
 DESIDER_REASONING_LENGTH = 1024
 MAX_REASONING_LENGTH = 4096
+DESIDER_TACTIC_LENGTH = 128
 
 model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
 
@@ -20,40 +21,46 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     for completion in completions:
         completion = completion.strip()
         if '<think>' in completion and '</think>' in completion:
-            # Check if the tags are properly ordered
             think_start = completion.find('<think>')
             think_end = completion.find('</think>')
             if think_start > think_end:
-                rewards.append(-1.0)
+                rewards.append(-1)
             else:
-                rewards.append(0.0)
+                rewards.append(0)
         else:
-            rewards.append(-1.0)
+            rewards.append(-1)
     print("Rewards reasoning format", rewards, len(rewards))
     return rewards
 
-def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
+# def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
+#     rewards = []
+#     for completion in completions:
+#         completion = completion.strip()
+#         reasoning = completion.split('<think>')[-1].split('</think>')[0].strip()
+#         reasoning_length = len(reasoning)
+#         if reasoning_length < DESIDER_REASONING_LENGTH:
+#             rewards.append(0)
+#         else:
+#             rewards.append(-1)
+#     print("Rewards reasoning length", rewards, len(rewards))
+#     return rewards
+
+def calculate_tactic_format_reward(prompts, completions, answer, **kwargs):
     rewards = []
     for completion in completions:
-        completion = completion.strip()
-        reasoning = completion.split('<think>')[-1].split('</think>')[0].strip()
-        reasoning_length = len(reasoning)
-        if reasoning_length < DESIDER_REASONING_LENGTH:
-            rewards.append(0.0)
-        else:
-            rewards.append(- (reasoning_length - DESIDER_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIDER_REASONING_LENGTH))
-    print("Rewards reasoning length", rewards, len(rewards))
+        completion = completion.split("</think>")[-1].strip()
+        rewards.append(0 if completion.endswith('.') and completion.count('.') == 1 else -1)
+    print("Rewards tactic format", rewards, len(rewards))
     return rewards
 
-def calculate_tactic_format_reward(completion):
-    completion = completion.strip()
-    return 0.0 if completion.endswith('.') else -1.0
+# def calculate_tactic_length_reward(prompts, completions, answer, **kwargs):
+#     rewards = []
+#     for completion in completions:
+#         completion = completion.split("</think>")[-1].strip()
+#         rewards.append(0 if len(completion) < DESIDER_TACTIC_LENGTH else -1)
+#     print("Rewards tactic length", rewards, len(rewards))
+#     return rewards
 
-def calculate_admit_reward(completion):
-    completion = completion.strip()
-    if 'admit' in completion:
-        return -1.0
-    return 0.0
 
 def goals_exist(goals):
     return (

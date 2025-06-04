@@ -8,15 +8,15 @@ tokenizer: "unsloth/Qwen3-8B-unsloth-bnb-4bit"
 
 # Training Args
 hard_seq_len: 4096
-per_device_train_batch_size: 4
+per_device_train_batch_size: 6
 learning_rate: 1.0e-4
 num_train_epochs: 1
-max_steps: 600
+max_steps: 20000
 peft_lora_r: 64
 peft_lora_alpha: 16
 
 temperature: 0.6
-num_generations: 4
+num_generations: 6
 gradient_accumulation_steps: 1
 
 # Basic
@@ -63,7 +63,7 @@ example_collator:
 
 # Evaluation Args
 eval_steps: 3000 
-save_steps: 3000
+save_steps: 200
 eval_accumulation_steps: 1
 per_device_eval_batch_size: 8
 num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting this

@@ -29,9 +29,8 @@ from tactic_gen.reward_utils import (
     get_last_point,
     get_proof_goals,
     calculate_reasoning_format_reward,
-    calculate_reasoning_length_reward,
     calculate_tactic_format_reward,
-    calculate_admit_reward
+    
 )
 
 from util.train_utils import (
@@ -352,7 +351,7 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[calculate_reasoning_format_reward, calculate_reasoning_length_reward, check_reward],
+            reward_funcs=[calculate_reasoning_format_reward, calculate_tactic_format_reward, check_reward],
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset
@@ -434,13 +433,8 @@ def calculate_reward(
 ):
     try:
         generated_tactic = completion.split("</think>")[-1].strip()
-        tactic_format_reward = calculate_tactic_format_reward(generated_tactic)
-        if tactic_format_reward == -1:
+        if "admit" in generated_tactic:
             return -1
-        admit_reward = calculate_admit_reward(generated_tactic)
-        if admit_reward == -1:
-            return -1
-        
         with open(temp_file_name, "w") as temp_file:
             temp_file.write(prefix + "\n" + generated_tactic)
         coq_file.version += 1
