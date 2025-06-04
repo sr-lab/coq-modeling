@@ -7,14 +7,14 @@ train_type: grpo
 
 # Training Args
 hard_seq_len: 4096
-per_device_train_batch_size: 4
+per_device_train_batch_size: 8
 learning_rate: 1.0e-3
 num_train_epochs: 2
 max_steps: 55500
 peft_lora_r: 64
 peft_lora_alpha: 16
 
-gradient_accumulation_steps: 4
+gradient_accumulation_steps: 2
 temperature: 1.0
 num_generations: 8
 
