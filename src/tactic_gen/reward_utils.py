@@ -10,7 +10,7 @@ from coqpyt.lsp.structs import (
     TextDocumentIdentifier
 )
 
-DESIDER_REASONING_LENGTH = 1024
+DESIRED_REASONING_LENGTH = 512
 MAX_REASONING_LENGTH = 4096
 DESIDER_TACTIC_LENGTH = 128
 
@@ -32,18 +32,18 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     print("Rewards reasoning format", rewards, len(rewards))
     return rewards
 
-# def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
-#     rewards = []
-#     for completion in completions:
-#         completion = completion.strip()
-#         reasoning = completion.split('<think>')[-1].split('</think>')[0].strip()
-#         reasoning_length = len(reasoning)
-#         if reasoning_length < DESIDER_REASONING_LENGTH:
-#             rewards.append(0)
-#         else:
-#             rewards.append(-1)
-#     print("Rewards reasoning length", rewards, len(rewards))
-#     return rewards
+def calculate_length_reward(prompts, completions, answer, **kwargs):
+    rewards = []
+    for completion in completions:
+        completion = len(completion)
+        if completion < DESIRED_REASONING_LENGTH:
+            rewards.append(0)
+        else:
+            rewards.append(
+                (completion - DESIRED_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIRED_REASONING_LENGTH)
+            )
+    print("Rewards reasoning length", rewards, len(rewards))
+    return rewards
 
 # def calculate_tactic_format_reward(prompts, completions, answer, **kwargs):
 #     rewards = []

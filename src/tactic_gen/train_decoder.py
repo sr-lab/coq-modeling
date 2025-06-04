@@ -29,6 +29,7 @@ from tactic_gen.reward_utils import (
     get_last_point,
     get_proof_goals,
     calculate_reasoning_format_reward,
+    calculate_length_reward
 )
 
 from util.train_utils import (
@@ -351,7 +352,11 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[calculate_reasoning_format_reward, check_reward],
+            reward_funcs=[
+                calculate_reasoning_format_reward, 
+                check_reward, 
+                calculate_length_reward
+            ],
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset
