@@ -147,7 +147,7 @@ def get_training_args(
             ddp_find_unused_parameters=False,
             temperature=get_optional_arg("temperature", conf, 0.9),
             report_to = "tensorboard",
-            scale_rewards=False,
+            #scale_rewards=False,
         )
     elif conf["train_type"] == "sft":
         from transformers import TrainingArguments
