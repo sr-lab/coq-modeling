@@ -2,7 +2,7 @@
 data_path: "data/split-dataset"
 repos_path: "data/"
 model_name: "unsloth/Mistral-Small-24B-Base-2501-unsloth-bnb-4bit"
-output_dir: "models/proofmindrl-cot"
+output_dir: "models/proofmindrl-cot-small-mistral"
 train_type: unsloth-sft
 tokenizer: "unsloth/Mistral-Small-24B-Base-2501-unsloth-bnb-4bit"
 
