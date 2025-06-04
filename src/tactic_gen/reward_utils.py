@@ -40,7 +40,7 @@ def calculate_length_reward(prompts, completions, answer, **kwargs):
             rewards.append(0)
         else:
             rewards.append(
-                (completion - DESIRED_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIRED_REASONING_LENGTH)
+                -(completion - DESIRED_REASONING_LENGTH) / (MAX_REASONING_LENGTH - DESIRED_REASONING_LENGTH)
             )
     print("Rewards reasoning length", rewards, len(rewards))
     return rewards
