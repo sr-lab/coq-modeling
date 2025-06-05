@@ -394,6 +394,7 @@ def get_trainer(
             processed_train_dataset.append({
                 "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
             })
+        
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
         )

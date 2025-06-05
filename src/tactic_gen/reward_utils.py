@@ -2,7 +2,7 @@ import os
 import logging
 import uuid
 
-from src.tactic_gen.tactic_data import ReasoningCollator
+from tactic_gen.tactic_data import ReasoningCollator
 from sentence_transformers import SentenceTransformer, util
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
