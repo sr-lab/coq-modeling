@@ -4,7 +4,6 @@ repos_path: "data/"
 model_name: "models/proofmindrl-cot-tiny-llama"
 output_dir: "models/proofmindrl-cot-tiny-llama-grpo"
 train_type: "unsloth-grpo"
-tokenizer: "unsloth/tinyllama-bnb-4bit"
 
 # Training Args
 hard_seq_len: 4096

@@ -186,10 +186,7 @@ def get_datasets(
         )
         example_collator = example_collator_from_conf(example_collator_conf)
         _logger.info("EXAMPLE COLLATOR: %s", example_collator)
-        if tokenizer is None:
-            tokenizer = get_tokenizer(get_required_arg("model_name", conf))
-        elif "tokenizer" in conf:
-            tokenizer = get_tokenizer(conf["tokenizer"])
+        tokenizer = get_tokenizer(get_required_arg("model_name", conf))
 
         data_path = Path(get_required_arg("data_path", conf))
         num_eval_examples = get_optional_arg("num_eval_examples", conf, None)

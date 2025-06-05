@@ -4,7 +4,6 @@ repos_path: "data/"
 model_name: "models/proofmindrl-cot"
 output_dir: "models/proofmindrl-cot-grpo"
 train_type: "unsloth-grpo"
-tokenizer: "unsloth/Qwen3-8B-unsloth-bnb-4bit"
 
 # Training Args
 hard_seq_len: 4096
