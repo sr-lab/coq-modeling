@@ -117,6 +117,8 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         )
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastModel
+        from unsloth import add_new_tokens
+
         model, tokenizer = FastModel.from_pretrained(
             model_name = model_name,
             max_seq_length = conf["hard_seq_len"],
@@ -124,11 +126,11 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_8bit = False,
             full_finetuning = False,
         )
-        if tokenizer.eos_token != "</answer>":
-            tokenizer.add_special_tokens({'eos_token': "</answer>"})
-            tokenizer.eos_token = "</answer>"
-            tokenizer.add_special_tokens({"additional_special_tokens": ["<answer>", "<think>", "</think>"]})
-            model.resize_token_embeddings(len(tokenizer))
+        add_new_tokens(
+            model, 
+            tokenizer, 
+            new_tokens = ["<answer>", "</answer>", "<think>", "</think>"]
+        )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
@@ -279,7 +281,6 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
                 use_rslora = False,
                 loftq_config = None
             )
-            model.resize_token_embeddings(len(tokenizer))
         except RuntimeError as e:
             print(f"Warning: getting unsloth model: {e}")
             model = raw_model

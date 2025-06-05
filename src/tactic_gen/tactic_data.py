@@ -420,6 +420,7 @@ class ReasoningCollator(ProofPremiseCollator):
             tokenizer, target, self.out_tokens, truncate_front=False
         )
         out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
+        out_str += tokenizer.eos_token
         return {
             "input": input_str,
             "output": out_str,
