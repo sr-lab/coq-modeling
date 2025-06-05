@@ -372,10 +372,10 @@ def get_trainer(
         from transformers import DataCollatorForSeq2Seq
         from unsloth.chat_templates import get_chat_template
 
-        train_dataset.tokenizer = get_chat_template(
-            train_dataset.tokenizer,
-            chat_template = "unsloth",
-        )
+        # train_dataset.tokenizer = get_chat_template(
+        #     train_dataset.tokenizer,
+        #     chat_template = "unsloth",
+        # )
 
         processed_train_dataset = []
         for i in range(len(train_dataset)):
@@ -395,18 +395,18 @@ def get_trainer(
             processed_train_dataset
         )
         
-        def formatting_prompts_func(examples):
-            convos = examples["conversations"]
-            texts = [
-                train_dataset.tokenizer.apply_chat_template(
-                    convo, tokenize = False, add_generation_prompt = False
-                ) for convo in convos
-            ]
-            return { "text" : texts, }
+        # def formatting_prompts_func(examples):
+        #     convos = examples["conversations"]
+        #     texts = [
+        #         train_dataset.tokenizer.apply_chat_template(
+        #             convo, tokenize = False, add_generation_prompt = False
+        #         ) for convo in convos
+        #     ]
+        #     return { "text" : texts, }
         
-        processed_train_dataset = processed_train_dataset.map(
-            formatting_prompts_func, batched = True
-        )
+        # processed_train_dataset = processed_train_dataset.map(
+        #     formatting_prompts_func, batched = True
+        # )
 
         trainer = SFTTrainer(
             model=model,
