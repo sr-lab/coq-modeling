@@ -416,7 +416,7 @@ class ReasoningCollator(ProofPremiseCollator):
     def collate(self, tokenizer: PreTrainedTokenizer, example: LmExample) -> str:
         input_str = self.collate_input(tokenizer, example)
         
-        fixed_wrapper = f"<think></think>\n<answer>{example.next_steps[0]}</answer>"
+        fixed_wrapper = f"<think></think>\n<answer>\n{example.next_steps[0]}</answer>"
         fixed_tokens_count = len(tokenizer.encode(fixed_wrapper)) - 3 
         
         cot_token_limit = self.out_tokens - fixed_tokens_count
@@ -424,7 +424,7 @@ class ReasoningCollator(ProofPremiseCollator):
             tokenizer, example.cot, cot_token_limit, truncate_front=False
         )
         
-        target = f"<think>{cot_content}</think>\n<answer>{example.next_steps[0]}</answer>"
+        target = f"<think>{cot_content}</think>\n<answer>\n{example.next_steps[0]}</answer>"
         out_str, _ = allocate_tokens(
             tokenizer, target, self.out_tokens - 1, truncate_front=False
         )
