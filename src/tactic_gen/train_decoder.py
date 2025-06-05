@@ -124,7 +124,9 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_8bit = False,
             full_finetuning = False,
         )
-        model.resize_token_embeddings(len(tokenizer.tokenizer))
+        tokenizer.add_special_tokens({'eos_token': "</answer>"})
+        tokenizer.eos_token = "</answer>"
+        model.resize_token_embeddings(len(tokenizer))
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
@@ -378,9 +380,6 @@ def get_trainer(
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
         )
-        train_dataset.tokenizer.add_special_tokens({'eos_token': "</answer>"})
-        train_dataset.tokenizer.eos_token = "</answer>"
-        model.resize_token_embeddings(len(train_dataset.tokenizer))
 
         trainer = SFTTrainer(
             model=model,
