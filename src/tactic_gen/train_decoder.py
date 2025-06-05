@@ -127,8 +127,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         if tokenizer.eos_token != "</answer>":
             tokenizer.add_special_tokens({'eos_token': "</answer>"})
             tokenizer.eos_token = "</answer>"
-            for token in ["<answer>", "<think>", "</think>"]:
-                tokenizer.add_special_tokens({"additional_special_tokens": token})
+            tokenizer.add_special_tokens({"additional_special_tokens": ["<answer>", "<think>", "</think>"]})
             model.resize_token_embeddings(len(tokenizer))
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
