@@ -457,12 +457,11 @@ class ReasoningCollator(ProofPremiseCollator):
     @classmethod
     def check_format(cls, completion: str) -> bool:
         return (
-            "<think>" in completion and 
-            "<answer>" in completion and 
-            "</think>" in completion and 
-            "</answer>" in completion
+            completion.count("<think>") == 1 and
+            completion.count("<answer>") == 1 and
+            completion.count("</think>") == 1 and
+            completion.count("</answer>") == 1
         )
-
 
 @dataclass
 class NoScriptCollatorConf:
