@@ -124,6 +124,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_8bit = False,
             full_finetuning = False,
         )
+        model.resize_token_embeddings(len(tokenizer.tokenizer))
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
