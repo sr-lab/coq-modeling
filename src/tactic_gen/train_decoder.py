@@ -28,6 +28,7 @@ from tactic_gen.reward_utils import (
     get_last_point,
     get_proof_goals,
     calculate_reasoning_format_reward,
+    calculate_unchanged_reward
 )
 
 from util.train_utils import (
@@ -319,6 +320,14 @@ def get_trainer(
                 with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                     temp_file.write(prefix)
 
+                coq_file.version += 1
+                coq_file.coq_lsp_client.didChange(
+                    VersionedTextDocumentIdentifier(uri, coq_file.version),
+                    [TextDocumentContentChangeEvent(None, None, prefix)],
+                )
+                line, column = get_last_point(prefix)
+                previous_goals = get_proof_goals(coq_file, line, column, uri)
+
                 reward_cache = {}
                 print("Completions length", len(completions))
                 for completion in completions:
@@ -331,7 +340,8 @@ def get_trainer(
                         temp_file_name, 
                         uri, 
                         coq_file, 
-                        ground_truth_goals
+                        ground_truth_goals,
+                        previous_goals
                     )
                     rewards.append(final_reward)
             print("Rewards", rewards, len(rewards))
@@ -400,7 +410,8 @@ def calculate_reward(
     temp_file_name, 
     uri, 
     coq_file, 
-    ground_truth_goals
+    ground_truth_goals,
+    previous_goals
 ):
     try:
         generated_tactic = ReasoningCollator.extract_tactic(completion)
@@ -418,11 +429,12 @@ def calculate_reward(
         if not has_errors:
             line, column = get_last_point(prefix + "\n" + generated_tactic)
             goals = get_proof_goals(coq_file, line, column, uri)
-            unchanged_reward = reward_goals(ground_truth_goals, goals)
+            unchanged_reward = calculate_unchanged_reward(previous_goals, goals)
+            progress_reward = -1 if unchanged_reward == -1 else reward_goals(ground_truth_goals, goals)
         else:
-            unchanged_reward = -1
+            progress_reward = -1
         
-        final_reward = unchanged_reward
+        final_reward = progress_reward
     except TimeoutError as e:
         print("Timeout error", e, temp_file_name, file=sys.stderr)
         final_reward = -1

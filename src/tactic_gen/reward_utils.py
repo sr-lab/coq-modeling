@@ -64,6 +64,11 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
 #     print("Rewards tactic length", rewards, len(rewards))
 #     return rewards
 
+def calculate_unchanged_reward(previous_goals, final_goals):
+    if repr(previous_goals) == repr(final_goals):
+        return -1
+    else:
+        return 0
 
 def goals_exist(goals):
     return (
