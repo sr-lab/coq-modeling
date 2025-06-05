@@ -370,27 +370,9 @@ def get_trainer(
     elif conf["train_type"] == "unsloth-sft":
         from trl import SFTTrainer
         from transformers import DataCollatorForSeq2Seq
-        from unsloth.chat_templates import get_chat_template
-
-        # train_dataset.tokenizer = get_chat_template(
-        #     train_dataset.tokenizer,
-        #     chat_template = "unsloth",
-        # )
 
         processed_train_dataset = []
         for i in range(len(train_dataset)):
-            # processed_train_dataset.append({
-            #     "conversations": [
-            #         {
-            #             "role": "user",
-            #             "content": train_dataset[i]["input"],
-            #         },
-            #         {
-            #             "role": "assistant",
-            #             "content": train_dataset[i]["output"],
-            #         }
-            #     ]
-            # })
             processed_train_dataset.append({
                 "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
             })
@@ -398,19 +380,9 @@ def get_trainer(
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
         )
-        
-        # def formatting_prompts_func(examples):
-        #     convos = examples["conversations"]
-        #     texts = [
-        #         train_dataset.tokenizer.apply_chat_template(
-        #             convo, tokenize = False, add_generation_prompt = False
-        #         ) for convo in convos
-        #     ]
-        #     return { "text" : texts, }
-        
-        # processed_train_dataset = processed_train_dataset.map(
-        #     formatting_prompts_func, batched = True
-        # )
+        train_dataset.tokenizer.add_special_tokens({'eos_token': "</answer>"})
+        train_dataset.tokenizer.eos_token = "</answer>"
+        model.resize_token_embeddings(len(train_dataset.tokenizer))
 
         trainer = SFTTrainer(
             model=model,
