@@ -117,7 +117,6 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         )
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastModel
-        from unsloth import add_new_tokens
 
         model, tokenizer = FastModel.from_pretrained(
             model_name = model_name,
@@ -125,11 +124,6 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_4bit = True,
             load_in_8bit = False,
             full_finetuning = False,
-        )
-        add_new_tokens(
-            model, 
-            tokenizer, 
-            new_tokens = ["<answer>", "</answer>", "<think>", "</think>"]
         )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
