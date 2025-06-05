@@ -417,7 +417,7 @@ class ReasoningCollator(ProofPremiseCollator):
         input_str = self.collate_input(tokenizer, example)
         
         fixed_wrapper = f"<think></think>\n<answer>{example.next_steps[0]}</answer>"
-        fixed_tokens_count = len(tokenizer.encode(fixed_wrapper)) - 2 
+        fixed_tokens_count = len(tokenizer.encode(fixed_wrapper)) - 3 
         
         cot_token_limit = self.out_tokens - fixed_tokens_count
         cot_content, _ = allocate_tokens(
@@ -425,12 +425,11 @@ class ReasoningCollator(ProofPremiseCollator):
         )
         
         target = f"<think>{cot_content}</think>\n<answer>{example.next_steps[0]}</answer>"
-        
         out_str, _ = allocate_tokens(
-            tokenizer, target, self.out_tokens, truncate_front=False
+            tokenizer, target, self.out_tokens - 1, truncate_front=False
         )
-        out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
         out_str += tokenizer.eos_token
+        out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
         return {
             "input": input_str,
             "output": out_str,
