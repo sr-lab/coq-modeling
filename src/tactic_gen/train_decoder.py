@@ -124,9 +124,12 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             load_in_8bit = False,
             full_finetuning = False,
         )
-        tokenizer.add_special_tokens({'eos_token': "</answer>"})
-        tokenizer.eos_token = "</answer>"
-        model.resize_token_embeddings(len(tokenizer))
+        if tokenizer.eos_token != "</answer>":
+            tokenizer.add_special_tokens({'eos_token': "</answer>"})
+            tokenizer.eos_token = "</answer>"
+            for token in ["<answer>", "<think>", "</think>"]:
+                tokenizer.add_special_tokens({"additional_special_tokens": token})
+            model.resize_token_embeddings(len(tokenizer))
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
@@ -277,6 +280,7 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
                 use_rslora = False,
                 loftq_config = None
             )
+            model.resize_token_embeddings(len(tokenizer))
         except RuntimeError as e:
             print(f"Warning: getting unsloth model: {e}")
             model = raw_model
