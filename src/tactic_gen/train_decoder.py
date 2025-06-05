@@ -8,7 +8,6 @@ import argparse
 from pathlib import Path
 import shutil
 import json
-import numpy.core.multiarray
 from coqpyt.coq.base_file import CoqFile
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
@@ -53,6 +52,7 @@ from tactic_gen.tactic_data import (
     example_collator_from_conf,
     get_tokenizer,
 )
+from tactic_gen.tactic_data import ReasoningCollator
 import datasets
 
 from torch.utils.data import Subset
@@ -379,17 +379,20 @@ def get_trainer(
 
         processed_train_dataset = []
         for i in range(len(train_dataset)):
+            # processed_train_dataset.append({
+            #     "conversations": [
+            #         {
+            #             "role": "user",
+            #             "content": train_dataset[i]["input"],
+            #         },
+            #         {
+            #             "role": "assistant",
+            #             "content": train_dataset[i]["output"],
+            #         }
+            #     ]
+            # })
             processed_train_dataset.append({
-                "conversations": [
-                    {
-                        "role": "user",
-                        "content": train_dataset[i]["input"],
-                    },
-                    {
-                        "role": "assistant",
-                        "content": train_dataset[i]["output"],
-                    }
-                ]
+                "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
             })
         processed_train_dataset = datasets.Dataset.from_list(
             processed_train_dataset
@@ -432,7 +435,7 @@ def calculate_reward(
     ground_truth_goals
 ):
     try:
-        generated_tactic = completion.split("</think>")[-1].strip()
+        generated_tactic = ReasoningCollator.extract_tactic(completion)
         if "admit" in generated_tactic:
             return -1
         with open(temp_file_name, "w") as temp_file:
@@ -458,7 +461,6 @@ def calculate_reward(
     return final_reward
 
 if __name__ == "__main__":
-    #accelerator = Accelerator()
     parser = argparse.ArgumentParser(
         description="Train code llama by providing a .yaml config file. As an example, see src/tactic_gen/confs/basic_train.yaml"
     )

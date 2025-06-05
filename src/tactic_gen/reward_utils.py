@@ -2,6 +2,7 @@ import os
 import logging
 import uuid
 
+from src.tactic_gen.tactic_data import ReasoningCollator
 from sentence_transformers import SentenceTransformer, util
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
@@ -20,10 +21,12 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     rewards = []
     for completion in completions:
         completion = completion.strip()
-        if '<think>' in completion and '</think>' in completion:
+        if ReasoningCollator.check_format(completion):
             think_start = completion.find('<think>')
             think_end = completion.find('</think>')
-            if think_start > think_end:
+            answer_start = completion.find('<answer>')
+            answer_end = completion.find('</answer>')
+            if think_start > think_end and answer_start > answer_end:
                 rewards.append(-1)
             else:
                 rewards.append(0)

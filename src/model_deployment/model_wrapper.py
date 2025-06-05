@@ -24,6 +24,7 @@ from tactic_gen.tactic_data import (
     ExampleCollator,
     ProofPremiseCollator,
     NoScriptCollator,
+    ReasoningCollator,
     example_collator_from_conf,
     example_collator_conf_from_yaml,
     NEWLINE_RESPONSE_TEMPLATE,
@@ -180,8 +181,8 @@ class DecoderLocalWrapper:
 
         tactics = []
         for tactic in aux_tactics:
-            if "<think>" in tactic and "</think>" in tactic:
-                tactics.append(tactic.split("</think>")[1])   
+            if ReasoningCollator.check_format(tactic):
+                tactics.append(ReasoningCollator.extract_tactic(tactic))
             else:
                 tactics.append(tactic)
 

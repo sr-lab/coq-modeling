@@ -435,6 +435,23 @@ class ReasoningCollator(ProofPremiseCollator):
             conf.out_tokens,
             conf.whole_proof,
         )
+    
+    @classmethod
+    def extract_tactic(cls, completion: str) -> str:
+        return completion.split("<answer>")[1].split("</answer>")[0].strip()
+    
+    @classmethod
+    def extract_reasoning(cls, completion: str) -> str:
+        return completion.split("<think>")[1].split("</think>")[0].strip()
+    
+    @classmethod
+    def check_format(cls, completion: str) -> bool:
+        return (
+            "<think>" in completion and 
+            "<answer>" in completion and 
+            "<think/>" in completion and 
+            "<answer/>" in completion
+        )
 
 
 @dataclass
