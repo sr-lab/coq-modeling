@@ -459,8 +459,8 @@ class ReasoningCollator(ProofPremiseCollator):
         return (
             "<think>" in completion and 
             "<answer>" in completion and 
-            "<think/>" in completion and 
-            "<answer/>" in completion
+            "</think>" in completion and 
+            "</answer>" in completion
         )
 
 
