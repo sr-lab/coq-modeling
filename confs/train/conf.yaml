@@ -2,7 +2,7 @@
 data_path: "data/split-dataset"
 repos_path: "data/"
 model_name: "deepseek-ai/deepseek-coder-1.3b-instruct"
-output_dir: "./models/proofmindrl"
+output_dir: "./models/proofmindrl-simplified"
 train_type: grpo
 
 # Training Args
