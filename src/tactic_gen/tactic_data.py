@@ -419,7 +419,6 @@ class ReasoningCollator(ProofPremiseCollator):
         out_str, _ = allocate_tokens(
             tokenizer, f"\n{example.next_steps[0]}", self.out_tokens, truncate_front=False
         )
-        out_str += tokenizer.eos_token
         return {
             "input": input_str,
             "output": out_str,
