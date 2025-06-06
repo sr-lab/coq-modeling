@@ -298,6 +298,16 @@ def get_trainer(
 
     print("\n\nBuilding Trainer...")
 
+    def check_format(prompts, completions, **kwargs):
+        rewards = [1 if completion.startswith(("\n", " ")) else 0 for completion in completions]
+        print("Rewards Format", rewards, len(rewards))
+        return rewards
+
+    def check_answer(prompts, completions, answer, **kwargs):
+        rewards = [1 if completion.strip() == a.strip() else 0 for completion, a in zip(completions, answer)]
+        print("Rewards Answer", rewards, len(rewards))
+        return rewards
+
     def check_reward(prompts, completions, answer, **kwargs):
         file_name = kwargs["file_name"][0]
         proof_script = kwargs["proof_script"][0]
@@ -359,7 +369,7 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[calculate_reasoning_format_reward, check_reward],
+            reward_funcs=[check_format, check_answer],
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset

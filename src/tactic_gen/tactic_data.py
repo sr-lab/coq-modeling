@@ -411,25 +411,15 @@ class ReasoningCollatorConf(ProofPremiseCollatorConf):
         )
 
 
+# TODO: Change name
 @dataclass
 class ReasoningCollator(ProofPremiseCollator):
     def collate(self, tokenizer: PreTrainedTokenizer, example: LmExample) -> str:
         input_str = self.collate_input(tokenizer, example)
-        
-        fixed_wrapper = f"<think></think>\n<answer>\n{example.next_steps[0]}</answer>"
-        fixed_tokens_count = len(tokenizer.encode(fixed_wrapper)) - 3 
-        
-        cot_token_limit = self.out_tokens - fixed_tokens_count
-        cot_content, _ = allocate_tokens(
-            tokenizer, example.cot, cot_token_limit, truncate_front=False
-        )
-        
-        target = f"<think>{cot_content}</think>\n<answer>\n{example.next_steps[0]}</answer>"
         out_str, _ = allocate_tokens(
-            tokenizer, target, self.out_tokens - 1, truncate_front=False
+            tokenizer, f"\n{example.next_steps[0]}", self.out_tokens, truncate_front=False
         )
         out_str += tokenizer.eos_token
-        out_str = out_str.replace(RESPONSE_TEMPLATE, "(tactic)")
         return {
             "input": input_str,
             "output": out_str,
@@ -748,7 +738,7 @@ class LmProcessedDataset(Dataset):
             )
             return {
                 "prompt": clean_example,
-                "answer": None,
+                "answer": target_lm_example.next_steps[0],
                 "file_name": target_lm_example.file_name,
                 "proof_idx": target_lm_example.proof_idx,
                 "step_idx": target_lm_example.step_idx,
