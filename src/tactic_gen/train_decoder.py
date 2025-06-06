@@ -304,7 +304,9 @@ def get_trainer(
         return rewards
 
     def check_answer(prompts, completions, answer, **kwargs):
-        rewards = [1 if completion.strip() == a.strip() else 0 for completion, a in zip(completions, answer)]
+        rewards = [
+            1 if completion.strip(tokenizer.eos_token).strip() == a.strip() else 0 for completion, a in zip(completions, answer)
+        ]
         print("Rewards Answer", rewards, len(rewards))
         return rewards
 
