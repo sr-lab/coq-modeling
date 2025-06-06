@@ -351,8 +351,11 @@ def get_trainer(
 
     print("\n\nBuilding Trainer...")
 
-    def check_reward(prompts, completions, answer, **kwargs):
-        return [1 if completion.strip() == answer.strip() else 0 for completion in completions]
+    def check_format(prompts, completions, answers, **kwargs):
+        return [1 if completion.startswith(("\n", " ")) else 0 for completion in completions]
+
+    def check_reward(prompts, completions, answers, **kwargs):
+        return [1 if completion.strip() == answer.strip() else 0 for completion, answer in zip(completions, answers)]
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
@@ -360,7 +363,7 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[check_reward],
+            reward_funcs=[check_reward, check_format],
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
