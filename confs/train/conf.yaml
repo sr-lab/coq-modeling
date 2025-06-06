@@ -69,7 +69,7 @@ num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting 
 
 # Logging Args
 logging_steps: 5
-save_total_limit: 2
+save_total_limit: 50
 
 # Train from checkpoint
 checkpoint_name: models/deepseek-bm25-proof-tfidf-proj-thm-prem-final/checkpoint-54500
