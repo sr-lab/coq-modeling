@@ -194,16 +194,16 @@ def get_datasets(
         num_eval_examples = get_optional_arg("num_eval_examples", conf, None)
         hard_seq_len = get_required_arg("hard_seq_len", conf)
 
-        if conf["example_collator"]["alias"] == "reasoning":
-            cot_train_path = data_path / "cot.db"
-            train_dataset = LmProcessedDataset(
-                cot_train_path, 
-                tokenizer, 
-                example_collator, 
-                hard_seq_len, 
-                train_type=conf["train_type"]
-            )
-            return train_dataset, None
+        # if conf["example_collator"]["alias"] == "reasoning":
+        #     cot_train_path = data_path / "cot.db"
+        #     train_dataset = LmProcessedDataset(
+        #         cot_train_path, 
+        #         tokenizer, 
+        #         example_collator, 
+        #         hard_seq_len, 
+        #         train_type=conf["train_type"]
+        #     )
+        #     return train_dataset, None
 
         orig_train_path, orig_val_path = get_train_val_path(data_path)
         
