@@ -28,12 +28,9 @@ from transformers import (
 import torch
 from transformers import AutoTokenizer
 from tactic_gen.reward_utils import (
-    reward_goals,
     get_file_info,
     get_last_point,
     get_proof_goals,
-    calculate_reasoning_format_reward,
-    calculate_unchanged_reward
 )
 
 from util.train_utils import (
@@ -355,79 +352,7 @@ def get_trainer(
     print("\n\nBuilding Trainer...")
 
     def check_reward(prompts, completions, answer, **kwargs):
-        timeout=180
-        file_name = kwargs["file_name"][0]
-        proof_script = kwargs["proof_script"][0]
-        next_steps = kwargs["next_steps"][0]
-        temp_file_name = None
-        start_time = time.time()
-        
-        signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(timeout)
-        #for completion in completions:
-        #    print(f"[Rank {rank}] | Completion:\n{completion}\n----------------------\n")
-        #print("=====================================")
-
-        try:
-            temp_file_name, prefix = get_file_info(conf, file_name, proof_script)
-
-            line, column = get_last_point(prefix + "\n" + proof_script)
-            with open(temp_file_name, "w", encoding="utf-8") as temp_file:
-                temp_file.write(prefix + "\n" + next_steps[0])
-            rewards = []
-            with CoqFile(
-                temp_file_name, 
-                workspace=valid_files[file_name],
-                timeout=120
-            ) as coq_file:
-                uri = f"file://{coq_file.path}"
-                ground_truth_goals = get_proof_goals(coq_file, line, column, uri)
-                # Rewrite the file with only the prefix
-                with open(temp_file_name, "w", encoding="utf-8") as temp_file:
-                    temp_file.write(prefix)
-                
-                coq_file.version += 1
-                coq_file.coq_lsp_client.didChange(
-                    VersionedTextDocumentIdentifier(uri, coq_file.version),
-                    [TextDocumentContentChangeEvent(None, None, prefix)],
-                )
-
-                line, column = get_last_point(prefix)
-                previous_goals = get_proof_goals(coq_file, line, column, uri)
-                reward_cache = {}
-                
-                for completion in completions:
-                    if completion.strip() in reward_cache:
-                        rewards.append(reward_cache[completion.strip()])
-                        continue
-                    final_reward = calculate_reward(
-                        completion, 
-                        prefix, 
-                        temp_file_name, 
-                        uri, 
-                        coq_file, 
-                        ground_truth_goals,
-                        previous_goals
-                    )
-                    rewards.append(final_reward)
-            end_time = time.time()
-            print(f"[Rank {rank}] Rewards: {rewards} | Num completions: {len(completions)} | time: {end_time - start_time}")
-            return rewards
-        except TimeoutException:
-            print("Timeout: check_reward exceeded time limit.", file=sys.stderr)
-            return [0] * len(completions)
-
-        except Exception as e:
-            print(f"[Rank {rank}] Exception during reward computation: {e}", file=sys.stderr)
-            return [0] * len(completions)
-        finally:
-            signal.alarm(0)  # Disable the alarm
-            if temp_file_name:
-                try:
-                    os.remove(temp_file_name)
-                except Exception:
-                    pass
-    
+        return [1 if completion.strip() == answer.strip() else 0 for completion in completions]
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
@@ -513,43 +438,6 @@ def get_trainer(
 
     return trainer
 
-
-def calculate_reward(
-    completion, 
-    prefix, 
-    temp_file_name, 
-    uri, 
-    coq_file, 
-    ground_truth_goals,
-    previous_goals
-):
-    try:
-        generated_tactic = completion.split("</think>")[-1].strip()
-        if "admit" in generated_tactic:
-            return -1
-        with open(temp_file_name, "w") as temp_file:
-            temp_file.write(prefix + "\n" + generated_tactic)
-        coq_file.version += 1
-
-        coq_file.coq_lsp_client.didChange(
-            VersionedTextDocumentIdentifier(uri, coq_file.version),
-            [TextDocumentContentChangeEvent(None, None, prefix + "\n" + generated_tactic)], 
-        )
-        has_errors = (len(list(filter(lambda x: x.severity == 1, coq_file.diagnostics))) > 0)
-        if not has_errors:
-            line, column = get_last_point(prefix + "\n" + generated_tactic)
-            goals = get_proof_goals(coq_file, line, column, uri)
-            unchanged_reward = calculate_unchanged_reward(previous_goals, goals)
-            
-            progress_reward = -1 if unchanged_reward == -1 else reward_goals(ground_truth_goals, goals)
-        else:
-            progress_reward = -1
-        
-        final_reward = progress_reward
-    except TimeoutError as e:
-        print("Timeout error", e, temp_file_name, file=sys.stderr)
-        final_reward = -1
-    return final_reward
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
