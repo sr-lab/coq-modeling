@@ -1,7 +1,11 @@
 from typing import Optional, Any
 
-import unsloth
+from transformers import TrainerCallback
+#import unsloth
+from accelerate import Accelerator
 import os
+import time
+import signal
 import csv
 import sys
 import argparse
@@ -29,6 +33,7 @@ from tactic_gen.reward_utils import (
     get_last_point,
     get_proof_goals,
     calculate_reasoning_format_reward,
+    calculate_unchanged_reward
 )
 
 from util.train_utils import (
@@ -58,6 +63,17 @@ import datasets
 from torch.utils.data import Subset
 import logging
 
+_original_load = torch.load
+def patched_load(*args, **kwargs):
+    kwargs['weights_only'] = False
+    return _original_load(*args, **kwargs)
+
+torch.load = patched_load
+
+accelerator = Accelerator()
+rank = accelerator.process_index
+
+
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
 valid_files = {}
@@ -73,6 +89,12 @@ def init_valid_files(repo_path: Path) -> set[Path]:
 
     return valid_files
 
+
+class TimeoutException(Exception):
+        pass
+
+def timeout_handler(signum, frame):
+    raise TimeoutException()
 
 # This doc details how to finetune codellama:
 # https://github.com/huggingface/trl/blob/main/examples/scripts/sft_trainer.py
@@ -285,6 +307,39 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
 
     return model, tokenizer
 
+class PrintLossCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if accelerator.is_main_process and logs and 'loss' in logs:
+            print(f"Step {state.global_step} - Loss: {logs['loss']:.4f}")
+
+class CheckpointCallback(TrainerCallback):
+    def __init__(self, trainer):
+        self.trainer = trainer
+              
+    def on_train_begin(self, args, state, control, **kwargs):
+        print("Starting training")
+    
+    def on_step_end(self, args, state, control, **kwargs):
+        if accelerator.is_main_process and state.global_step % args.save_steps == 0:
+            print("Checkpoint callback save")
+            print("save steps:", args.save_steps)
+            checkpoint_dir = f"{args.output_dir}/checkpoint-{state.global_step}"
+            self.trainer.save_state()
+            self.trainer.save_model(checkpoint_dir)
+        #if state.global_step % args.save_steps == 0:
+            #checkpoint_dir = f"{args.output_dir}/checkpoint-{state.global_step}"
+            #accelerator.save_state(checkpoint_dir)
+            #if state.global_step % args.save_steps == 0 and accelerator.is_main_process:
+            #    checkpoint_dir = f"{args.output_dir}/checkpoint-{state.global_step}"
+            #    kwargs['model'].save_pretrained(checkpoint_dir)
+            #    trainer = kwargs.get("trainer")
+            #    if trainer:
+            #        print(f"Saving training state at epoch {state.epoch}")
+            #        trainer.save_state()
+            #    else:
+            #        print("NO TRAINER")
+           # kwargs['tokenizer'].save_pretrained(checkpoint_dir)
+
 
 def get_trainer(
     conf: dict[str, Any], local_rank: Optional[int], checkpoint_name: Optional[str]
@@ -300,12 +355,22 @@ def get_trainer(
     print("\n\nBuilding Trainer...")
 
     def check_reward(prompts, completions, answer, **kwargs):
+        timeout=180
         file_name = kwargs["file_name"][0]
         proof_script = kwargs["proof_script"][0]
         next_steps = kwargs["next_steps"][0]
         temp_file_name = None
+        start_time = time.time()
+        
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(timeout)
+        #for completion in completions:
+        #    print(f"[Rank {rank}] | Completion:\n{completion}\n----------------------\n")
+        #print("=====================================")
+
         try:
             temp_file_name, prefix = get_file_info(conf, file_name, proof_script)
+
             line, column = get_last_point(prefix + "\n" + proof_script)
             with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                 temp_file.write(prefix + "\n" + next_steps[0])
@@ -320,9 +385,17 @@ def get_trainer(
                 # Rewrite the file with only the prefix
                 with open(temp_file_name, "w", encoding="utf-8") as temp_file:
                     temp_file.write(prefix)
+                
+                coq_file.version += 1
+                coq_file.coq_lsp_client.didChange(
+                    VersionedTextDocumentIdentifier(uri, coq_file.version),
+                    [TextDocumentContentChangeEvent(None, None, prefix)],
+                )
 
+                line, column = get_last_point(prefix)
+                previous_goals = get_proof_goals(coq_file, line, column, uri)
                 reward_cache = {}
-                print("Completions length", len(completions))
+                
                 for completion in completions:
                     if completion.strip() in reward_cache:
                         rewards.append(reward_cache[completion.strip()])
@@ -333,17 +406,28 @@ def get_trainer(
                         temp_file_name, 
                         uri, 
                         coq_file, 
-                        ground_truth_goals
+                        ground_truth_goals,
+                        previous_goals
                     )
                     rewards.append(final_reward)
-            print("Rewards", rewards, len(rewards))
+            end_time = time.time()
+            print(f"[Rank {rank}] Rewards: {rewards} | Num completions: {len(completions)} | time: {end_time - start_time}")
             return rewards
+        except TimeoutException:
+            print("Timeout: check_reward exceeded time limit.", file=sys.stderr)
+            return [0] * len(completions)
+
         except Exception as e:
-            print("Exception error", e, temp_file_name, file=sys.stderr)
+            print(f"[Rank {rank}] Exception during reward computation: {e}", file=sys.stderr)
             return [0] * len(completions)
         finally:
+            signal.alarm(0)  # Disable the alarm
             if temp_file_name:
-                os.remove(temp_file_name)
+                try:
+                    os.remove(temp_file_name)
+                except Exception:
+                    pass
+    
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
@@ -351,10 +435,11 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[calculate_reasoning_format_reward, check_reward],
+            reward_funcs=[check_reward],
             args=training_args,
             train_dataset=train_dataset,
-            eval_dataset=val_dataset
+            eval_dataset=val_dataset,
+           
         )
         trainer.args.warmup_ratio = 0
     elif conf["train_type"] == "sft":
@@ -419,7 +504,13 @@ def get_trainer(
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
+
     
+    checkpoint_callback = CheckpointCallback(trainer=trainer)
+    logloss_callback = PrintLossCallback()
+    trainer.add_callback(checkpoint_callback)
+    trainer.add_callback(logloss_callback)
+
     return trainer
 
 
@@ -429,7 +520,8 @@ def calculate_reward(
     temp_file_name, 
     uri, 
     coq_file, 
-    ground_truth_goals
+    ground_truth_goals,
+    previous_goals
 ):
     try:
         generated_tactic = completion.split("</think>")[-1].strip()
@@ -447,18 +539,19 @@ def calculate_reward(
         if not has_errors:
             line, column = get_last_point(prefix + "\n" + generated_tactic)
             goals = get_proof_goals(coq_file, line, column, uri)
-            unchanged_reward = reward_goals(ground_truth_goals, goals)
+            unchanged_reward = calculate_unchanged_reward(previous_goals, goals)
+            
+            progress_reward = -1 if unchanged_reward == -1 else reward_goals(ground_truth_goals, goals)
         else:
-            unchanged_reward = -1
+            progress_reward = -1
         
-        final_reward = unchanged_reward
+        final_reward = progress_reward
     except TimeoutError as e:
         print("Timeout error", e, temp_file_name, file=sys.stderr)
         final_reward = -1
     return final_reward
 
 if __name__ == "__main__":
-    #accelerator = Accelerator()
     parser = argparse.ArgumentParser(
         description="Train code llama by providing a .yaml config file. As an example, see src/tactic_gen/confs/basic_train.yaml"
     )
@@ -489,5 +582,6 @@ if __name__ == "__main__":
         copy_configs(args.yaml_config, conf, TrainType.TACTIC)
         print("Training from scratch")
         trainer.train()
+    
     trainer.save_model()
     trainer.save_state()

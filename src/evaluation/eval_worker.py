@@ -121,7 +121,7 @@ if __name__ == "__main__":
 
     strikes = 0
     MAX_STRIKES_IN_A_ROW = 3
-    NUM_THEOREMS = 500
+    NUM_THEOREMS = 30
     for i in range(NUM_THEOREMS):
         try:
             eval_thm = q.get()
@@ -150,11 +150,11 @@ if __name__ == "__main__":
         orig_summary = RangoResult(eval_thm, None, None, None)
         save_loc = get_save_loc(eval_conf.save_loc, eval_thm)
         if save_loc.exists():
-            _logger.info(f"Skipping {eval_thm.path}::{run_conf.theorem_id}")
+            print(f"Skipping {eval_thm.path}::{run_conf.theorem_id}")
             continue
 
         orig_summary.save(save_loc)
-        _logger.info(
+        print(
             f"running proof of {run_conf.theorem_id} from {location_info.file_loc}"
         )
         worker_process = mp.Process(

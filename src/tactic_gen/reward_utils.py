@@ -29,7 +29,7 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
                 rewards.append(0)
         else:
             rewards.append(-1)
-    print("Rewards reasoning format", rewards, len(rewards))
+   
     return rewards
 
 # def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
@@ -62,10 +62,17 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
 #     return rewards
 
 
+
 def goals_exist(goals):
     return (
         (goals is not None and goals.goals is not None and goals.goals.goals is not None)
     )
+
+
+def calculate_unchanged_reward(previous_goals, final_goals):
+    if repr(previous_goals) == repr(final_goals):
+        return -1
+    return 0
 
 def reward_goals(ground_truth_goals, final_goals):
     """
