@@ -392,7 +392,7 @@ def get_trainer(
         from transformers import DataCollatorForSeq2Seq
 
         processed_train_dataset = []
-        for i in range(len(train_dataset)):
+        for i in range(max(len(train_dataset), conf["max_steps"])):
             processed_train_dataset.append({
                 "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
             })
