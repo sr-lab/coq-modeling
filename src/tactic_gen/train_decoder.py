@@ -351,11 +351,11 @@ def get_trainer(
 
     print("\n\nBuilding Trainer...")
 
-    def check_format(prompts, completions, answers, **kwargs):
+    def check_format(prompts, completions, answer, **kwargs):
         return [1 if completion.startswith(("\n", " ")) else 0 for completion in completions]
 
-    def check_reward(prompts, completions, answers, **kwargs):
-        return [1 if completion.strip() == answer.strip() else 0 for completion, answer in zip(completions, answers)]
+    def check_reward(prompts, completions, answer, **kwargs):
+        return [1 if completion.strip() == a.strip() else 0 for completion, a in zip(completions, answer)]
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
