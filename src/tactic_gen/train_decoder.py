@@ -64,6 +64,9 @@ _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
 valid_files = {}
 
+
+TRAIN_DATASET_PATH = "train_dataset"
+
 def init_valid_files(repo_path: Path) -> set[Path]:
     for repo in Path(os.path.join(repo_path, "repos")).iterdir():
         if repo.is_dir():
@@ -392,15 +395,21 @@ def get_trainer(
         from trl import SFTTrainer
         from transformers import DataCollatorForSeq2Seq
 
-        processed_train_dataset = []
-        for i in tqdm(range(min(len(train_dataset), conf["max_steps"] * conf["per_device_train_batch_size"]))):
-            processed_train_dataset.append({
-                "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
-            })
+        if os.path.exists(TRAIN_DATASET_PATH):
+            processed_train_dataset = datasets.load_from_disk(TRAIN_DATASET_PATH)
+        else:
+            processed_train_dataset = []
+            for i in tqdm(range(min(len(train_dataset), conf["max_steps"] * conf["per_device_train_batch_size"]))):
+                processed_train_dataset.append({
+                    "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
+                })
         
-        processed_train_dataset = datasets.Dataset.from_list(
-            processed_train_dataset
-        )
+            processed_train_dataset = datasets.Dataset.from_list(
+                processed_train_dataset
+            )
+
+            processed_train_dataset.save_to_disk(TRAIN_DATASET_PATH)
+
 
         trainer = SFTTrainer(
             model=model,
