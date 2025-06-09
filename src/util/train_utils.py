@@ -186,18 +186,19 @@ def get_training_args(
             max_seq_length = get_required_arg("hard_seq_len", conf),
             per_device_train_batch_size = get_required_arg("per_device_train_batch_size", conf),
             gradient_accumulation_steps = get_optional_arg("gradient_accumulation_steps", conf, 2),
-            save_strategy = "no",
+            save_strategy = "steps",
             save_steps = get_required_arg("save_steps", conf),
             save_total_limit = get_required_arg("save_total_limit", conf),
             eval_strategy = "no",
             eval_steps = get_required_arg("eval_steps", conf),
             per_device_eval_batch_size = get_required_arg("per_device_eval_batch_size", conf),
             eval_accumulation_steps = get_optional_arg("eval_accumulation_steps", conf, 1),
-            load_best_model_at_end = True,
+            load_best_model_at_end = False,
             local_rank = (local_rank if local_rank else -1),
             ddp_find_unused_parameters = False,
             logging_steps = get_required_arg("logging_steps", conf),
             output_dir = get_required_arg("output_dir", conf),
+            report_to = "tensorboard",
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")

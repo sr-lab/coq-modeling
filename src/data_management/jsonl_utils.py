@@ -138,11 +138,42 @@ def to_db(in_file: Path, db_file: Path, insert_freq: int = 100000):
 
 class ExampleDB:
     TABLE_NAME = "example"
+    CACHE_WINDOW_SIZE = 1000  # Number of subsequent IDs to cache
+    MAX_CACHE_SIZE = 10000    # Maximum number of items to keep in cache
 
     def __init__(self, connection: Connection, cursor: Cursor) -> None:
         self.connection = connection
         self.cursor = cursor
         self.__size: Optional[int] = None
+        self._cache: dict[int, str] = {}
+        self._last_retrieved_id: Optional[int] = None
+
+    def _prefetch_window(self, start_id: int) -> None:
+        """Prefetch a window of items starting from the given ID."""
+        if self._last_retrieved_id == start_id:
+            return  # Already prefetched this window
+
+        # Clear cache if it's too large
+        if len(self._cache) + self.CACHE_WINDOW_SIZE > self.MAX_CACHE_SIZE:
+            self._cache.clear()
+
+        # Calculate end of window
+        end_id = min(start_id + self.CACHE_WINDOW_SIZE, self.size())
+        
+        # Fetch the window of items
+        result = self.cursor.execute(
+            f"""
+            SELECT id, text FROM {self.TABLE_NAME} 
+            WHERE id >= ? AND id < ?
+            """,
+            (start_id, end_id),
+        ).fetchall()
+
+        # Update cache
+        for id_, text in result:
+            self._cache[id_] = text
+
+        self._last_retrieved_id = start_id
 
     def insert_examples(self, examples: list[tuple[str,]]):
         self.cursor.executemany(
@@ -186,17 +217,29 @@ class ExampleDB:
         return count
 
     def retrieve(self, id: int) -> str:
+        # Check if item is in cache
+        if id in self._cache:
+            return self._cache[id]
+
+        # If not in cache, fetch it and prefetch window
         result = self.cursor.execute(
             f"""
             SELECT * FROM {self.TABLE_NAME} WHERE id=?
-                            """,
+            """,
             (id,),
         ).fetchall()
+        
         if len(result) != 1:
             raise ValueError(
                 f"Expected single result from sentence db. Got {len(result)}"
             )
+        
         _, text = result[0]
+        
+        # Store in cache and prefetch window
+        self._cache[id] = text
+        self._prefetch_window(id)
+        
         return text
 
     def commit(self) -> None:
