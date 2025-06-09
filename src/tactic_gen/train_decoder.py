@@ -8,6 +8,7 @@ import argparse
 from pathlib import Path
 import shutil
 import json
+from tqdm import tqdm
 from coqpyt.coq.base_file import CoqFile
 from coqpyt.lsp.structs import (
     VersionedTextDocumentIdentifier,
@@ -392,7 +393,7 @@ def get_trainer(
         from transformers import DataCollatorForSeq2Seq
 
         processed_train_dataset = []
-        for i in range(min(len(train_dataset), conf["max_steps"])):
+        for i in tqdm(range(min(len(train_dataset), conf["max_steps"] * conf["per_device_train_batch_size"]))):
             processed_train_dataset.append({
                 "text": train_dataset[i]["input"] + "\n" + train_dataset[i]["output"]
             })
