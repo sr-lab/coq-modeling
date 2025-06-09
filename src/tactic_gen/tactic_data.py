@@ -707,6 +707,10 @@ def example_collator_conf_from_yaml(yaml_data: Any) -> ExampleCollatorConf:
     match attempted_alias:
         case BasicCollatorConf.ALIAS:
             return BasicCollatorConf.from_yaml(yaml_data)
+        case SFTCollatorConf.ALIAS:
+            return SFTCollatorConf.from_yaml(yaml_data)
+        case ReasoningCollatorConf.ALIAS:
+            return ReasoningCollatorConf.from_yaml(yaml_data)
         case PremiseCollatorConf.ALIAS:
             return PremiseCollatorConf.from_yaml(yaml_data)
         case ProofCollatorConf.ALIAS:
@@ -717,10 +721,6 @@ def example_collator_conf_from_yaml(yaml_data: Any) -> ExampleCollatorConf:
             return NPrevLineCollatorConf.from_yaml(yaml_data)
         case NoScriptCollatorConf.ALIAS:
             return NoScriptCollatorConf.from_yaml(yaml_data)
-        case ReasoningCollatorConf.ALIAS:
-            return ReasoningCollatorConf.from_yaml(yaml_data)
-        case SFTCollatorConf.ALIAS:
-            return SFTCollatorConf.from_yaml(yaml_data)
         case _:
             raise ValueError(f"Could not find example collator: {attempted_alias}")
 
@@ -729,6 +729,8 @@ def example_collator_from_conf(conf: ExampleCollatorConf) -> ExampleCollator:
     match conf:
         case BasicCollatorConf():
             return BasicCollator.from_conf(conf)
+        case SFTCollatorConf():
+            return SFTCollator.from_conf(conf)
         case PremiseCollatorConf():
             return PremiseCollator.from_conf(conf)
         case ProofCollatorConf():
@@ -741,8 +743,6 @@ def example_collator_from_conf(conf: ExampleCollatorConf) -> ExampleCollator:
             return NPrevLineCollator.from_conf(conf)
         case NoScriptCollatorConf():
             return NoScriptCollator.from_conf(conf)
-        case SFTCollatorConf():
-            return SFTCollator.from_conf(conf)
 
 
 class LmProcessedDataset(Dataset):
