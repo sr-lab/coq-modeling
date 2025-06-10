@@ -7,15 +7,15 @@ train_type: unsloth-sft
 
 # Training Args
 hard_seq_len: 4096
-per_device_train_batch_size: 64
-learning_rate: 1.0e-3
+per_device_train_batch_size: 32
+learning_rate: 5.0e-5
 num_train_epochs: 1
-max_steps: 8000
-peft_lora_r: 64
+max_steps: 16000
+peft_lora_r: 16
 peft_lora_alpha: 16
 
 gradient_accumulation_steps: 2
-temperature: 1.0
+temperature: 0.7
 num_generations: 16
 
 # Basic
@@ -68,7 +68,7 @@ per_device_eval_batch_size: 8
 num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting this
 
 # Logging Args
-logging_steps: 10
+logging_steps: 20
 save_total_limit: 100
 
 # Train from checkpoint

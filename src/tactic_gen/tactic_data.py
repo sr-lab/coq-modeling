@@ -411,15 +411,17 @@ class ReasoningCollatorConf(ProofPremiseCollatorConf):
         )
 
 
-# TODO: Change name
 @dataclass
 class ReasoningCollator(ProofPremiseCollator):
     def collate(self, tokenizer: PreTrainedTokenizer, example: LmExample) -> str:
         input_str = self.collate_input(tokenizer, example)
-        out_str, _ = allocate_tokens(
-            tokenizer, f"\n{example.next_steps[0]}", self.out_tokens, truncate_front=False
+        cot = allocate_tokens(
+            tokenizer, example.cot, self.out_tokens - 128, truncate_front=False
         )
-        out_str += tokenizer.eos_token
+        target = f"<think>{cot}</think>\n{example.next_steps[0]}"
+        out_str, _ = allocate_tokens(
+            tokenizer, target, self.out_tokens, truncate_front=False
+        )
         return {
             "input": input_str,
             "output": out_str,
@@ -500,7 +502,6 @@ class SFTCollator(ProofPremiseCollator):
         out_str, _ = allocate_tokens(
             tokenizer, target, self.out_tokens, truncate_front=False
         )
-        out_str += tokenizer.eos_token
         return {
             "input": input_str,
             "output": out_str,

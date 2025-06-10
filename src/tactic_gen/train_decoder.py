@@ -410,6 +410,12 @@ def get_trainer(
 
             processed_train_dataset.save_to_disk(TRAIN_DATASET_PATH)
 
+        processed_train_dataset = tokenizer.apply_chat_template(
+            processed_train_dataset["text"],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
 
         trainer = SFTTrainer(
             model=model,
