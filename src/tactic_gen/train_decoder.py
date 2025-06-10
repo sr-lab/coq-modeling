@@ -392,8 +392,7 @@ def get_trainer(
             eval_dataset=val_dataset,
         )
     elif conf["train_type"] == "unsloth-sft":
-        from trl import SFTTrainer
-        from transformers import DataCollatorForCompletionOnlyLM
+        from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 
         if os.path.exists(TRAIN_DATASET_PATH):
             processed_train_dataset = datasets.load_from_disk(TRAIN_DATASET_PATH)
