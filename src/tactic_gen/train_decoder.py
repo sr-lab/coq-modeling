@@ -393,7 +393,7 @@ def get_trainer(
         )
     elif conf["train_type"] == "unsloth-sft":
         from trl import SFTTrainer
-        from transformers import DataCollatorForSeq2Seq
+        from transformers import DataCollatorForCompletionOnlyLM
 
         if os.path.exists(TRAIN_DATASET_PATH):
             processed_train_dataset = datasets.load_from_disk(TRAIN_DATASET_PATH)
@@ -417,11 +417,13 @@ def get_trainer(
             formatting_prompts_func, batched = True,
         )
 
+        response_template = "[TACTIC]"
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             args=training_args,
-            data_collator=DataCollatorForSeq2Seq(
+            data_collator=DataCollatorForCompletionOnlyLM(
+                response_template,
                 tokenizer=train_dataset.tokenizer,
             ),
             train_dataset=processed_train_dataset,
