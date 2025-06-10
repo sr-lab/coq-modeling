@@ -430,6 +430,7 @@ def get_trainer(
             ),
             train_dataset=processed_train_dataset,
         )
+        trainer.args.warmup_ratio = 0
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
     
