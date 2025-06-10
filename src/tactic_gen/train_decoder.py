@@ -411,12 +411,14 @@ def get_trainer(
 
         EOS_TOKEN = tokenizer.eos_token
         def formatting_prompts_func(examples):
-            return { "text" : [example + EOS_TOKEN for example in examples["text"]] }
+            return { "text" : [
+                example.split("[TACTIC]")[0] + "[TACTIC]<|im_end|>" + example.split("[TACTIC]")[1] + EOS_TOKEN for example in examples["text"]] 
+            }
         processed_train_dataset = processed_train_dataset.map(
             formatting_prompts_func, batched = True,
         )
 
-        response_template = "[TACTIC]"
+        response_template = "<|im_end|>"
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
