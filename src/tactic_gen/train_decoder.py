@@ -416,7 +416,8 @@ def get_trainer(
             formatting_prompts_func, batched = True,
         )
 
-        response_template = "[TACTIC]"
+        # Note: not adding the ] avoids issues with the tokenizer
+        response_template = "[TACTIC"
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
