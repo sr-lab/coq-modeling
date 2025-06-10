@@ -410,11 +410,11 @@ def get_trainer(
 
             processed_train_dataset.save_to_disk(TRAIN_DATASET_PATH)
 
-        processed_train_dataset = tokenizer.apply_chat_template(
-            processed_train_dataset["text"],
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=False,
+        EOS_TOKEN = tokenizer.eos_token
+        def formatting_prompts_func(examples):
+            return { "text" : [example + EOS_TOKEN for example in examples["text"]] }
+        processed_train_dataset = processed_train_dataset.map(
+            formatting_prompts_func, batched = True,
         )
 
         trainer = SFTTrainer(
