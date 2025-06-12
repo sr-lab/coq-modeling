@@ -1,0 +1,75 @@
+# File Paths
+data_path: "data/split-dataset"
+repos_path: "data/"
+model_name: "models/proofmindrl-sft-trained/checkpoint-1050"
+output_dir: "models/proofmindrl-sft-trained-grpo"
+train_type: unsloth-grpo
+
+# Training Args
+hard_seq_len: 4096
+per_device_train_batch_size: 64
+learning_rate: 1.0e-4
+num_train_epochs: 1
+max_steps: 30000
+peft_lora_r: 16
+peft_lora_alpha: 16
+
+gradient_accumulation_steps: 8
+temperature: 0.7
+num_generations: 64
+
+# Basic
+# example_collator:
+#   alias: basic
+#   state_tokens: 2640
+#   script_tokens: 1320
+#   out_tokens: 128 
+
+# Proofs And Premises
+example_collator:
+   alias: proof-premise
+   state_tokens: 1024 
+   script_tokens: 512
+   proof_tokens: 1024 
+   premise_tokens: 512 
+   out_tokens: 128 
+
+# Premises only
+# example_collator:
+#   alias: premise
+#   state_tokens: 1024 
+#   script_tokens: 512
+#   premise_tokens: 1536 
+#   out_tokens: 128 
+
+# Proofs only
+# example_collator:
+#  alias: proof 
+#  state_tokens: 1024 
+#  script_tokens: 512
+#  proof_tokens: 1536 
+#  out_tokens: 128 
+
+# Prev lines 
+# example_collator:
+#   alias: n-prev-line 
+#   state_tokens: 1024 
+#   script_tokens: 512
+#   prefix_tokens: 1536
+#   out_tokens: 128 
+#   data_loc: raw-data/coq-dataset
+#   line_dict_loc: data/line-dict.json
+
+# Evaluation Args
+eval_steps: 100 
+save_steps: 50
+eval_accumulation_steps: 1
+per_device_eval_batch_size: 8
+num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting this
+
+# Logging Args
+logging_steps: 5
+save_total_limit: 100
+
+# Train from checkpoint
+# checkpoint_name: models/Qwen3-30B-A3B-Base-bnb-4bit/checkpoint-40000

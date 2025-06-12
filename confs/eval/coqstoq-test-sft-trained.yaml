@@ -7,7 +7,7 @@ sentence_db_loc: raw-data/coqstoq-test/coqstoq-test-sentences.db
 
 search:
   alias: straight_line
-  timeout: 400 
+  timeout: 400
   print_proofs: False
 
 tactic_gen:

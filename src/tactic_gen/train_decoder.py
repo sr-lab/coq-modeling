@@ -303,7 +303,12 @@ def get_trainer(
     print("\n\nBuilding Trainer...")
 
     def check_format(prompts, completions, **kwargs):
-        rewards = [1 if completion.startswith(("\n", " ")) else 0 for completion in completions]
+        check = lambda completion: (
+            completion.strip(tokenizer.eos_token).startswith(("\n", " "))
+            and completion.strip(tokenizer.eos_token).endswith(".")
+            and completion.strip(tokenizer.eos_token).count(".") == 1
+        )
+        rewards = [1 if check(completion) else 0 for completion in completions]
         print("Rewards Format", rewards, len(rewards))
         return rewards
 
