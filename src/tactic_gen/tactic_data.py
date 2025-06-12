@@ -755,6 +755,7 @@ class LmProcessedDataset(Dataset):
         hard_seq_len: int,
         max_n_examples: Optional[int] = None,
         train_type: str = "sft",
+        skip_instances: int = 0,
     ) -> None:
         super(LmProcessedDataset, self).__init__()
         self.edb = ExampleDB.load(data_path)
@@ -773,14 +774,15 @@ class LmProcessedDataset(Dataset):
         self.example_collator = example_collator
         self.max_n_examples = max_n_examples
         self.train_type = train_type
+        self.skip_instances = skip_instances
     
     def __len__(self) -> int:
         if self.max_n_examples is not None:
             return self.max_n_examples
-        return self.edb.size()
+        return self.edb.size() - self.skip_instances
 
     def __getitem__(self, idx: int) -> Any:
-        target_idx = self.edb_map[idx]
+        target_idx = self.edb_map[idx + self.skip_instances]
         # print(self.edb.retrieve(target_idx + 1))
         target_lm_example = LmExample.from_json(
             json.loads(self.edb.retrieve(target_idx + 1))

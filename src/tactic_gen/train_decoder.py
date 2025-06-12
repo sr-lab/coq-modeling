@@ -236,7 +236,8 @@ def get_datasets(
             tokenizer, 
             example_collator, 
             hard_seq_len, 
-            train_type=conf["train_type"]
+            train_type=conf["train_type"],
+            skip_instances=conf["skip_instances"]
         )
         val_dataset = LmProcessedDataset(
             filtered_val_path,
@@ -313,6 +314,7 @@ def get_trainer(
         return rewards
 
     def check_answer(prompts, completions, answer, **kwargs):
+        print("Completions", completions)
         rewards = [
             1 if completion.strip(tokenizer.eos_token).strip() == a.strip() else 0 for completion, a in zip(completions, answer)
         ]
@@ -376,7 +378,8 @@ def get_trainer(
     
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOTrainer
-        print("Training Ar")
+        
+        
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
