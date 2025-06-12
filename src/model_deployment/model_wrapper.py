@@ -218,12 +218,15 @@ class DecoderLocalWrapper:
             training_conf["example_collator"]
         )
         example_collator = example_collator_from_conf(example_collator_conf)
-        tokenizer = get_tokenizer(
-            get_required_arg("model_name", training_conf), add_eos=False
-        )
-        model, _ = get_model(str(checkpoint_loc.resolve()), conf)
+
+        model, tokenizer = get_model(str(checkpoint_loc.resolve()), conf)
         model.to("cuda")
         
+        if tokenizer is None:
+            tokenizer = get_tokenizer(
+                get_required_arg("model_name", training_conf), add_eos=False
+            )
+
         if "max_new_tokens" in conf:
             max_new_tokens = conf["max_new_tokens"]
         else:
