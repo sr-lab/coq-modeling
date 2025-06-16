@@ -18,7 +18,7 @@ from tactic_gen.lm_example import (
 )
 from tactic_gen.train_decoder import (
     get_tokenizer,
-    get_model,
+    process_model,
 )
 from tactic_gen.tactic_data import (
     ExampleCollator,
@@ -219,7 +219,7 @@ class DecoderLocalWrapper:
         )
         example_collator = example_collator_from_conf(example_collator_conf)
 
-        model, tokenizer = get_model(str(checkpoint_loc.resolve()), conf)
+        model, tokenizer = process_model(str(checkpoint_loc.resolve()), conf)
         model.to("cuda")
         
         if tokenizer is None:
