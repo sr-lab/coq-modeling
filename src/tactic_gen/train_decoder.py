@@ -21,6 +21,10 @@ from transformers import (
     PreTrainedModel,
     BitsAndBytesConfig
 )
+
+from vllm import LLM
+
+
 import torch
 from transformers import AutoTokenizer
 from tactic_gen.reward_utils import (
@@ -101,10 +105,7 @@ def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
 def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     tokenizer = None
     if conf["train_type"] == "grpo":
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name,
-            torch_dtype=torch.bfloat16,
-        )
+        model = LLM(model=model_name) 
     elif conf["train_type"] == "sft":
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
