@@ -219,7 +219,7 @@ class DecoderLocalWrapper:
         )
         example_collator = example_collator_from_conf(example_collator_conf)
 
-        model, tokenizer = process_model(str(checkpoint_loc.resolve()), conf)
+        model, tokenizer = process_model(str(checkpoint_loc.resolve()), training_conf)
         model.to("cuda")
         
         if tokenizer is None:
