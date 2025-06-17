@@ -149,9 +149,13 @@ class DecoderLocalWrapper:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
         
-        aux_tactics = self.model.generate(collated_input, SamplingParams(max_tokens=self.max_new_tokens))
+        outputs = self.model.generate(collated_input, SamplingParams(max_tokens=self.max_new_tokens))
+        tactics = []
+        for output in outputs:
+            generated_text = output.outputs[0].text
+            tactics.append(generated_text)
 
-        return ModelResult(aux_tactics, [], [])
+        return ModelResult(tactics, [], [])
 
     @classmethod
     def get_training_conf(cls, checkpoint_loc: Path) -> Any:
@@ -170,7 +174,6 @@ class DecoderLocalWrapper:
         example_collator = example_collator_from_conf(example_collator_conf)
 
         model, tokenizer = get_model(str(checkpoint_loc.resolve()), conf)
-        model.to("cuda")
         
         if tokenizer is None:
             tokenizer = get_tokenizer(
