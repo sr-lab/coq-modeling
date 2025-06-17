@@ -104,7 +104,12 @@ def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
 def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     tokenizer = None
     if conf["train_type"] == "grpo":
-        model = LLM(model=model_name) 
+        tokenizer = get_tokenizer(model_name, add_eos=False)
+        model = LLM(
+            model=model_name, 
+            max_seq_len_to_capture=conf["hard_seq_len"],
+            tokenizer=tokenizer
+        ) 
     elif conf["train_type"] == "sft":
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
