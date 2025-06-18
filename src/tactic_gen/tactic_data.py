@@ -4,6 +4,7 @@ import re
 import os
 import pickle
 import random
+import torch
 import functools
 from typing import Any, Optional
 from pathlib import Path
@@ -807,21 +808,20 @@ class LmProcessedDataset(Dataset):
                 self.tokenizer, target_lm_example
             )
             if isinstance(collated, dict):
-                return self.tokenizer(
+                encoded = self.tokenizer(
                     collated["input"] + collated["output"],
                     max_length=self.hard_seq_len,
                     truncation=True,
                     padding="max_length",
-                    return_tensors="pt"
                 )
             else:
-                return self.tokenizer(
+                encoded = self.tokenizer(
                     collated,
                     max_length=self.hard_seq_len,
                     truncation=True,
                     padding="max_length",
-                    return_tensors="pt"
                 )
+            return {k: torch.tensor(v) for k, v in encoded.items()}
 
 
 @dataclass
