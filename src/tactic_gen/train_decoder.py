@@ -1,6 +1,5 @@
 from typing import Optional, Any
 
-import unsloth
 import os
 import csv
 import sys
@@ -28,8 +27,8 @@ from tactic_gen.reward_utils import (
     get_file_info,
     get_last_point,
     get_proof_goals,
-    calculate_reasoning_format_reward,
-    calculate_unchanged_reward
+    calculate_unchanged_reward,
+    calculate_tactic_similarity_reward_aux
 )
 
 from util.train_utils import (
@@ -101,11 +100,13 @@ def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
 def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     tokenizer = None
     if conf["train_type"] == "grpo":
+        print("Loading [GRPO] model", model_name)
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
         )
     elif conf["train_type"] == "sft":
+        print("Loading [SFT] model", model_name)
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
@@ -120,21 +121,12 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             torch_dtype=torch.bfloat16,
             device_map="auto"
         )
-    elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
-        from unsloth import FastModel
-
-        model, tokenizer = FastModel.from_pretrained(
-            model_name = model_name,
-            max_seq_length = conf["hard_seq_len"],
-            load_in_4bit = True,
-            load_in_8bit = False,
-            full_finetuning = False,
-        )
 
     # https://huggingface.co/docs/bitsandbytes/main/en/fsdp_qlora
     # model = prepare_model_for_kbit_training(model)
     # https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/inference/quantization/quantization.py
     # https://github.com/microsoft/DeepSpeedExamples/tree/master/inference/huggingface/zero_inference
+    print("Model loaded", model)
     return model, tokenizer
 
 
@@ -262,28 +254,8 @@ def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     if conf["train_type"] == "grpo" or conf["train_type"] == "sft":
         raw_model, tokenizer = get_model(model_name, conf)
         lora_config = get_lora_conf(conf)
+        print("Getting PEFT model")
         model = get_peft_model(raw_model, lora_config)
-    elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":        
-        from unsloth import FastLanguageModel
-        raw_model, tokenizer = get_model(model_name, conf)
-        try:
-            model = FastLanguageModel.get_peft_model(
-                raw_model,
-                r = conf["peft_lora_r"],
-                target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
-                                "gate_proj", "up_proj", "down_proj",],
-                lora_alpha = conf["peft_lora_alpha"],
-                lora_dropout = 0,
-                bias = "none",
-                use_gradient_checkpointing = "unsloth",
-                random_state = 3407,
-                max_seq_length = conf["hard_seq_len"],
-                use_rslora = False,
-                loftq_config = None
-            )
-        except RuntimeError as e:
-            print(f"Warning: getting unsloth model: {e}")
-            model = raw_model
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
 
@@ -314,11 +286,11 @@ def get_trainer(
         return rewards
 
     def check_answer(prompts, completions, answer, **kwargs):
-        print("Completions", completions)
+        print("Completions: ", completions)
         rewards = [
-            1 if completion.strip(tokenizer.eos_token).strip() == a.strip() else 0 for completion, a in zip(completions, answer)
+            calculate_tactic_similarity_reward_aux(completion, ans) for completion, ans in zip(completions, answer)
         ]
-        print("Rewards Answer", rewards, len(rewards))
+        print("Rewards: ", rewards, len(rewards))
         return rewards
 
     def check_reward(prompts, completions, answer, **kwargs):

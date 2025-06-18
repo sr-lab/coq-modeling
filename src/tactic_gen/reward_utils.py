@@ -35,6 +35,7 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     print("Rewards reasoning format", rewards, len(rewards))
     return rewards
 
+
 # def calculate_reasoning_length_reward(prompts, completions, answer, **kwargs):
 #     rewards = []
 #     for completion in completions:
@@ -64,12 +65,17 @@ def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
 #     print("Rewards tactic length", rewards, len(rewards))
 #     return rewards
 
+def calculate_tactic_similarity_reward_aux(tactic, ground_truth_tactic):
+    embedding1 = model.encode(tactic, convert_to_tensor=True)
+    embedding2 = model.encode(ground_truth_tactic, convert_to_tensor=True)
+    similarity = util.cos_sim(embedding1, embedding2).item()
+    return similarity
+
 def calculate_unchanged_reward(previous_goals, final_goals):
     if repr(previous_goals) == repr(final_goals):
         return -1
     else:
         return 0
-
 def goals_exist(goals):
     return (
         (goals is not None and goals.goals is not None and goals.goals.goals is not None)
