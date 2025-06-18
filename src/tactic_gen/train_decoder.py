@@ -105,6 +105,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             model_name,
             torch_dtype=torch.bfloat16,
         )
+        tokenizer = get_tokenizer(model_name, add_eos=True)
     elif conf["train_type"] == "sft":
         print("Loading [SFT] model", model_name)
         bnb_config = BitsAndBytesConfig(
