@@ -783,7 +783,6 @@ class LmProcessedDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Any:
         target_idx = self.edb_map[idx + self.skip_instances]
-        # print(self.edb.retrieve(target_idx + 1))
         target_lm_example = LmExample.from_json(
             json.loads(self.edb.retrieve(target_idx + 1))
         )
@@ -804,9 +803,25 @@ class LmProcessedDataset(Dataset):
                 "proofs": target_lm_example.proofs,
             }
         else:
-            return self.example_collator.collate(
+            collated = self.example_collator.collate(
                 self.tokenizer, target_lm_example
             )
+            if isinstance(collated, dict):
+                return self.tokenizer(
+                    collated["input"] + collated["output"],
+                    max_length=self.hard_seq_len,
+                    truncation=True,
+                    padding="max_length",
+                    return_tensors="pt"
+                )
+            else:
+                return self.tokenizer(
+                    collated,
+                    max_length=self.hard_seq_len,
+                    truncation=True,
+                    padding="max_length",
+                    return_tensors="pt"
+                )
 
 
 @dataclass

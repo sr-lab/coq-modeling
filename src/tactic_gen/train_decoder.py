@@ -104,6 +104,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
+            trust_remote_code=True
         )
         tokenizer = get_tokenizer(model_name, add_eos=True)
     elif conf["train_type"] == "sft":
@@ -371,6 +372,7 @@ def get_trainer(
             data_collator=train_dataset.collator,
             train_dataset=train_dataset,
             eval_dataset=val_dataset,
+            #label_names=["labels"]
         )
     elif conf["train_type"] == "unsloth-sft":
         from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
