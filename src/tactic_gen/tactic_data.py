@@ -803,6 +803,14 @@ class LmProcessedDataset(Dataset):
                 "premises": target_lm_example.premises,
                 "proofs": target_lm_example.proofs,
             }
+        elif self.train_type == "sft" or self.train_type == "unsloth-sft":
+            clean_example = self.example_collator.collate(self.tokenizer, target_lm_example)
+            return self.tokenizer(
+                clean_example,
+                max_length=self.hard_seq_len,
+                truncation=True,
+                padding="max_length",
+            )
         else:
             return self.example_collator.collate(
                 self.tokenizer, target_lm_example
