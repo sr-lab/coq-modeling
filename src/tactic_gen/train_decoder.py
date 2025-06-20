@@ -1,6 +1,6 @@
 from typing import Optional, Any
 
-import unsloth
+#import unsloth
 import os
 import csv
 import sys
@@ -104,6 +104,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
+
         )
     elif conf["train_type"] == "sft":
         bnb_config = BitsAndBytesConfig(
@@ -112,14 +113,19 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_use_double_quant=True,
             bnb_4bit_quant_storage=torch.bfloat16,
+            llm_int8_enable_fp32_cpu_offload=True
         )
 
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             quantization_config=bnb_config,
             torch_dtype=torch.bfloat16,
-            device_map="auto"
+            device_map="auto",
+            attn_implementation="flash_attention_2"
         )
+        #model.gradient_checkpointing_enable()
+        #model.gradient_checkpointing_enable()
+        #model.config.use_cache = False
     elif conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":
         from unsloth import FastModel
 
