@@ -66,9 +66,13 @@ def create_unsloth_dataset(
     train_path, val_path = get_train_val_path(data_path)
     data_file_path = train_path if split == "train" else val_path
     
+    print(f"Max examples before: {max_examples}")
     # Get number of examples
     if max_examples is None:
-        max_examples = get_optional_arg("num_eval_examples", conf, None)
+        max_examples = get_optional_arg("max_steps", conf, 0) * get_optional_arg("per_device_train_batch_size", conf, 0) * get_optional_arg("gradient_accumulation_steps", conf, 0)
+    
+    if max_examples == 0:
+        max_examples = None
     
     print(f"Using data file: {data_file_path}")
     print(f"Example collator: {example_collator}")
