@@ -105,12 +105,14 @@ class StraightLineSearcher:
         start_time = time.time()
         attempts: list[str] = []
         cur_time = time.time() - start_time
+        count = 0
         while cur_time < self.timeout:
             maybe_complete, attempt = self.search_step(
                 start_time,
                 self.tactic_clients[len(attempts) % len(self.tactic_clients)],
             )
             if self.print_proofs:
+                print(f" ======= Attempt {count} ======= ")
                 print(attempt)
             attempts.append(attempt)
             if maybe_complete is not None:
@@ -120,8 +122,9 @@ class StraightLineSearcher:
                     self.total_model_time,
                     maybe_complete,
                     attempts,
-                )
+                ) 
             cur_time = time.time() - start_time
+            count += 1
         return StraightLineFailure(cur_time, self.total_model_time, attempts)
 
     def search_step(
