@@ -803,7 +803,7 @@ class LmProcessedDataset(Dataset):
                 "premises": target_lm_example.premises,
                 "proofs": target_lm_example.proofs,
             }
-        elif self.train_type == "sft" or self.train_type == "unsloth-sft":
+        elif self.train_type == "sft":
             clean_example = self.example_collator.collate(self.tokenizer, target_lm_example)
             return self.tokenizer(
                 clean_example,
@@ -811,6 +811,18 @@ class LmProcessedDataset(Dataset):
                 truncation=True,
                 padding="max_length",
             )
+        elif self.train_type == "unsloth-sft":
+            # For Unsloth SFT, return raw text that SFTTrainer expects
+            clean_example = self.example_collator.collate(self.tokenizer, target_lm_example)
+            # If the collator returns a dict with input/output, combine them
+            if isinstance(clean_example, dict) and "input" in clean_example and "output" in clean_example:
+                return clean_example["input"] + "\n" + clean_example["output"]
+            # If it returns a string, use it directly
+            elif isinstance(clean_example, str):
+                return clean_example
+            else:
+                # Fallback: try to convert to string
+                return str(clean_example)
         else:
             return self.example_collator.collate(
                 self.tokenizer, target_lm_example
