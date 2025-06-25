@@ -15,7 +15,7 @@ DESIDER_REASONING_LENGTH = 1024
 MAX_REASONING_LENGTH = 4096
 DESIDER_TACTIC_LENGTH = 128
 
-model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
+embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
 
 def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     rewards = []
@@ -97,14 +97,14 @@ def reward_goals(ground_truth_goals, final_goals):
         goals_reward_ty = 0
         goals_reward_hyps = 0
         for i in range(len(ground_truth_goals.goals.goals)):
-            embedding1_ty = model.encode(ground_truth_goals.goals.goals[i].ty, convert_to_tensor=True)
-            embedding2_ty = model.encode(final_goals.goals.goals[i].ty, convert_to_tensor=True)
+            embedding1_ty = embedding_model.encode(ground_truth_goals.goals.goals[i].ty, convert_to_tensor=True)
+            embedding2_ty = embedding_model.encode(final_goals.goals.goals[i].ty, convert_to_tensor=True)
             similarity_ty = util.cos_sim(embedding1_ty, embedding2_ty).item()
 
             hyps = list(map(lambda hyp: repr(hyp), ground_truth_goals.goals.goals[i].hyps))
-            embedding1_hyps = model.encode("".join(hyps), convert_to_tensor=True)
+            embedding1_hyps = embedding_model.encode("".join(hyps), convert_to_tensor=True)
             hyps = list(map(lambda hyp: repr(hyp), final_goals.goals.goals[i].hyps))
-            embedding2_hyps = model.encode("".join(hyps), convert_to_tensor=True)
+            embedding2_hyps = embedding_model.encode("".join(hyps), convert_to_tensor=True)
             similarity_hyps = util.cos_sim(embedding1_hyps, embedding2_hyps).item()
 
             goals_reward_ty += similarity_ty
