@@ -185,9 +185,9 @@ def get_training_args(
         return SFTConfig(
             logging_dir="train_logs",
             num_train_epochs = get_optional_arg("num_train_epochs", conf, 1),
-            learning_rate = get_required_arg("learning_rate", conf),
-            max_seq_length = get_required_arg("hard_seq_len", conf),
-            per_device_train_batch_size = get_required_arg("per_device_train_batch_size", conf),
+            learning_rate = get_required_arg("learning_rate", conf, 1.0e-4),
+            max_seq_length = get_required_arg("hard_seq_len", conf, 4096),
+            per_device_train_batch_size = get_required_arg("per_device_train_batch_size", conf, 16),
             gradient_accumulation_steps = get_optional_arg("gradient_accumulation_steps", conf, 2),
             save_strategy = "steps",
             save_steps = get_required_arg("save_steps", conf),

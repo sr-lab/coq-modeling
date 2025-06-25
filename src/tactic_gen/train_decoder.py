@@ -29,9 +29,9 @@ from tactic_gen.reward_utils import (
     get_last_point,
     get_proof_goals,
     calculate_reasoning_format_reward,
-    calculate_unchanged_reward
+    calculate_unchanged_reward,
+    embedding_model
 )
-
 from util.train_utils import (
     get_optional_arg,
     get_required_arg,
@@ -56,6 +56,7 @@ from tactic_gen.tactic_data import (
 )
 from tactic_gen.tactic_data import ReasoningCollator
 import datasets
+from sentence_transformers import util
 
 from torch.utils.data import Subset
 import logging
@@ -321,10 +322,26 @@ def get_trainer(
 
     def check_answer(prompts, completions, answer, **kwargs):
         print("Completions", completions)
-        rewards = [
-            1 if completion.strip(tokenizer.eos_token).strip() == a.strip() else 0 for completion, a in zip(completions, answer)
-        ]
-        print("Rewards Answer", rewards, len(rewards))
+        
+        # Clean the completions and answers
+        cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
+        cleaned_answers = [a.strip() for a in answer]
+        
+        # Calculate cosine similarities
+        rewards = []
+        for completion, ans in zip(cleaned_completions, cleaned_answers):
+            try:
+                # Encode both completion and answer
+                embedding1 = embedding_model.encode(completion, convert_to_tensor=True)
+                embedding2 = embedding_model.encode(ans, convert_to_tensor=True)
+                # Calculate cosine similarity
+                similarity = util.cos_sim(embedding1, embedding2).item()
+                rewards.append(similarity)
+            except Exception as e:
+                print(f"Error calculating similarity: {e}")
+                rewards.append(0.0)
+        
+        print("Rewards Answer (cosine similarity)", rewards, len(rewards))
         return rewards
 
     def check_reward(prompts, completions, answer, **kwargs):

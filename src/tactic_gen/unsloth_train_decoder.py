@@ -24,14 +24,6 @@ from transformers import (
 )
 import torch
 from transformers import AutoTokenizer
-from tactic_gen.reward_utils import (
-    reward_goals,
-    get_file_info,
-    get_last_point,
-    get_proof_goals,
-    calculate_reasoning_format_reward,
-    calculate_unchanged_reward
-)
 
 from util.train_utils import (
     get_optional_arg,
@@ -116,7 +108,8 @@ def process_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedMode
                 random_state = 3407,
                 max_seq_length = conf["hard_seq_len"],
                 use_rslora = False,
-                loftq_config = None
+                loftq_config = None,
+                attention_implementation = "flash_attention_2"
             )
         except RuntimeError as e:
             print(f"Warning: getting unsloth model: {e}")
