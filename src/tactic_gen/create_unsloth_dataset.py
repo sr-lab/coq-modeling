@@ -94,17 +94,50 @@ def create_unsloth_dataset(
     processed_examples = []
     
     print("Processing examples...")
+    empty_examples = 0
+    short_examples = 0
+    long_examples = 0
+    
     for i in tqdm(range(len(dataset))):
         example = dataset[i]
         
         # For unsloth-sft, LmProcessedDataset returns raw text directly
         if isinstance(example, str):
+            # Validate the example
+            if len(example.strip()) == 0:
+                print(f"Warning: Empty example at index {i}")
+                empty_examples += 1
+                continue
+            
+            # Check for very short examples (potential issues)
+            if len(example) < 50:
+                print(f"Warning: Very short example at index {i} (length: {len(example)})")
+                short_examples += 1
+            
+            # Check for very long examples (potential memory issues)
+            if len(example) > 10000:
+                print(f"Warning: Very long example at index {i} (length: {len(example)})")
+                long_examples += 1
+            
+            # Check for problematic patterns
+            if "[TACTIC]" not in example:
+                print(f"Warning: Missing [TACTIC] marker at index {i}")
+            
             processed_examples.append({
                 "text": example
             })
         else:
             print(f"Warning: Unexpected example format at index {i}: {type(example)}")
             continue
+    
+    print(f"\nDataset validation summary:")
+    print(f"Total examples processed: {len(processed_examples)}")
+    print(f"Empty examples skipped: {empty_examples}")
+    print(f"Short examples (<50 chars): {short_examples}")
+    print(f"Long examples (>10000 chars): {long_examples}")
+    
+    if len(processed_examples) == 0:
+        raise ValueError("No valid examples found in dataset!")
     
     # Create HuggingFace dataset
     hf_dataset = datasets.Dataset.from_list(processed_examples)
@@ -126,7 +159,115 @@ def create_unsloth_dataset(
         print(f"Text length: {len(sample['text'])} characters")
         print(f"First 200 chars: {sample['text'][:200]}...")
         print(f"Last 100 chars: ...{sample['text'][-100:]}")
+        
+        # Validate tokenization
+        try:
+            tokens = tokenizer.encode(sample['text'])
+            print(f"Token count: {len(tokens)}")
+            if len(tokens) > hard_seq_len:
+                print(f"Warning: Sample exceeds hard_seq_len ({len(tokens)} > {hard_seq_len})")
+        except Exception as e:
+            print(f"Warning: Tokenization error: {e}")
+    
     return hf_dataset
+
+
+def validate_unsloth_dataset(dataset_path: str, tokenizer, max_samples: int = 320000) -> None:
+    """
+    Validate a created Unsloth dataset for potential issues that could cause training problems.
+    
+    Args:
+        dataset_path: Path to the saved dataset
+        tokenizer: Tokenizer to use for validation
+        max_samples: Maximum number of samples to check
+    """
+    print(f"\n=== Validating Unsloth Dataset: {dataset_path} ===")
+    
+    try:
+        dataset = datasets.load_from_disk(dataset_path)
+    except Exception as e:
+        print(f"Error loading dataset: {e}")
+        return
+    
+    print(f"Dataset size: {len(dataset)}")
+    
+    if len(dataset) == 0:
+        print("ERROR: Dataset is empty!")
+        return
+    
+    # Check a sample of examples
+    num_to_check = min(max_samples, len(dataset))
+    empty_examples = 0
+    short_examples = 0
+    long_examples = 0
+    missing_tactic = 0
+    tokenization_errors = 0
+    very_long_tokens = 0
+    
+    print(f"Checking {num_to_check} examples...")
+    
+    for i in range(num_to_check):
+        example = dataset[i]
+        text = example.get('text', '')
+        
+        # Check for empty examples
+        if not text or len(text.strip()) == 0:
+            empty_examples += 1
+            print(f"  Empty example at index {i}")
+            continue
+        
+        # Check for very short examples
+        if len(text) < 50:
+            short_examples += 1
+            print(f"  Very short example at index {i} (length: {len(text)})")
+        
+        # Check for very long examples
+        if len(text) > 10000:
+            long_examples += 1
+            print(f"  Very long example at index {i} (length: {len(text)})")
+        
+        # Check for missing [TACTIC] marker
+        if "[TACTIC]" not in text:
+            missing_tactic += 1
+            print(f"  Missing [TACTIC] marker at index {i}")
+        
+        # Check tokenization
+        try:
+            tokens = tokenizer.encode(text)
+            if len(tokens) > 4096:  # Very long token sequences
+                very_long_tokens += 1
+                print(f"  Very long token sequence at index {i} ({len(tokens)} tokens)")
+        except Exception as e:
+            tokenization_errors += 1
+            print(f"  Tokenization error at index {i}: {e}")
+    
+    print(f"\n=== Validation Summary ===")
+    print(f"Total examples checked: {num_to_check}")
+    print(f"Empty examples: {empty_examples}")
+    print(f"Short examples (<50 chars): {short_examples}")
+    print(f"Long examples (>10000 chars): {long_examples}")
+    print(f"Missing [TACTIC] marker: {missing_tactic}")
+    print(f"Tokenization errors: {tokenization_errors}")
+    print(f"Very long token sequences (>4096): {very_long_tokens}")
+    
+    # Overall assessment
+    total_issues = empty_examples + short_examples + long_examples + missing_tactic + tokenization_errors + very_long_tokens
+    if total_issues == 0:
+        print("✅ Dataset appears to be valid")
+    elif total_issues < num_to_check * 0.1:  # Less than 10% issues
+        print("⚠️  Dataset has some issues but may still be usable")
+    else:
+        print("❌ Dataset has significant issues that may cause training problems")
+    
+    # Check for potential causes of NaN loss
+    if empty_examples > 0:
+        print("  - Empty examples can cause division by zero in loss computation")
+    if missing_tactic > 0:
+        print("  - Missing [TACTIC] markers can cause incorrect loss computation")
+    if tokenization_errors > 0:
+        print("  - Tokenization errors can cause training failures")
+    if very_long_tokens > 0:
+        print("  - Very long sequences can cause memory issues and gradient problems")
 
 
 def print_unsloth_examples(dataset_path: str, num_examples: int = 5) -> None:
@@ -140,6 +281,10 @@ def print_unsloth_examples(dataset_path: str, num_examples: int = 5) -> None:
     print(f"Loaded dataset from: {dataset_path}")
     print(f"Dataset size: {len(dataset)}")
     print(f"Printing {min(num_examples, len(dataset))} example(s):\n")
+    for i in range(len(dataset)):
+        example = dataset[i]
+        if len(example['text']) == 0:
+            print("Empty example found")
     for i in range(min(num_examples, len(dataset))):
         example = dataset[i]
         print(f"Example {i+1}:")
@@ -277,6 +422,11 @@ def main():
         "--output-path-append",
         help="Path to save the updated dataset when appending (default: overwrites existing)"
     )
+    parser.add_argument(
+        "--validate",
+        action="store_true",
+        help="Validate the created dataset for potential issues"
+    )
     
     args = parser.parse_args()
     
@@ -285,6 +435,10 @@ def main():
     
     # Load configuration
     conf = load_config(args.yaml_config)
+    
+    # Get tokenizer for validation
+    model_name = get_required_arg("model_name", conf)
+    tokenizer = get_tokenizer(model_name)
     
     # Create or append dataset
     if args.append_to:
@@ -295,15 +449,26 @@ def main():
             split=args.split,
             max_examples=args.max_examples
         )
+        if args.validate:
+            validate_unsloth_dataset(args.append_to, tokenizer)
     else:
-        create_unsloth_dataset(
+        dataset = create_unsloth_dataset(
             conf=conf,
             output_path=args.output_path,
             split=args.split,
             max_examples=args.max_examples
         )
+        
+        if args.validate:
+            dataset_path = Path(args.output_path) / f"{args.split}_dataset"
+            validate_unsloth_dataset(str(dataset_path), tokenizer)
 
 
 if __name__ == "__main__":
     #main() 
-    print_unsloth_examples("train_dataset", num_examples=1)
+    model_name = "unsloth/codellama-7b-bnb-4bit"
+    tokenizer = get_tokenizer(model_name)
+    print("tokenizer: ", tokenizer)
+    print("tokenizer.eos_token: ", tokenizer.eos_token)
+    validate_unsloth_dataset("train_dataset", tokenizer)
+    #print_unsloth_examples("train_dataset", num_examples=1)

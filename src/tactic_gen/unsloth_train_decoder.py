@@ -1,8 +1,9 @@
 import unsloth
+import os
+os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
 
 from typing import Optional, Any
 
-import os
 import csv
 import sys
 import argparse
@@ -56,6 +57,7 @@ from torch.utils.data import Subset
 import logging
 
 from tactic_gen.create_unsloth_dataset import create_unsloth_dataset
+from tactic_gen.debug_callbacks import create_debug_callbacks
 
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
@@ -266,6 +268,11 @@ def get_sft_trainer(
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
+        
+        # Create debug callbacks
+        debug_config = conf.get("debug_callbacks", {})
+        callbacks = create_debug_callbacks(debug_config)
+        
         trainer = SFTTrainer(
             model=model,
             tokenizer=tokenizer,  # Use the tokenizer from the model, not from dataset
@@ -275,6 +282,7 @@ def get_sft_trainer(
                 tokenizer=tokenizer,  # Use the tokenizer from the model
             ),
             train_dataset=processed_train_dataset,
+            callbacks=callbacks,  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
     else:
