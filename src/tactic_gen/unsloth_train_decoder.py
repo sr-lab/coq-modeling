@@ -273,14 +273,15 @@ def get_sft_trainer(
         # Note: not adding the ] avoids issues with the tokenizer
         # The tokenizer adds ] and the end of line characters together
         # and so the token is different than the one in the response template
+        # THIS IS SO DUMB
         response_template = "[TACTIC"
         trainer = SFTTrainer(
             model=model,
-            tokenizer=tokenizer,  # Use the tokenizer from the model, not from dataset
+            tokenizer=train_dataset.tokenizer,  
             args=training_args,
             data_collator=DataCollatorForCompletionOnlyLM(
                 response_template,
-                tokenizer=tokenizer,  # Use the tokenizer from the model
+                tokenizer=train_dataset.tokenizer,  
             ),
             train_dataset=processed_train_dataset,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
