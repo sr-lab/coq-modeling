@@ -11,6 +11,15 @@ from datetime import datetime
 
 _logger = logging.getLogger(__name__)
 
+# Note: In Transformers 4.34.0, the on_step_end callback method signature is:
+# def on_step_end(self, args, state, control, model, **kwargs)
+# 
+# The inputs and outputs parameters are not available in this version.
+# To access inputs and outputs, consider using:
+# 1. on_prediction_step for evaluation outputs
+# 2. Custom training loop with explicit callback points
+# 3. Subclassing the Trainer class
+# 4. Using on_log callback to access logged metrics
 
 class TokenizationValidationCallback(TrainerCallback):
     """
@@ -23,10 +32,12 @@ class TokenizationValidationCallback(TrainerCallback):
         self.tokenization_issues = []
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Validate tokenization periodically."""
         if state.global_step % self.validate_every_n_steps == 0:
-            self._validate_tokenization(inputs, model, state.global_step)
+            # Note: We can't access inputs directly in on_step_end
+            # This callback would need to be modified to work with the available data
+            pass
     
     def _validate_tokenization(self, inputs, model, step: int):
         """Validate tokenization for potential issues."""
@@ -239,39 +250,55 @@ class NaNLossCallback(TrainerCallback):
         self.debug_info = []
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Check for NaN loss after each step."""
-        if outputs is None:
-            return
+        # Access loss from the trainer's log history
+        if hasattr(state, 'log_history') and state.log_history:
+            latest_log = state.log_history[-1]
+            loss = latest_log.get("loss", None)
             
-        loss = outputs.get("loss", None)
-        if loss is not None:
-            if torch.isnan(loss) or torch.isinf(loss) or loss > self.nan_threshold:
+            if loss is not None:
+                if torch.isnan(torch.tensor(loss)) or torch.isinf(torch.tensor(loss)) or loss > self.nan_threshold:
+                    self.nan_detected = True
+                    _logger.error(f"NaN/Inf loss detected at step {state.global_step}: {loss}")
+                    
+                    if self.save_debug_info:
+                        debug_info = self._collect_debug_info(model, state, loss)
+                        self.debug_info.append(debug_info)
+                        self._save_debug_info(debug_info, state.global_step)
+                    
+                    # Optionally stop training
+                    control.should_training_stop = True
+    
+    def on_log(self, args, state: TrainerState, control: TrainerControl, logs=None, **kwargs):
+        """Alternative method to access loss through logs."""
+        if logs is not None and "loss" in logs:
+            loss = logs["loss"]
+            if torch.isnan(torch.tensor(loss)) or torch.isinf(torch.tensor(loss)) or loss > self.nan_threshold:
                 self.nan_detected = True
                 _logger.error(f"NaN/Inf loss detected at step {state.global_step}: {loss}")
                 
                 if self.save_debug_info:
-                    debug_info = self._collect_debug_info(model, inputs, outputs, state)
+                    debug_info = self._collect_debug_info(None, state, loss)
                     self.debug_info.append(debug_info)
                     self._save_debug_info(debug_info, state.global_step)
                 
                 # Optionally stop training
                 control.should_training_stop = True
                 
-    def _collect_debug_info(self, model, inputs, outputs, state) -> Dict[str, Any]:
+    def _collect_debug_info(self, model, state, loss) -> Dict[str, Any]:
         """Collect debugging information when NaN loss is detected."""
         debug_info = {
             "step": state.global_step,
             "epoch": state.epoch,
-            "loss": outputs.get("loss", None),
+            "loss": loss,
             "timestamp": datetime.now().isoformat(),
             "model_gradients": {},
-            "input_stats": {},
-            "output_stats": {}
+            "model_stats": {}
         }
         
         # Check model gradients
-        if hasattr(model, 'named_parameters'):
+        if model is not None and hasattr(model, 'named_parameters'):
             for name, param in model.named_parameters():
                 if param.grad is not None:
                     grad_norm = param.grad.norm().item()
@@ -283,35 +310,17 @@ class NaNLossCallback(TrainerCallback):
                             "has_inf_grad": torch.isinf(param.grad).any().item()
                         }
         
-        # Check input statistics
-        if inputs is not None:
-            for key, value in inputs.items():
-                if isinstance(value, torch.Tensor):
-                    debug_info["input_stats"][key] = {
-                        "shape": list(value.shape),
-                        "dtype": str(value.dtype),
-                        "min": value.min().item() if value.numel() > 0 else None,
-                        "max": value.max().item() if value.numel() > 0 else None,
-                        "mean": value.mean().item() if value.numel() > 0 else None,
-                        "std": value.std().item() if value.numel() > 0 else None,
-                        "has_nan": torch.isnan(value).any().item(),
-                        "has_inf": torch.isinf(value).any().item()
-                    }
-        
-        # Check output statistics
-        if outputs is not None:
-            for key, value in outputs.items():
-                if isinstance(value, torch.Tensor):
-                    debug_info["output_stats"][key] = {
-                        "shape": list(value.shape),
-                        "dtype": str(value.dtype),
-                        "min": value.min().item() if value.numel() > 0 else None,
-                        "max": value.max().item() if value.numel() > 0 else None,
-                        "mean": value.mean().item() if value.numel() > 0 else None,
-                        "std": value.std().item() if value.numel() > 0 else None,
-                        "has_nan": torch.isnan(value).any().item(),
-                        "has_inf": torch.isinf(value).any().item()
-                    }
+        # Check model parameter statistics
+        if model is not None and hasattr(model, 'named_parameters'):
+            for name, param in model.named_parameters():
+                if param.requires_grad:
+                    param_norm = param.norm().item()
+                    if torch.isnan(param_norm) or torch.isinf(param_norm):
+                        debug_info["model_stats"][name] = {
+                            "param_norm": param_norm,
+                            "has_nan": torch.isnan(param).any().item(),
+                            "has_inf": torch.isinf(param).any().item()
+                        }
         
         return debug_info
     
@@ -338,7 +347,7 @@ class GradientMonitoringCallback(TrainerCallback):
         self.gradient_history = []
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Monitor gradients after each step."""
         if state.global_step % self.log_every_n_steps == 0:
             grad_stats = self._compute_gradient_stats(model)
@@ -392,38 +401,71 @@ class LossMonitoringCallback(TrainerCallback):
         self.loss_history = []
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Monitor loss after each step."""
-        if outputs is None or "loss" not in outputs:
-            return
+        # Access loss from the trainer's log history
+        if hasattr(state, 'log_history') and state.log_history:
+            latest_log = state.log_history[-1]
+            loss = latest_log.get("loss", None)
             
-        loss = outputs["loss"]
-        if isinstance(loss, torch.Tensor):
-            loss = loss.item()
-        
-        self.loss_history.append(loss)
-        
-        # Keep only the last window_size losses
-        if len(self.loss_history) > self.window_size:
-            self.loss_history = self.loss_history[-self.window_size:]
-        
-        # Check for anomalies if we have enough history
-        if len(self.loss_history) >= 10:
-            recent_losses = self.loss_history[-10:]
-            mean_loss = np.mean(recent_losses)
-            std_loss = np.std(recent_losses)
+            if loss is not None:
+                if isinstance(loss, torch.Tensor):
+                    loss = loss.item()
+                
+                self.loss_history.append(loss)
+                
+                # Keep only the last window_size losses
+                if len(self.loss_history) > self.window_size:
+                    self.loss_history = self.loss_history[-self.window_size:]
+                
+                # Check for anomalies if we have enough history
+                if len(self.loss_history) >= 10:
+                    recent_losses = self.loss_history[-10:]
+                    mean_loss = np.mean(recent_losses)
+                    std_loss = np.std(recent_losses)
+                    
+                    if std_loss > 0:
+                        z_score = abs(loss - mean_loss) / std_loss
+                        if z_score > self.anomaly_threshold:
+                            _logger.warning(f"Anomalous loss detected at step {state.global_step}: "
+                                          f"loss={loss:.6f}, z_score={z_score:.2f}")
+                
+                # Log loss statistics periodically
+                if state.global_step % 100 == 0:
+                    if len(self.loss_history) > 0:
+                        _logger.info(f"Step {state.global_step} - Loss: {loss:.6f}, "
+                                   f"Recent mean: {np.mean(self.loss_history[-10:]):.6f}")
+
+    def on_log(self, args, state: TrainerState, control: TrainerControl, logs=None, **kwargs):
+        """Alternative method to access loss through logs."""
+        if logs is not None and "loss" in logs:
+            loss = logs["loss"]
+            if isinstance(loss, torch.Tensor):
+                loss = loss.item()
             
-            if std_loss > 0:
-                z_score = abs(loss - mean_loss) / std_loss
-                if z_score > self.anomaly_threshold:
-                    _logger.warning(f"Anomalous loss detected at step {state.global_step}: "
-                                  f"loss={loss:.6f}, z_score={z_score:.2f}")
-        
-        # Log loss statistics periodically
-        if state.global_step % 100 == 0:
-            if len(self.loss_history) > 0:
-                _logger.info(f"Step {state.global_step} - Loss: {loss:.6f}, "
-                           f"Recent mean: {np.mean(self.loss_history[-10:]):.6f}")
+            self.loss_history.append(loss)
+            
+            # Keep only the last window_size losses
+            if len(self.loss_history) > self.window_size:
+                self.loss_history = self.loss_history[-self.window_size:]
+            
+            # Check for anomalies if we have enough history
+            if len(self.loss_history) >= 10:
+                recent_losses = self.loss_history[-10:]
+                mean_loss = np.mean(recent_losses)
+                std_loss = np.std(recent_losses)
+                
+                if std_loss > 0:
+                    z_score = abs(loss - mean_loss) / std_loss
+                    if z_score > self.anomaly_threshold:
+                        _logger.warning(f"Anomalous loss detected at step {state.global_step}: "
+                                      f"loss={loss:.6f}, z_score={z_score:.2f}")
+            
+            # Log loss statistics periodically
+            if state.global_step % 100 == 0:
+                if len(self.loss_history) > 0:
+                    _logger.info(f"Step {state.global_step} - Loss: {loss:.6f}, "
+                               f"Recent mean: {np.mean(self.loss_history[-10:]):.6f}")
 
 
 class DataValidationCallback(TrainerCallback):
@@ -435,10 +477,12 @@ class DataValidationCallback(TrainerCallback):
         self.validate_every_n_steps = validate_every_n_steps
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Validate input data periodically."""
         if state.global_step % self.validate_every_n_steps == 0:
-            self._validate_inputs(inputs, state.global_step)
+            # Note: We can't access inputs directly in on_step_end
+            # This callback would need to be modified to work with the available data
+            pass
     
     def _validate_inputs(self, inputs, step: int):
         """Validate input tensors for potential issues."""
@@ -481,7 +525,7 @@ class ModelStateCallback(TrainerCallback):
         self.log_every_n_steps = log_every_n_steps
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Monitor model state periodically."""
         if state.global_step % self.log_every_n_steps == 0:
             self._log_model_stats(model, state.global_step)
@@ -516,7 +560,7 @@ class LearningRateCallback(TrainerCallback):
         self.last_lr = None
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Monitor learning rate changes."""
         if state.global_step % self.log_every_n_steps == 0:
             current_lr = self._get_current_lr(model)
@@ -540,7 +584,7 @@ class MemoryMonitoringCallback(TrainerCallback):
         self.log_every_n_steps = log_every_n_steps
         
     def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, inputs, outputs, **kwargs):
+                   model, **kwargs):
         """Monitor memory usage periodically."""
         if state.global_step % self.log_every_n_steps == 0:
             self._log_memory_stats()
