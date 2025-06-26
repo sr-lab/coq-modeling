@@ -57,7 +57,7 @@ from torch.utils.data import Subset
 import logging
 
 from tactic_gen.create_unsloth_dataset import create_unsloth_dataset
-from tactic_gen.debug_callbacks import create_debug_callbacks
+from tactic_gen.debug_callbacks import create_debug_callbacks, SimpleCallback
 
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
@@ -271,8 +271,10 @@ def get_sft_trainer(
         
         # Create debug callbacks
         debug_config = conf.get("debug_callbacks", {})
-        callbacks = create_debug_callbacks(debug_config, tokenizer)
-        
+        #callbacks = create_debug_callbacks(debug_config, tokenizer)
+        #callbacks = []
+        print("Tokenizer: ", tokenizer)
+        print("Tokenizer.eos_token: ", tokenizer.eos_token)
         trainer = SFTTrainer(
             model=model,
             tokenizer=tokenizer,  # Use the tokenizer from the model, not from dataset
@@ -282,7 +284,7 @@ def get_sft_trainer(
                 tokenizer=tokenizer,  # Use the tokenizer from the model
             ),
             train_dataset=processed_train_dataset,
-            callbacks=callbacks,  # Add debug callbacks
+            callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
     else:

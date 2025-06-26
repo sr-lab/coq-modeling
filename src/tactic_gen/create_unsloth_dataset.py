@@ -12,6 +12,7 @@ from tqdm import tqdm
 import datasets
 import json
 import logging
+from unsloth import FastModel
 
 # Add the src directory to the path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -172,7 +173,7 @@ def create_unsloth_dataset(
     return hf_dataset
 
 
-def validate_unsloth_dataset(dataset_path: str, tokenizer, max_samples: int = 320000) -> None:
+def validate_unsloth_dataset(dataset_path: str, tokenizer, max_samples: int = 10000) -> None:
     """
     Validate a created Unsloth dataset for potential issues that could cause training problems.
     
@@ -468,7 +469,13 @@ if __name__ == "__main__":
     #main() 
     model_name = "unsloth/codellama-7b-bnb-4bit"
     tokenizer = get_tokenizer(model_name)
-    print("tokenizer: ", tokenizer)
-    print("tokenizer.eos_token: ", tokenizer.eos_token)
+    _, tokenizer = FastModel.from_pretrained(
+        model_name = model_name,
+        max_seq_length = 4096,
+        load_in_4bit = True,
+        load_in_8bit = False,
+        full_finetuning = False,
+    )
+    
     validate_unsloth_dataset("train_dataset", tokenizer)
     #print_unsloth_examples("train_dataset", num_examples=1)

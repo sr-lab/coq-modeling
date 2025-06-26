@@ -20,6 +20,24 @@ _logger = logging.getLogger(__name__)
 # 2. Custom training loop with explicit callback points
 # 3. Subclassing the Trainer class
 # 4. Using on_log callback to access logged metrics
+
+
+class SimpleCallback(TrainerCallback):
+    def __init__(self, callback_type: str, tokenizer):
+        self.callback_type = callback_type
+        self.tokenizer = tokenizer
+    
+    def on_step_begin(self, args, state, control, **kwargs):
+        print(f"on_step_begin: {self.callback_type}")
+        print(kwargs)
+        if 'train_dataloader' in kwargs:
+            train_dataloader = kwargs['train_dataloader']
+            for batch in train_dataloader:
+                print(batch)
+                break
+        else:
+            print("No train_dataloader found")
+
 class TokenizerInspectionCallback(TrainerCallback):
     def __init__(self, tokenizer, check_frequency=1, max_samples_to_check=3):
         """
