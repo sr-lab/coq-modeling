@@ -61,9 +61,10 @@ _logger = logging.getLogger(RANGO_LOGGER)
 valid_files = {}
 
 # Unsloth imports
-import unsloth
 from unsloth import FastModel
 from unsloth import FastLanguageModel
+
+from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 
 
 def init_valid_files(repo_path: Path) -> set[Path]:
@@ -241,39 +242,28 @@ def get_sft_trainer(
     model_name = get_required_arg("model_name", conf)
     model, tokenizer = process_model(model_name, conf)
     print("\n\nConstructing Dataset...")
-    train_dataset, val_dataset = get_datasets(conf, tokenizer)
-
-    print("\n\nBuilding Trainer...")
-
-    if conf["train_type"] == "unsloth-sft":
-        from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
-
-        # Check if dataset already exists
+    if "dataset_path" not in conf:
         train_dataset_path = Path("unsloth_dataset/train_dataset")
-        if train_dataset_path.exists():
-            print(f"Loading existing dataset from {train_dataset_path}")
-            processed_train_dataset = datasets.load_from_disk(str(train_dataset_path))
-        else:
-            print("Creating new Unsloth dataset...")
-            # Create the dataset using the dedicated function
-            create_unsloth_dataset(
+        create_unsloth_dataset(
                 conf=conf,
                 output_path="unsloth_dataset",
                 split="train",
                 max_examples=conf.get("max_steps", None) * conf.get("per_device_train_batch_size", 1)
             )
-            processed_train_dataset = datasets.load_from_disk(str(train_dataset_path))
+        train_dataset = datasets.load_from_disk(str(train_dataset_path))
+    else:
+        train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
-        # Add EOS tokens to the dataset
-        EOS_TOKEN = tokenizer.eos_token
-        def formatting_prompts_func(examples):
-            return {"text": [example + EOS_TOKEN for example in examples["text"]]}
-        
-        processed_train_dataset = processed_train_dataset.map(
-            formatting_prompts_func, batched=True,
-        )
+    EOS_TOKEN = tokenizer.eos_token
+    def formatting_prompts_func(examples):
+        return {"text": [example + EOS_TOKEN for example in examples["text"]]}
+    
+    processed_train_dataset = train_dataset.map(
+        formatting_prompts_func, batched=True,
+    )
 
-        # Use the same response template as defined in tactic_data.py
+    print("\n\nBuilding Trainer...")
+    if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
         trainer = SFTTrainer(
             model=model,
@@ -296,7 +286,6 @@ def arg_parser():
     parser = argparse.ArgumentParser(
         description="Train code llama by providing a .yaml config file. As an example, see src/tactic_gen/confs/basic_train.yaml"
     )
-    #print(f"<ARGV>{sys.argv}</ARGV")
     parser.add_argument(
         "--local_rank",
         type=int,
