@@ -269,13 +269,11 @@ def get_sft_trainer(
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
         
-        # Create debug callbacks
-        debug_config = conf.get("debug_callbacks", {})
-        #callbacks = create_debug_callbacks(debug_config, tokenizer)
-        #callbacks = []
-        print("Tokenizer: ", tokenizer)
-        print("Tokenizer.eos_token: ", tokenizer.eos_token)
-        print("Tokenizer.pad_token: ", tokenizer.pad_token)
+        
+        # Note: not adding the ] avoids issues with the tokenizer
+        # The tokenizer adds ] and the end of line characters together
+        # and so the token is different than the one in the response template
+        response_template = "[TACTIC"
         trainer = SFTTrainer(
             model=model,
             tokenizer=tokenizer,  # Use the tokenizer from the model, not from dataset
