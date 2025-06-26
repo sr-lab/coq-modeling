@@ -504,10 +504,10 @@ def create_debug_callbacks(config: Dict[str, Any], tokenizer) -> List[TrainerCal
     callbacks = []
     
     # Always include NaN loss detection
-    callbacks.append(NaNLossCallback(
-        nan_threshold=config.get("nan_threshold", 1e6),
-        save_debug_info=config.get("save_debug_info", True)
-    ))
+    # callbacks.append(NaNLossCallback(
+    #     nan_threshold=config.get("nan_threshold", 1e6),
+    #     save_debug_info=config.get("save_debug_info", True)
+    # ))
     
     # Add gradient monitoring
     if config.get("monitor_gradients", True):
