@@ -20,222 +20,112 @@ _logger = logging.getLogger(__name__)
 # 2. Custom training loop with explicit callback points
 # 3. Subclassing the Trainer class
 # 4. Using on_log callback to access logged metrics
-
-class TokenizationValidationCallback(TrainerCallback):
-    """
-    Callback to validate tokenization and detect potential issues.
-    """
-    
-    def __init__(self, validate_every_n_steps: int = 1000, max_seq_length: Optional[int] = None):
-        self.validate_every_n_steps = validate_every_n_steps
-        self.max_seq_length = max_seq_length
-        self.tokenization_issues = []
+class TokenizerInspectionCallback(TrainerCallback):
+    def __init__(self, tokenizer, check_frequency=1, max_samples_to_check=3):
+        """
+        Callback to inspect tokenizer behavior during training
         
-    def on_step_end(self, args, state: TrainerState, control: TrainerControl, 
-                   model, **kwargs):
-        """Validate tokenization periodically."""
-        if state.global_step % self.validate_every_n_steps == 0:
-            # Note: We can't access inputs directly in on_step_end
-            # This callback would need to be modified to work with the available data
-            pass
+        Args:
+            tokenizer: The tokenizer being used
+            check_frequency: Check every N steps (default: 1 for immediate debugging)
+            max_samples_to_check: Number of samples to inspect per batch
+        """
+        self.tokenizer = tokenizer
+        self.check_frequency = check_frequency
+        self.max_samples_to_check = max_samples_to_check
+        self.step_count = 0
     
-    def _validate_tokenization(self, inputs, model, step: int):
-        """Validate tokenization for potential issues."""
-        if inputs is None:
+    def on_step_begin(self, args, state, control, **kwargs):
+        self.step_count += 1
+        
+        # Only check at specified frequency
+        if self.step_count % self.check_frequency != 0:
             return
             
-        issues = []
-        
-        # Check for input_ids
-        if "input_ids" in inputs:
-            input_ids = inputs["input_ids"]
-            if isinstance(input_ids, torch.Tensor):
-                issues.extend(self._check_input_ids(input_ids, step))
-        
-        # Check for attention_mask
-        if "attention_mask" in inputs:
-            attention_mask = inputs["attention_mask"]
-            if isinstance(attention_mask, torch.Tensor):
-                issues.extend(self._check_attention_mask(attention_mask, step))
-        
-        # Check for labels if present
-        if "labels" in inputs:
-            labels = inputs["labels"]
-            if isinstance(labels, torch.Tensor):
-                issues.extend(self._check_labels(labels, step))
-        
-        # Check for tokenization consistency
-        if "input_ids" in inputs and "attention_mask" in inputs:
-            input_ids = inputs["input_ids"]
-            attention_mask = inputs["attention_mask"]
-            if isinstance(input_ids, torch.Tensor) and isinstance(attention_mask, torch.Tensor):
-                issues.extend(self._check_tokenization_consistency(input_ids, attention_mask, step))
-        
-        # Check for special tokens
-        if "input_ids" in inputs and hasattr(model, 'config'):
-            input_ids = inputs["input_ids"]
-            if isinstance(input_ids, torch.Tensor):
-                issues.extend(self._check_special_tokens(input_ids, model.config, step))
-        
-        if issues:
-            self.tokenization_issues.extend(issues)
-            _logger.warning(f"Tokenization issues at step {step}: {issues}")
+        # Get the current batch from kwargs
+        if 'inputs' in kwargs:
+            inputs = kwargs['inputs']
+            self._inspect_batch(inputs, state.global_step)
     
-    def _check_input_ids(self, input_ids: torch.Tensor, step: int) -> List[str]:
-        """Check input_ids for potential issues."""
-        issues = []
+    def _inspect_batch(self, inputs, step):
+        print(f"\n=== TOKENIZER INSPECTION - Step {step} ===")
         
-        # Check for empty sequences
-        if input_ids.numel() == 0:
-            issues.append("Empty input_ids tensor")
-            return issues
-        
-        # Check for sequences that are too long
-        if self.max_seq_length and input_ids.size(-1) > self.max_seq_length:
-            issues.append(f"Sequence length {input_ids.size(-1)} exceeds max_seq_length {self.max_seq_length}")
-        
-        # Check for all-zero sequences (might indicate padding issues)
-        if torch.all(input_ids == 0):
-            issues.append("All-zero input_ids (possible padding issue)")
-        
-        # Check for sequences that are all the same token
-        if input_ids.size(-1) > 1:
-            unique_tokens = torch.unique(input_ids)
-            if len(unique_tokens) == 1:
-                issues.append(f"All tokens are the same: {unique_tokens[0].item()}")
-        
-        # Check for extreme token IDs
-        min_token = input_ids.min().item()
-        max_token = input_ids.max().item()
-        if min_token < 0:
-            issues.append(f"Negative token ID found: {min_token}")
-        if max_token > 100000:  # Arbitrary large number
-            issues.append(f"Unusually large token ID found: {max_token}")
-        
-        # Check for NaN/Inf in token IDs
-        if torch.isnan(input_ids).any():
-            issues.append("NaN values found in input_ids")
-        if torch.isinf(input_ids).any():
-            issues.append("Inf values found in input_ids")
-        
-        return issues
-    
-    def _check_attention_mask(self, attention_mask: torch.Tensor, step: int) -> List[str]:
-        """Check attention_mask for potential issues."""
-        issues = []
-        
-        # Check for empty tensor
-        if attention_mask.numel() == 0:
-            issues.append("Empty attention_mask tensor")
-            return issues
-        
-        # Check for invalid values (should only be 0 or 1)
-        unique_values = torch.unique(attention_mask)
-        if not torch.all(torch.isin(unique_values, torch.tensor([0, 1]))):
-            issues.append(f"Invalid attention_mask values: {unique_values.tolist()}")
-        
-        # Check for all-zero attention masks
-        if torch.all(attention_mask == 0):
-            issues.append("All-zero attention_mask (no tokens attended to)")
-        
-        # Check for all-one attention masks (might be suspicious for long sequences)
-        if torch.all(attention_mask == 1) and attention_mask.size(-1) > 1000:
-            issues.append("All-one attention_mask for long sequence (possible issue)")
-        
-        # Check for NaN/Inf
-        if torch.isnan(attention_mask).any():
-            issues.append("NaN values found in attention_mask")
-        if torch.isinf(attention_mask).any():
-            issues.append("Inf values found in attention_mask")
-        
-        return issues
-    
-    def _check_labels(self, labels: torch.Tensor, step: int) -> List[str]:
-        """Check labels for potential issues."""
-        issues = []
-        
-        # Check for empty tensor
-        if labels.numel() == 0:
-            issues.append("Empty labels tensor")
-            return issues
-        
-        # Check for all -100 labels (no loss computed)
-        if torch.all(labels == -100):
-            issues.append("All labels are -100 (no loss will be computed)")
-        
-        # Check for extreme label values
-        min_label = labels.min().item()
-        max_label = labels.max().item()
-        if min_label < -100:
-            issues.append(f"Label value below -100: {min_label}")
-        if max_label > 100000:  # Arbitrary large number
-            issues.append(f"Unusually large label value: {max_label}")
-        
-        # Check for NaN/Inf
-        if torch.isnan(labels).any():
-            issues.append("NaN values found in labels")
-        if torch.isinf(labels).any():
-            issues.append("Inf values found in labels")
-        
-        return issues
-    
-    def _check_tokenization_consistency(self, input_ids: torch.Tensor, attention_mask: torch.Tensor, step: int) -> List[str]:
-        """Check consistency between input_ids and attention_mask."""
-        issues = []
-        
-        # Check if shapes match
-        if input_ids.shape != attention_mask.shape:
-            issues.append(f"Shape mismatch: input_ids {input_ids.shape} vs attention_mask {attention_mask.shape}")
-            return issues
-        
-        # Check if attention_mask is 1 where input_ids is not padding (assuming 0 is padding)
-        # This is a common pattern, but might vary by tokenizer
-        if input_ids.size(-1) > 0:
-            # Check if there are any non-zero input_ids with zero attention_mask
-            non_zero_inputs = input_ids != 0
-            zero_attention = attention_mask == 0
-            inconsistent = torch.logical_and(non_zero_inputs, zero_attention)
+        # Check input_ids
+        if 'input_ids' in inputs:
+            input_ids = inputs['input_ids']
+            print(f"Input IDs shape: {input_ids.shape}")
+            print(f"Input IDs dtype: {input_ids.dtype}")
+            print(f"Input IDs device: {input_ids.device}")
             
-            if torch.any(inconsistent):
-                num_inconsistent = inconsistent.sum().item()
-                issues.append(f"{num_inconsistent} tokens have non-zero input_ids but zero attention_mask")
+            # Check for problematic values
+            unique_ids = torch.unique(input_ids)
+            print(f"Unique token count: {len(unique_ids)}")
+            print(f"Min token ID: {input_ids.min().item()}")
+            print(f"Max token ID: {input_ids.max().item()}")
+            
+            # Check for out-of-vocabulary tokens
+            vocab_size = self.tokenizer.vocab_size
+            oov_mask = input_ids >= vocab_size
+            if oov_mask.any():
+                print(f"⚠️  WARNING: Found {oov_mask.sum().item()} out-of-vocabulary tokens!")
+                print(f"   Vocab size: {vocab_size}, Max token ID: {input_ids.max().item()}")
+            
+            # Check for special tokens
+            pad_token_id = getattr(self.tokenizer, 'pad_token_id', None)
+            eos_token_id = getattr(self.tokenizer, 'eos_token_id', None)
+            bos_token_id = getattr(self.tokenizer, 'bos_token_id', None)
+            unk_token_id = getattr(self.tokenizer, 'unk_token_id', None)
+            
+            print(f"Special tokens - PAD: {pad_token_id}, EOS: {eos_token_id}, BOS: {bos_token_id}, UNK: {unk_token_id}")
+            
+            # Inspect first few samples
+            batch_size = min(self.max_samples_to_check, input_ids.shape[0])
+            for i in range(batch_size):
+                sample_ids = input_ids[i]
+                
+                # Decode the sample
+                try:
+                    decoded_text = self.tokenizer.decode(sample_ids, skip_special_tokens=False)
+                    print(f"\nSample {i}:")
+                    print(f"  Length: {len(sample_ids)}")
+                    print(f"  Decoded: {repr(decoded_text[:100])}{'...' if len(decoded_text) > 100 else ''}")
+                    
+                    # Check for None or empty decoded text
+                    if not decoded_text or decoded_text.strip() == "":
+                        print(f"  ⚠️  WARNING: Sample {i} decoded to empty text!")
+                        
+                except Exception as e:
+                    print(f"  ❌ ERROR decoding sample {i}: {e}")
         
-        return issues
-    
-    def _check_special_tokens(self, input_ids: torch.Tensor, config, step: int) -> List[str]:
-        """Check for special token usage."""
-        issues = []
+        # Check labels if present
+        if 'labels' in inputs:
+            labels = inputs['labels']
+            print(f"\nLabels shape: {labels.shape}")
+            print(f"Labels dtype: {labels.dtype}")
+            
+            # Check for -100 (ignore index)
+            ignore_mask = labels == -100
+            print(f"Ignored tokens (labels == -100): {ignore_mask.sum().item()}/{labels.numel()}")
+            
+            # Check for valid label range
+            valid_labels = labels[labels != -100]
+            if len(valid_labels) > 0:
+                print(f"Valid labels range: {valid_labels.min().item()} to {valid_labels.max().item()}")
+                
+                # Check if labels are in valid range
+                if valid_labels.max().item() >= vocab_size:
+                    print(f"⚠️  WARNING: Labels contain out-of-vocabulary indices!")
+            else:
+                print(f"⚠️  WARNING: All labels are -100 (ignored)!")
         
-        # Check for BOS/EOS tokens if config has them
-        if hasattr(config, 'bos_token_id') and config.bos_token_id is not None:
-            bos_count = (input_ids == config.bos_token_id).sum().item()
-            if bos_count == 0:
-                issues.append("No BOS token found in sequences")
-            elif bos_count > input_ids.size(0):
-                issues.append(f"Multiple BOS tokens found: {bos_count} for {input_ids.size(0)} sequences")
+        # Check attention mask
+        if 'attention_mask' in inputs:
+            attention_mask = inputs['attention_mask']
+            print(f"\nAttention mask shape: {attention_mask.shape}")
+            active_tokens = attention_mask.sum(dim=1)
+            print(f"Active tokens per sample: min={active_tokens.min().item()}, max={active_tokens.max().item()}, mean={active_tokens.float().mean().item():.1f}")
         
-        if hasattr(config, 'eos_token_id') and config.eos_token_id is not None:
-            eos_count = (input_ids == config.eos_token_id).sum().item()
-            if eos_count == 0:
-                issues.append("No EOS token found in sequences")
-            elif eos_count > input_ids.size(0):
-                issues.append(f"Multiple EOS tokens found: {eos_count} for {input_ids.size(0)} sequences")
-        
-        # Check for pad token if config has it
-        if hasattr(config, 'pad_token_id') and config.pad_token_id is not None:
-            pad_count = (input_ids == config.pad_token_id).sum().item()
-            if pad_count == 0 and input_ids.size(-1) > 1:
-                issues.append("No PAD tokens found despite variable sequence lengths")
-        
-        return issues
-    
-    def get_tokenization_summary(self) -> Dict[str, Any]:
-        """Get a summary of all tokenization issues found."""
-        return {
-            "total_issues": len(self.tokenization_issues),
-            "issues": self.tokenization_issues,
-            "unique_issue_types": list(set(self.tokenization_issues))
-        }
+        print("=" * 50)
 
 
 class NaNLossCallback(TrainerCallback):
@@ -601,7 +491,7 @@ class MemoryMonitoringCallback(TrainerCallback):
                         f"Max allocated: {max_allocated:.2f}GB")
 
 
-def create_debug_callbacks(config: Dict[str, Any]) -> List[TrainerCallback]:
+def create_debug_callbacks(config: Dict[str, Any], tokenizer) -> List[TrainerCallback]:
     """
     Create a list of debugging callbacks based on configuration.
     
@@ -659,9 +549,10 @@ def create_debug_callbacks(config: Dict[str, Any]) -> List[TrainerCallback]:
     
     # Add tokenization validation
     if config.get("validate_tokenization", True):
-        callbacks.append(TokenizationValidationCallback(
-            validate_every_n_steps=config.get("tokenization_validation_steps", 1000),
-            max_seq_length=config.get("max_seq_length", None)
+        callbacks.append(TokenizerInspectionCallback(
+            tokenizer=tokenizer,
+            check_frequency=config.get("tokenization_check_frequency", 1),
+            max_samples_to_check=config.get("max_samples_to_check", 3)
         ))
     
     return callbacks 

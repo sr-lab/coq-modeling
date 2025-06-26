@@ -271,7 +271,7 @@ def get_sft_trainer(
         
         # Create debug callbacks
         debug_config = conf.get("debug_callbacks", {})
-        callbacks = create_debug_callbacks(debug_config)
+        callbacks = create_debug_callbacks(debug_config, tokenizer)
         
         trainer = SFTTrainer(
             model=model,
