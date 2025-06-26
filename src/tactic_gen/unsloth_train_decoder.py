@@ -239,11 +239,13 @@ def get_sft_trainer(
         checkpoint_name: Optional[str]
     ) -> "SFTTrainer":
     
+    
     print("\n\nBuilding Training Config...")
     training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     model, tokenizer = process_model(model_name, conf)
+    train_dataset, val_dataset = get_datasets(conf, tokenizer)
     print("\n\nConstructing Dataset...")
     if "dataset_path" not in conf:
         train_dataset_path = Path("unsloth_dataset/train_dataset")
@@ -253,15 +255,15 @@ def get_sft_trainer(
                 split="train",
                 max_examples=conf.get("max_steps", None) * conf.get("per_device_train_batch_size", 1)
             )
-        train_dataset = datasets.load_from_disk(str(train_dataset_path))
+        processed_train_dataset = datasets.load_from_disk(str(train_dataset_path))
     else:
-        train_dataset = datasets.load_from_disk(conf["dataset_path"])
+        processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
         return {"text": [example + EOS_TOKEN for example in examples["text"]]}
     
-    processed_train_dataset = train_dataset.map(
+    processed_train_dataset = processed_train_dataset.map(
         formatting_prompts_func, batched=True,
     )
 
