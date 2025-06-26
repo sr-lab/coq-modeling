@@ -33,7 +33,12 @@ class SimpleCallback(TrainerCallback):
         if 'train_dataloader' in kwargs:
             train_dataloader = kwargs['train_dataloader']
             for batch in train_dataloader:
-                print(batch)
+                inputs = batch['input_ids']
+                labels = batch['labels']
+                tokenized_inputs = self.tokenizer.decode(inputs, skip_special_tokens=False)
+                print("tokenized_inputs: ", tokenized_inputs)
+                print("inputs: ", inputs)
+                print("labels: ", labels)
                 break
         else:
             print("No train_dataloader found")
