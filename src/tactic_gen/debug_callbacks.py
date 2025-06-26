@@ -36,6 +36,8 @@ class TokenizerInspectionCallback(TrainerCallback):
         self.step_count = 0
     
     def on_step_begin(self, args, state, control, **kwargs):
+        print("on_step_begin")
+        print(kwargs)
         self.step_count += 1
         
         # Only check at specified frequency
