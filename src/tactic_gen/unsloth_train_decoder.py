@@ -275,6 +275,7 @@ def get_sft_trainer(
         #callbacks = []
         print("Tokenizer: ", tokenizer)
         print("Tokenizer.eos_token: ", tokenizer.eos_token)
+        print("Tokenizer.pad_token: ", tokenizer.pad_token)
         trainer = SFTTrainer(
             model=model,
             tokenizer=tokenizer,  # Use the tokenizer from the model, not from dataset
