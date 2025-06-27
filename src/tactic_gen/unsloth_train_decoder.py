@@ -259,29 +259,27 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
-    EOS_TOKEN = tokenizer.eos_token
-    def formatting_prompts_func(examples):
-        return {"text" : [example.replace("\n[TACTIC]\n", "<unk>\n[TACTIC]\n<unk>") + EOS_TOKEN for example in examples["text"]] }
-    processed_train_dataset = processed_train_dataset.map(
-        formatting_prompts_func, batched = True,
-    )
+    # EOS_TOKEN = tokenizer.eos_token
+    # def formatting_prompts_func(examples):
+    #     return {"text" : [example + EOS_TOKEN for example in examples["text"]] }
+    # processed_train_dataset = processed_train_dataset.map(
+    #     formatting_prompts_func, batched = True,
+    # )
 
-    
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
-        response_template = "<unk>\n[TACTIC]\n<unk>"
         
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,  
             args=training_args,
-            data_collator=DataCollatorForCompletionOnlyLM(
-                response_template,
-                tokenizer=train_dataset.tokenizer,
-                mlm=False
-            ),
-            train_dataset=processed_train_dataset,
+            # data_collator=DataCollatorForCompletionOnlyLM(
+            #     response_template,
+            #     tokenizer=train_dataset.tokenizer,
+            #     mlm=False
+            # ),
+            # train_dataset=processed_train_dataset,
             #formatting_func=None,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
