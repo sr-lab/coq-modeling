@@ -276,9 +276,23 @@ def get_sft_trainer(
             text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
             texts.append(text)
         return { "text" : texts, }
-    processed_train_dataset = processed_train_dataset.map(
-        formatting_prompts_func, batched = True,
-    )
+    # processed_train_dataset = processed_train_dataset.map(
+    #     formatting_prompts_func, batched = True,
+    # )
+
+    def custom_data_collator(examples): 
+        prompts = examples["prompt"] # These contain the proofs, premises, proofstate
+        completions = examples["completion"] # These contain the ground truth tactic
+        
+        #This function should return a batch with input_ids and labels (the ground truth tactic is the label)
+        #The input_ids should be the tokenized prompt
+        input_ids = tokenizer.encode(prompts, add_special_tokens=False)
+        labels = tokenizer.encode(completions, add_special_tokens=False)
+        return {
+            "input_ids": input_ids,
+            #"attention_mask": attention_mask,
+            "labels": labels,
+        }
 
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
@@ -287,7 +301,8 @@ def get_sft_trainer(
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
-            dataset_text_field = "text",
+            #dataset_text_field = "text",
+            data_collator=custom_data_collator,
             args=training_args,
             train_dataset=processed_train_dataset,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
