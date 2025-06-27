@@ -280,7 +280,7 @@ def get_sft_trainer(
         #response_template = "[TACTIC"
 
         def formatting_func(examples):
-
+            print(examples)
             return [f"{example['prompt']}\n[TACTIC]\n{example['completion']}" for example in examples]
         
         trainer = SFTTrainer(
