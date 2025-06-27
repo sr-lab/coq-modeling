@@ -279,10 +279,12 @@ def get_sft_trainer(
         # and so the token is different than the one in the response template
         # THIS IS SO DUMB
         #response_template = "[TACTIC"
-        response_template = "[TACTIC]"
-        def formatting_func(example):
-            print(example)
-            return [f"{example['prompt']}\n[TACTIC]\n{example['completion']}"]
+        response_template = "[TACTIC"
+        def formatting_func(examples):
+            formatted_examples = []
+            for i in range(len(examples['prompt'])):
+                formatted_examples.append(f"{examples['prompt'][i]}\n[TACTIC]\n{examples['completion'][i]}")    
+            return formatted_examples
         
         trainer = SFTTrainer(
             model=model,
