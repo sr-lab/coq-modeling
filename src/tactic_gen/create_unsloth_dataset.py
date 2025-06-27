@@ -123,9 +123,11 @@ def create_unsloth_dataset(
             # Check for problematic patterns
             if "[TACTIC]" not in example:
                 print(f"Warning: Missing [TACTIC] marker at index {i}")
-            
+
+            prompt, completion = example.split("\n[TACTIC]\n")
             processed_examples.append({
-                "text": example
+                "prompt": prompt,
+                "completion": completion
             })
         else:
             print(f"Warning: Unexpected example format at index {i}: {type(example)}")
@@ -466,16 +468,16 @@ def main():
 
 
 if __name__ == "__main__":
-    #main() 
-    model_name = "unsloth/codellama-7b-bnb-4bit"
-    tokenizer = get_tokenizer(model_name)
-    _, tokenizer = FastModel.from_pretrained(
-        model_name = model_name,
-        max_seq_length = 4096,
-        load_in_4bit = True,
-        load_in_8bit = False,
-        full_finetuning = False,
-    )
+    main() 
+    # model_name = "unsloth/codellama-7b-bnb-4bit"
+    # tokenizer = get_tokenizer(model_name)
+    # _, tokenizer = FastModel.from_pretrained(
+    #     model_name = model_name,
+    #     max_seq_length = 4096,
+    #     load_in_4bit = True,
+    #     load_in_8bit = False,
+    #     full_finetuning = False,
+    # )
     
-    validate_unsloth_dataset("train_dataset", tokenizer)
+    # validate_unsloth_dataset("train_dataset", tokenizer)
     #print_unsloth_examples("train_dataset", num_examples=1)
