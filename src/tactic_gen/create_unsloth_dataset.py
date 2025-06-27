@@ -155,22 +155,22 @@ def create_unsloth_dataset(
     print(f"Dataset saved to: {dataset_path}")
     print(f"Dataset info: {hf_dataset.info}")
     
-    # Print a sample example
-    if len(hf_dataset) > 0:
-        print("\nSample example:")
-        sample = hf_dataset[0]
-        print(f"Text length: {len(sample['text'])} characters")
-        print(f"First 200 chars: {sample['text'][:200]}...")
-        print(f"Last 100 chars: ...{sample['text'][-100:]}")
+    #Print a sample example
+    # if len(hf_dataset) > 0:
+    #     print("\nSample example:")
+    #     sample = hf_dataset[0]
+    #     print(f"Text length: {len(sample['text'])} characters")
+    #     print(f"First 200 chars: {sample['text'][:200]}...")
+    #     print(f"Last 100 chars: ...{sample['text'][-100:]}")
         
-        # Validate tokenization
-        try:
-            tokens = tokenizer.encode(sample['text'])
-            print(f"Token count: {len(tokens)}")
-            if len(tokens) > hard_seq_len:
-                print(f"Warning: Sample exceeds hard_seq_len ({len(tokens)} > {hard_seq_len})")
-        except Exception as e:
-            print(f"Warning: Tokenization error: {e}")
+    #     # Validate tokenization
+    #     try:
+    #         tokens = tokenizer.encode(sample['text'])
+    #         print(f"Token count: {len(tokens)}")
+    #         if len(tokens) > hard_seq_len:
+    #             print(f"Warning: Sample exceeds hard_seq_len ({len(tokens)} > {hard_seq_len})")
+    #     except Exception as e:
+    #         print(f"Warning: Tokenization error: {e}")
     
     return hf_dataset
 
