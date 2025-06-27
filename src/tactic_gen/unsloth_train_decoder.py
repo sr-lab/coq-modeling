@@ -279,7 +279,7 @@ def get_sft_trainer(
             #     tokenizer=train_dataset.tokenizer,
             #     mlm=False
             # ),
-            # train_dataset=processed_train_dataset,
+            train_dataset=processed_train_dataset,
             #formatting_func=None,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
