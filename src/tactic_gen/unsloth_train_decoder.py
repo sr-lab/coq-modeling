@@ -269,6 +269,39 @@ def get_sft_trainer(
         formatting_prompts_func, batched=True,
     )
 
+    def debug_tokenization(example):
+        prompt = example['prompt']
+        completion = example['completion']
+        full_text = f"{prompt}\n[TACTIC]\n{completion}"
+        
+        # Tokenize the full text
+        full_tokens = tokenizer(full_text, add_special_tokens=False)
+        
+        # Tokenize just the response template
+        response_template = "[TACTIC]\n"
+        template_tokens = tokenizer(response_template, add_special_tokens=False)
+        
+        print(f"Full text: {repr(full_text)}")
+        print(f"Full tokens: {full_tokens['input_ids']}")
+        print(f"Template: {repr(response_template)}")
+        print(f"Template tokens: {template_tokens['input_ids']}")
+        
+        # Check if template tokens appear in full tokens
+        template_ids = template_tokens['input_ids']
+        full_ids = full_tokens['input_ids']
+        
+        for i in range(len(full_ids) - len(template_ids) + 1):
+            if full_ids[i:i+len(template_ids)] == template_ids:
+                print(f"Found template at position {i}")
+                break
+        else:
+            print("Template not found in tokenized sequence!")
+        
+        return full_text
+
+    # Test with one example
+    debug_tokenization(processed_train_dataset[0])
+
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
