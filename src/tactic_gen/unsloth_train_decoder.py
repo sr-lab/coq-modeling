@@ -270,6 +270,7 @@ def get_sft_trainer(
     )
 
     def formatting_func(examples):
+        print(examples)
         formatted_examples = []
         for i in range(len(examples['prompt'])):
             formatted_examples.append(f"{examples['prompt'][i]}\n[TACTIC]\n{examples['completion'][i]}")    
