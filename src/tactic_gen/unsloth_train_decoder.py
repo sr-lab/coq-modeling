@@ -281,8 +281,30 @@ def get_sft_trainer(
         #response_template = "[TACTIC"
 
         def formatting_func(example):
-            print(example)
-            return [f"{example['prompt']}\n[TACTIC]\n{example['completion']}"]
+            """
+            This function is used to format the examples for the SFTTrainer.
+            It is used to create the labels for the training data.
+            Using a datacollator was giving trouble because it was not able to identify 
+            the split point between the prompt and the completion.
+            """
+            prompt = example['prompt']
+            completion = example['completion']
+            
+            # Format the full text
+            full_text = f"{prompt}\n[TACTIC]\n{completion}"
+            
+            # Tokenize prompt and full text to get the split point
+            prompt_tokens = train_dataset.tokenizer(f"{prompt}\n[TACTIC]\n", add_special_tokens=False)
+            full_tokens = train_dataset.tokenizer(full_text, add_special_tokens=False)
+            
+            # Create labels with -100 for prompt tokens (ignored in loss)
+            labels = full_tokens['input_ids'].copy()
+            labels[:len(prompt_tokens['input_ids'])] = [-100] * len(prompt_tokens['input_ids'])
+            
+            return {
+                'input_ids': full_tokens['input_ids'],
+                'labels': labels
+            }
         
         trainer = SFTTrainer(
             model=model,
