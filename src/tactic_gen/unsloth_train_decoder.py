@@ -265,6 +265,20 @@ def get_sft_trainer(
     # processed_train_dataset = processed_train_dataset.map(
     #     formatting_prompts_func, batched = True,
     # )
+    prompt_format = """{prompt}\n[TACTIC]\n{completion}"""
+    EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
+    def formatting_prompts_func(examples):
+        prompts = examples["prompt"]
+        completions = examples["completion"]
+        texts = []
+        for prompt, completion in zip(prompts, completions):
+            # Must add EOS_TOKEN, otherwise your generation will go on forever!
+            text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
+            texts.append(text)
+        return { "text" : texts, }
+    processed_train_dataset = processed_train_dataset.map(
+        formatting_prompts_func, batched = True,
+    )
 
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
@@ -272,15 +286,10 @@ def get_sft_trainer(
         
         trainer = SFTTrainer(
             model=model,
-            tokenizer=train_dataset.tokenizer,  
+            tokenizer=train_dataset.tokenizer,
+            text_column="text",
             args=training_args,
-            # data_collator=DataCollatorForCompletionOnlyLM(
-            #     response_template,
-            #     tokenizer=train_dataset.tokenizer,
-            #     mlm=False
-            # ),
             train_dataset=processed_train_dataset,
-            #formatting_func=None,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
