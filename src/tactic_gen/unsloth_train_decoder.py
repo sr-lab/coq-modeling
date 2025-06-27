@@ -276,16 +276,21 @@ def get_sft_trainer(
         # The tokenizer adds ] and the end of line characters together
         # and so the token is different than the one in the response template
         # THIS IS SO DUMB
-        response_template = "[TACTIC"
+        #response_template = "[TACTIC"
+
+        def formatting_func(example):
+            return f"{example['prompt']}\n[TACTIC]\n{example['completion']}"
+        
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,  
             args=training_args,
-            data_collator=DataCollatorForCompletionOnlyLM(
-                response_template,
-                tokenizer=train_dataset.tokenizer,  
-            ),
+            #data_collator=DataCollatorForCompletionOnlyLM(
+            #    response_template,
+            #    tokenizer=train_dataset.tokenizer,  
+            #),
             train_dataset=processed_train_dataset,
+            formatting_func=formatting_func,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
