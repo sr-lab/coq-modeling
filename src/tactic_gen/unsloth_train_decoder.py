@@ -272,13 +272,13 @@ def get_sft_trainer(
     def debug_tokenization(example):
         prompt = example['prompt']
         completion = example['completion']
-        full_text = f"{prompt}\n[TACTIC]\n{completion}"
+        full_text = f"{prompt}\n### Answer:\n{completion}"
         
         # Tokenize the full text
         full_tokens = tokenizer(full_text, add_special_tokens=False)
         
         # Tokenize just the response template
-        response_template = "[TACTIC]\n"
+        response_template = "### Answer:\n"
         template_tokens = tokenizer(response_template, add_special_tokens=False)
         
         print(f"Full text: {repr(full_text)}")
