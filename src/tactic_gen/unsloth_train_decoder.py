@@ -272,9 +272,9 @@ def get_sft_trainer(
     def formatting_func(examples):
         print(examples)
         formatted_examples = []
-        for i in range(len(examples['prompt'])):
+        for i in range(len(examples)):
             formatted_examples.append(f"{examples['prompt'][i]}\n[TACTIC]\n{examples['completion'][i]}")    
-        return formatted_examples
+        return [examples["prompt"] + "[TACTIC]\n" + examples["completion"]]
 
     
     def custom_data_collator(examples):
