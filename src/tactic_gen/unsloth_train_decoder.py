@@ -287,7 +287,7 @@ def get_sft_trainer(
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
-            text_column="text",
+            dataset_text_field = "text",
             args=training_args,
             train_dataset=processed_train_dataset,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
