@@ -266,57 +266,54 @@ def get_sft_trainer(
         formatting_prompts_func, batched = True,
     )
 
-    def debug_delimiter_matching(example, response_template):
-        full_text = example['text']
+    def debug_delimiter_matching_precise(example, response_template):
+        prompt = example['prompt']
+        completion = example['completion']
+        full_text = f"{prompt}\n[TACTIC]\n{completion}"
         
         print(f"Response template: {repr(response_template)}")
-        print(f"Full text: {repr(full_text)}")
         
         # Tokenize both
         full_tokens = tokenizer(full_text, add_special_tokens=False)
         template_tokens = tokenizer(response_template, add_special_tokens=False)
         
-        print(f"Full tokens: {full_tokens['input_ids']}")
-        print(f"Template tokens: {template_tokens['input_ids']}")
-        
-        # Decode to see what each token represents
-        print(f"Full text decoded tokens: {[tokenizer.decode([t]) for t in full_tokens['input_ids']]}")
-        print(f"Template decoded tokens: {[tokenizer.decode([t]) for t in template_tokens['input_ids']]}")
-        
-        # Try to find the template in the full text
         full_ids = full_tokens['input_ids']
         template_ids = template_tokens['input_ids']
         
-        found = False
+        print(f"Full token IDs: {full_ids}")
+        print(f"Template token IDs: {template_ids}")
+        print(f"Template length: {len(template_ids)}")
+        
+        # More detailed search
+        print(f"\nSearching for template sequence {template_ids} in full sequence...")
+        
         for i in range(len(full_ids) - len(template_ids) + 1):
-            if full_ids[i:i+len(template_ids)] == template_ids:
-                print(f"✓ Template found at position {i}")
-                found = True
+            window = full_ids[i:i+len(template_ids)]
+            match = window == template_ids
+            print(f"Position {i}: {window} == {template_ids} ? {match}")
+            
+            if match:
+                print(f"✓ FOUND MATCH at position {i}!")
+                return True
+        
+        print("✗ No match found")
+        
+        # Let's also check if there are any differences in the individual tokens
+        print(f"\nDetailed token comparison:")
+        print(f"Template decoded: {[repr(tokenizer.decode([t])) for t in template_ids]}")
+        
+        # Find where [TACTIC] appears in the full text
+        for i in range(len(full_ids) - 5):  # Look for the '[' token
+            if tokenizer.decode([full_ids[i]]) == '[':
+                context = full_ids[i:i+len(template_ids)]
+                print(f"Found '[' at position {i}, context: {context}")
+                print(f"Context decoded: {[repr(tokenizer.decode([t])) for t in context]}")
                 break
         
-        if not found:
-            print("✗ Template not found!")
-            # Try various alternatives
-            alternatives = [
-                "\n[TACTIC]\n",
-                "[TACTIC]\n",
-                "\n[TACTIC]",
-                "[TACTIC]"
-                "[TACTIC"
-            ]
-            
-            for alt in alternatives:
-                alt_tokens = tokenizer(alt, add_special_tokens=False)['input_ids']
-                print(f"Alternative '{repr(alt)}': {alt_tokens}")
-                for i in range(len(full_ids) - len(alt_tokens) + 1):
-                    if full_ids[i:i+len(alt_tokens)] == alt_tokens:
-                        print(f"  ✓ Found at position {i}")
-                        return alt
-        
-        return response_template if found else None
+        return False
 
-# Test it
-    working_template = debug_delimiter_matching(processed_train_dataset[0], "[TACTIC]\n")
+    # Run the precise debug
+    debug_delimiter_matching_precise(processed_train_dataset[0], "[TACTIC]\n")
 
     
     print("\n\nBuilding Trainer...")
