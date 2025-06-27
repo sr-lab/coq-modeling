@@ -270,7 +270,7 @@ def get_sft_trainer(
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
-        #response_template = "[TACTIC"
+        response_template = "\n[TACTIC]\n"
         
         trainer = SFTTrainer(
             model=model,
