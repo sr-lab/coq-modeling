@@ -261,58 +261,66 @@ def get_sft_trainer(
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
-        print("Examples before", examples)
-        # Add EOS token to completion field
-        return {"prompt": examples["prompt"], "completion": [completion + EOS_TOKEN for completion in examples["completion"]]}
-    
+        return {"text" : [example + EOS_TOKEN for example in examples["text"]] }
     processed_train_dataset = processed_train_dataset.map(
-        formatting_prompts_func, batched=True,
+        formatting_prompts_func, batched = True,
     )
 
-    def formatting_func(example):
-        return example["prompt"] + "\n[TACTIC]\n" + example["completion"]
-
-    def aux_formatting_func(examples):
-        return examples
-    
-    def custom_data_collator(examples):
-        batch_input_ids = []
-        batch_labels = []
-    
-        for example in examples:
-            text = formatting_func(example)
+    def debug_delimiter_matching(example, response_template):
+        prompt = example['prompt']
+        completion = example['completion']
+        full_text = f"{prompt}\n[TACTIC]\n{completion}"
         
-            tokens = tokenizer(text, truncation=True, padding=False, return_tensors=None)
-            input_ids = tokens['input_ids']
+        print(f"Response template: {repr(response_template)}")
+        print(f"Full text: {repr(full_text)}")
         
-            # Find where the completion starts
-            prompt_part = f"{example['prompt']}\n[TACTIC]\n"
-            prompt_tokens = tokenizer(prompt_part, add_special_tokens=False, return_tensors=None)
-            prompt_length = len(prompt_tokens['input_ids'])
+        # Tokenize both
+        full_tokens = tokenizer(full_text, add_special_tokens=False)
+        template_tokens = tokenizer(response_template, add_special_tokens=False)
+        
+        print(f"Full tokens: {full_tokens['input_ids']}")
+        print(f"Template tokens: {template_tokens['input_ids']}")
+        
+        # Decode to see what each token represents
+        print(f"Full text decoded tokens: {[tokenizer.decode([t]) for t in full_tokens['input_ids']]}")
+        print(f"Template decoded tokens: {[tokenizer.decode([t]) for t in template_tokens['input_ids']]}")
+        
+        # Try to find the template in the full text
+        full_ids = full_tokens['input_ids']
+        template_ids = template_tokens['input_ids']
+        
+        found = False
+        for i in range(len(full_ids) - len(template_ids) + 1):
+            if full_ids[i:i+len(template_ids)] == template_ids:
+                print(f"✓ Template found at position {i}")
+                found = True
+                break
+        
+        if not found:
+            print("✗ Template not found!")
+            # Try various alternatives
+            alternatives = [
+                "\n[TACTIC]\n",
+                "[TACTIC]\n",
+                "\n[TACTIC]",
+                "[TACTIC]"
+                "[TACTIC"
+            ]
             
-            # Create labels (mask prompt tokens with -100)
-            labels = input_ids.copy()
-            labels[:prompt_length] = [-100] * prompt_length
-            
-            batch_input_ids.append(input_ids)
-            batch_labels.append(labels)
+            for alt in alternatives:
+                alt_tokens = tokenizer(alt, add_special_tokens=False)['input_ids']
+                print(f"Alternative '{repr(alt)}': {alt_tokens}")
+                for i in range(len(full_ids) - len(alt_tokens) + 1):
+                    if full_ids[i:i+len(alt_tokens)] == alt_tokens:
+                        print(f"  ✓ Found at position {i}")
+                        return alt
         
-        # Pad sequences
-        from torch.nn.utils.rnn import pad_sequence
-        import torch
-        
-        batch_input_ids = pad_sequence([torch.tensor(ids) for ids in batch_input_ids], 
-                                    batch_first=True, padding_value=tokenizer.pad_token_id)
-        batch_labels = pad_sequence([torch.tensor(labels) for labels in batch_labels], 
-                                    batch_first=True, padding_value=-100)
-        
-        return {
-            'input_ids': batch_input_ids,
-            'labels': batch_labels,
-            'attention_mask': (batch_input_ids != tokenizer.pad_token_id).long()
-        }
-        #debug_tokenization(processed_train_dataset[0])
+        return response_template if found else None
 
+# Test it
+    working_template = debug_delimiter_matching(processed_train_dataset[0], "[TACTIC]\n")
+
+    
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
@@ -322,9 +330,12 @@ def get_sft_trainer(
             model=model,
             tokenizer=train_dataset.tokenizer,  
             args=training_args,
-            data_collator=custom_data_collator,
+            data_collator=DataCollatorForCompletionOnlyLM(
+                response_template,
+                tokenizer=train_dataset.tokenizer,
+            ),
             train_dataset=processed_train_dataset,
-            formatting_func=aux_formatting_func,
+            #formatting_func=None,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
