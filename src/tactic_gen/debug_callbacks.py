@@ -28,16 +28,8 @@ class SimpleCallback(TrainerCallback):
         self.tokenizer = tokenizer
     
     def on_step_begin(self, args, state, control, **kwargs):
-        print(self.tokenizer.special_tokens_map)
-        print(self.tokenizer.sep_token)
-        print(self.tokenizer.eos_token)
-        print(self.tokenizer.bos_token)
-        print(self.tokenizer.unk_token)
-        print(self.tokenizer.pad_token)
-        print(self.tokenizer.mask_token)
-        print(self.tokenizer.cls_token)
         print(f"on_step_begin: {self.callback_type}")
-        delimiters = ["[TACTIC", "[TACTIC]", " \n[TACTIC]\n ", "[TACTIC]\n"]
+        delimiters = ["<unk>\n[TACTIC]\n<unk>"]
         for delimiter in delimiters:
             print(self.tokenizer.encode(delimiter, add_special_tokens=False))
         print("==============================")
