@@ -269,64 +269,61 @@ def get_sft_trainer(
         formatting_prompts_func, batched=True,
     )
 
-    def debug_tokenization(example):
-        prompt = example['prompt']
-        completion = example['completion']
-        full_text = f"{prompt}\n#Answer:\n"#\n{completion}"
-        
-        # Tokenize the full text
-        full_tokens = tokenizer(full_text, add_special_tokens=False)
-        
-        # Tokenize just the response template
-        response_template = "#Answer:\n"
-        template_tokens = tokenizer(response_template, add_special_tokens=False)
-        
-        print(f"Full text: {repr(full_text)}")
-        print(f"Full tokens: {full_tokens['input_ids']}")
-        print(f"Template: {repr(response_template)}")
-        print(f"Template tokens: {template_tokens['input_ids']}")
-        
-        # Check if template tokens appear in full tokens
-        template_ids = template_tokens['input_ids']
-        full_ids = full_tokens['input_ids']
-        
-        for i in range(len(full_ids) - len(template_ids) + 1):
-            if full_ids[i:i+len(template_ids)] == template_ids:
-                print(f"Found template at position {i}")
-                break
-        else:
-            print("Template not found in tokenized sequence!")
-        
-        return full_text
+    def formatting_func(examples):
+        formatted_examples = []
+        for i in range(len(examples['prompt'])):
+            formatted_examples.append(f"{examples['prompt'][i]}\n[TACTIC]\n{examples['completion'][i]}")    
+        return formatted_examples
 
-    # Test with one example
-    debug_tokenization(processed_train_dataset[0])
+    
+    def custom_data_collator(examples):
+        batch_input_ids = []
+        batch_labels = []
+    
+        for example in examples:
+            text = formatting_func(example)[0]
+        
+            tokens = tokenizer(text, truncation=True, padding=False, return_tensors=None)
+            input_ids = tokens['input_ids']
+        
+            # Find where the completion starts
+            prompt_part = f"{example['prompt']}\n[TACTIC]\n"
+            prompt_tokens = tokenizer(prompt_part, add_special_tokens=False, return_tensors=None)
+            prompt_length = len(prompt_tokens['input_ids'])
+            
+            # Create labels (mask prompt tokens with -100)
+            labels = input_ids.copy()
+            labels[:prompt_length] = [-100] * prompt_length
+            
+            batch_input_ids.append(input_ids)
+            batch_labels.append(labels)
+        
+        # Pad sequences
+        from torch.nn.utils.rnn import pad_sequence
+        import torch
+        
+        batch_input_ids = pad_sequence([torch.tensor(ids) for ids in batch_input_ids], 
+                                    batch_first=True, padding_value=tokenizer.pad_token_id)
+        batch_labels = pad_sequence([torch.tensor(labels) for labels in batch_labels], 
+                                    batch_first=True, padding_value=-100)
+        
+        return {
+            'input_ids': batch_input_ids,
+            'labels': batch_labels,
+            'attention_mask': (batch_input_ids != tokenizer.pad_token_id).long()
+        }
+        #debug_tokenization(processed_train_dataset[0])
 
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
-        
-        
-        # Note: not adding the ] avoids issues with the tokenizer
-        # The tokenizer adds ] and the end of line characters together
-        # and so the token is different than the one in the response template
-        # THIS IS SO DUMB
-        #response_template = "[TACTIC"
         response_template = "[TACTIC"
-        def formatting_func(examples):
-            formatted_examples = []
-            for i in range(len(examples['prompt'])):
-                formatted_examples.append(f"{examples['prompt'][i]}\n[TACTIC]\n{examples['completion'][i]}")    
-            return formatted_examples
         
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,  
             args=training_args,
-            data_collator=DataCollatorForCompletionOnlyLM(
-               response_template,
-               tokenizer=train_dataset.tokenizer,  
-            ),
+            data_collator=custom_data_collator,
             train_dataset=processed_train_dataset,
             formatting_func=formatting_func,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
