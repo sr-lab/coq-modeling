@@ -279,6 +279,7 @@ def get_sft_trainer(
             data_collator=DataCollatorForCompletionOnlyLM(
                 response_template,
                 tokenizer=train_dataset.tokenizer,
+                mlm=False
             ),
             train_dataset=processed_train_dataset,
             #formatting_func=None,
