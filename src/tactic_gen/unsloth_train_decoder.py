@@ -269,12 +269,8 @@ def get_sft_trainer(
         formatting_prompts_func, batched=True,
     )
 
-    def formatting_func(examples):
-        print(examples)
-        formatted_examples = []
-        for i in range(len(examples)):
-            formatted_examples.append(f"{examples['prompt'][i]}\n[TACTIC]\n{examples['completion'][i]}")    
-        return [examples["prompt"] + "[TACTIC]\n" + examples["completion"]]
+    def formatting_func(example):
+        return example["prompt"] + "\n[TACTIC]\n" + example["completion"]
 
     
     def custom_data_collator(examples):
@@ -282,7 +278,7 @@ def get_sft_trainer(
         batch_labels = []
     
         for example in examples:
-            text = formatting_func(example)[0]
+            text = formatting_func(example)
         
             tokens = tokenizer(text, truncation=True, padding=False, return_tensors=None)
             input_ids = tokens['input_ids']
@@ -326,7 +322,7 @@ def get_sft_trainer(
             args=training_args,
             data_collator=custom_data_collator,
             train_dataset=processed_train_dataset,
-            formatting_func=formatting_func,
+            #formatting_func=formatting_func,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
