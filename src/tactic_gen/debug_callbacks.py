@@ -29,6 +29,10 @@ class SimpleCallback(TrainerCallback):
     
     def on_step_begin(self, args, state, control, **kwargs):
         print(f"on_step_begin: {self.callback_type}")
+        delimiters = ["[TACTIC", "[TACTIC]", "\n[TACTIC]\n", "[TACTIC]\n"]
+        for delimiter in delimiters:
+            print(self.tokenizer.encode(delimiter, add_special_tokens=False))
+        print("==============================")
         #print(kwargs)
         if 'train_dataloader' in kwargs:
             train_dataloader = kwargs['train_dataloader']
