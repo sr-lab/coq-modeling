@@ -261,7 +261,7 @@ def get_sft_trainer(
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
-        return {"text" : [example + EOS_TOKEN for example in examples["text"]] }
+        return {"text" : [example.replace("\n[TACTIC]\n", " \n[TACTIC]\n ") + EOS_TOKEN for example in examples["text"]] }
     processed_train_dataset = processed_train_dataset.map(
         formatting_prompts_func, batched = True,
     )
@@ -270,7 +270,7 @@ def get_sft_trainer(
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         response_template = NEWLINE_RESPONSE_TEMPLATE
-        response_template = "\n[TACTIC]\n"
+        response_template = " \n[TACTIC]\n "
         
         trainer = SFTTrainer(
             model=model,
