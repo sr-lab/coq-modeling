@@ -267,9 +267,9 @@ def get_sft_trainer(
     )
 
     def debug_delimiter_matching_precise(example, response_template):
-        prompt = example['prompt']
-        completion = example['completion']
-        full_text = f"{prompt}\n[TACTIC]\n{completion}"
+        #prompt = example['prompt']
+        #completion = example['completion']
+        full_text = example['text']
         
         print(f"Response template: {repr(response_template)}")
         
