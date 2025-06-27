@@ -272,6 +272,8 @@ def get_sft_trainer(
     def formatting_func(example):
         return example["prompt"] + "\n[TACTIC]\n" + example["completion"]
 
+    def aux_formatting_func(examples):
+        return examples
     
     def custom_data_collator(examples):
         batch_input_ids = []
@@ -322,7 +324,7 @@ def get_sft_trainer(
             args=training_args,
             data_collator=custom_data_collator,
             train_dataset=processed_train_dataset,
-            #formatting_func=formatting_func,
+            formatting_func=aux_formatting_func,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
