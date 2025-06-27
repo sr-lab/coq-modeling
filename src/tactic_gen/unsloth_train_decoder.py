@@ -261,6 +261,7 @@ def get_sft_trainer(
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
+        print("Examples before", examples)
         # Add EOS token to completion field
         return {"prompt": examples["prompt"], "completion": [completion + EOS_TOKEN for completion in examples["completion"]]}
     
