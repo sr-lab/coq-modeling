@@ -282,7 +282,7 @@ def get_sft_trainer(
 
         def formatting_func(example):
             print(example)
-            return f"{example['prompt']}\n[TACTIC]\n{example['completion']}"
+            return [f"{example['prompt']}\n[TACTIC]\n{example['completion']}"]
         
         trainer = SFTTrainer(
             model=model,
