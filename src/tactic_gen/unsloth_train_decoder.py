@@ -293,6 +293,13 @@ def get_sft_trainer(
             #"attention_mask": attention_mask,
             "labels": labels,
         }
+    
+    def formatting_func(example):
+    # This will format the raw dict into (input, output) strings
+        prompt = example["prompt"]
+        completion = example["completion"]
+        return prompt, completion
+
 
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
@@ -302,7 +309,8 @@ def get_sft_trainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
             #dataset_text_field = "text",
-            data_collator=custom_data_collator,
+            #data_collator=custom_data_collator,
+            formatting_func=formatting_func,
             args=training_args,
             train_dataset=processed_train_dataset,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
