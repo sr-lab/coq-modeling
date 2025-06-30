@@ -273,6 +273,7 @@ def get_sft_trainer(
             texts = []
             for prompt, completion in zip(prompts, completions):
                 text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
+                print(text)
                 texts.append(text)
             return { "text" : texts, }
         elif "text" in examples:
@@ -281,7 +282,7 @@ def get_sft_trainer(
             texts = []
             for example_text in examples_text:
                 text = "[PROMPT]\n" + example_text
-                print(text)
+
                 texts.append(text)
             return { "text" : texts, }
         else:
