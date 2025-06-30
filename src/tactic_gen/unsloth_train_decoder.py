@@ -299,7 +299,7 @@ def get_sft_trainer(
     )
 
     print("processed_train_dataset: ", processed_train_dataset["text"][0])
-    
+
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         trainer = SFTTrainer(
@@ -318,7 +318,7 @@ def get_sft_trainer(
         trainer = train_on_responses_only(
             trainer,
             instruction_part = "[PROMPT]\n",
-            response_part = "[TACTIC]",
+            response_part = "\n[TACTIC]\n",
         )
 
     else:
