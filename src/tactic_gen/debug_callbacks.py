@@ -37,7 +37,12 @@ class SimpleCallback(TrainerCallback):
                 print("inputs shape: ", inputs.shape)
                 print("labels shape: ", labels.shape)
                 tokenized_inputs = self.tokenizer.decode(inputs[0], skip_special_tokens=False)
-                tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=True)
+                try:
+                    tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
+                except Exception as e:
+                    print("Error decoding labels: ", e)
+                    return
+                    #tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
                 print("==============================")
                 print("tokenized_inputs: ", tokenized_inputs[-100:])
                 print("tokenized_labels: ", tokenized_labels)
