@@ -276,10 +276,10 @@ def get_sft_trainer(
             print("len(completions): ", len(completions))
             texts = []
             for prompt, completion in zip(prompts, completions):
-                print("type(prompt): ", type(prompt))
-                print("type(completion): ", type(completion))
+                #print("type(prompt): ", type(prompt))
+                #print("type(completion): ", type(completion))
                 text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
-                print(text)
+                #print(text)
                 texts.append(text)
             return { "text" : texts, }
         elif "text" in examples:
@@ -298,7 +298,8 @@ def get_sft_trainer(
         format_dataset_prompt, batched = True,
     )
 
-
+    print("processed_train_dataset: ", processed_train_dataset["text"][0])
+    
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         trainer = SFTTrainer(
