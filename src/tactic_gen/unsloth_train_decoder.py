@@ -278,7 +278,7 @@ def get_sft_trainer(
             examples_text = examples["text"]
             texts = []
             for example_text in examples_text:
-                text = "[PROMPT]\n" + example_text + EOS_TOKEN
+                text = "[PROMPT]\n" + example_text
                 texts.append(text)
             return { "text" : texts, }
         else:
@@ -307,7 +307,7 @@ def get_sft_trainer(
         trainer = train_on_responses_only(
             trainer,
             instruction_part = "[PROMPT]\n",
-            response_part = "[TACTIC]\n",
+            response_part = "\n[TACTIC]\n",
         )
 
     else:
