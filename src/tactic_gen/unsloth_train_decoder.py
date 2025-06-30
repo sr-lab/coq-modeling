@@ -272,6 +272,8 @@ def get_sft_trainer(
             completions = examples["completion"]
             print("type(prompts): ", type(prompts))
             print("type(completions): ", type(completions))
+            print("len(prompts): ", len(prompts))
+            print("len(completions): ", len(completions))
             texts = []
             for prompt, completion in zip(prompts, completions):
                 print("type(prompt): ", type(prompt))
