@@ -124,10 +124,9 @@ def create_unsloth_dataset(
             if "[TACTIC]" not in example:
                 print(f"Warning: Missing [TACTIC] marker at index {i}")
 
-            prompt, completion = example.split("\n[TACTIC]\n")
+            #prompt, completion = example.split("\n[TACTIC]\n")
             processed_examples.append({
-                "prompt": prompt,
-                "completion": completion
+                "text": example
             })
         else:
             print(f"Warning: Unexpected example format at index {i}: {type(example)}")
