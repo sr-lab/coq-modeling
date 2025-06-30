@@ -287,7 +287,8 @@ def get_sft_trainer(
             examples_text = examples["text"]
             texts = []
             for example_text in examples_text:
-                text = "[PROMPT]\n" + example_text
+                text = "### Instruction:\n" + example_text
+                text = text.replace("\n[TACTIC]\n", "\n### Response:\n")
 
                 texts.append(text)
             return { "text" : texts, }
@@ -317,8 +318,8 @@ def get_sft_trainer(
 
         trainer = train_on_responses_only(
             trainer,
-            instruction_part = "[PROMPT]\n",
-            response_part = "\n[TACTIC]\n",
+            instruction_part = "### Instruction:\n",
+            response_part = "### Response:\n",
         )
 
     else:
