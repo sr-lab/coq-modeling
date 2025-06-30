@@ -468,7 +468,7 @@ def main():
 
 
 if __name__ == "__main__":
-    #main() 
+    main() 
     # model_name = "unsloth/codellama-7b-bnb-4bit"
     # tokenizer = get_tokenizer(model_name)
     # _, tokenizer = FastModel.from_pretrained(
@@ -480,4 +480,4 @@ if __name__ == "__main__":
     # )
     
     # validate_unsloth_dataset("train_dataset", tokenizer)
-    print_unsloth_examples("train_dataset", num_examples=1)
+    #print_unsloth_examples("train_dataset", num_examples=1)
