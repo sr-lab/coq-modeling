@@ -42,13 +42,13 @@ class SimpleCallback(TrainerCallback):
                 print("inputs shape: ", inputs.shape)
                 print("labels shape: ", labels.shape)
                 tokenized_inputs = self.tokenizer.decode(inputs[0], skip_special_tokens=False)
-                #tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
+                tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
                 print("==============================")
-                print("tokenized_inputs: ", tokenized_inputs)
-                #print("tokenized_labels: ", tokenized_labels)
+                print("tokenized_inputs: ", tokenized_inputs[-100:])
+                print("tokenized_labels: ", tokenized_labels)
                 print("==============================")
-                print("inputs: ", inputs)
-                print("labels: ", labels)
+                print("inputs: ", inputs[0][-100:])
+                print("labels: ", labels[0])
                 print("==============================")
                 break
         else:
