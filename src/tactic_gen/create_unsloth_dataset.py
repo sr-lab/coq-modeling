@@ -455,6 +455,7 @@ def main():
         if args.validate:
             validate_unsloth_dataset(args.append_to, tokenizer)
     else:
+        print("Creating new dataset")
         dataset = create_unsloth_dataset(
             conf=conf,
             output_path=args.output_path,
