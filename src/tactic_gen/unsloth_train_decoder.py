@@ -68,7 +68,9 @@ from unsloth import FastModel
 from unsloth import FastLanguageModel
 from unsloth.chat_templates import train_on_responses_only
 
-from trl import SFTTrainer, DataCollatorForSeq2Seq, DataCollatorForCompletionOnlyLM
+from transformers import DataCollatorForSeq2Seq
+
+from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
 
 
 
