@@ -275,7 +275,12 @@ def get_sft_trainer(
                 texts.append(text)
             return { "text" : texts, }
         elif "text" in examples:
-            return { "text" : "[PROMPT]\n" + examples["text"] + EOS_TOKEN, }
+            examples_text = examples["text"]
+            texts = []
+            for example_text in examples_text:
+                text = "[PROMPT]\n" + example_text + EOS_TOKEN
+                texts.append(text)
+            return { "text" : texts, }
         else:
             raise ValueError(f"Invalid examples")
         
@@ -324,10 +329,12 @@ def arg_parser():
     return parser
 
 if __name__ == "__main__":
+    print("Parsing args...")
     parser = arg_parser()
     args = parser.parse_args(sys.argv[1:])
     set_rango_logger(__file__, logging.DEBUG)
     conf = load_config(args.yaml_config)
+
 
     if "repos_path" in conf:
         init_valid_files(conf["repos_path"])
@@ -335,12 +342,15 @@ if __name__ == "__main__":
         conf["checkpoint_name"] if "checkpoint_name" in conf else None
     )
     trainer = get_sft_trainer(conf, args.local_rank, train_from_checkpoint)  # Fixed function name
+
     if train_from_checkpoint:
+        print("Starting training from checkpoint...")
         checkpoint_name = conf["checkpoint_name"]
         print(f"Training from checkpoint {checkpoint_name}")
         transformers.logging.set_verbosity_info()
         trainer.train(checkpoint_name)
     else:
+        print("Starting training from scratch...")
         make_output_dir(conf)
         copy_configs(args.yaml_config, conf, TrainType.TACTIC)
         print("Training from scratch")
