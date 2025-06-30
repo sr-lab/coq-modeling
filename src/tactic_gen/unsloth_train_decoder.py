@@ -66,8 +66,10 @@ valid_files = {}
 # Unsloth imports
 from unsloth import FastModel
 from unsloth import FastLanguageModel
+from unsloth.chat_templates import train_on_responses_only
 
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
+from trl import SFTTrainer, DataCollatorForSeq2Seq, DataCollatorForCompletionOnlyLM
+
 
 
 def init_valid_files(repo_path: Path) -> set[Path]:
@@ -259,68 +261,52 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
-    # EOS_TOKEN = tokenizer.eos_token
-    # def formatting_prompts_func(examples):
-    #     return {"text" : [example + EOS_TOKEN for example in examples["text"]] }
-    # processed_train_dataset = processed_train_dataset.map(
-    #     formatting_prompts_func, batched = True,
-    # )
-    prompt_format = """{prompt}\n[TACTIC]\n{completion}"""
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
-    def formatting_prompts_func(examples):
-        prompts = examples["prompt"]
-        completions = examples["completion"]
-        texts = []
-        for prompt, completion in zip(prompts, completions):
-            # Must add EOS_TOKEN, otherwise your generation will go on forever!
-            text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
-            texts.append(text)
-        return { "text" : texts, }
-    # processed_train_dataset = processed_train_dataset.map(
-    #     formatting_prompts_func, batched = True,
-    # )
-
-    def custom_data_collator(examples): 
-        prompts = examples["prompt"] # These contain the proofs, premises, proofstate
-        completions = examples["completion"] # These contain the ground truth tactic
+    def format_dataset_prompt(examples):
+        if "prompt" in examples and "completion" in examples:
+            prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
+            prompts = examples["prompt"]
+            completions = examples["completion"]
+            texts = []
+            for prompt, completion in zip(prompts, completions):
+                text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
+                texts.append(text)
+            return { "text" : texts, }
+        elif "text" in examples:
+            return { "text" : "[PROMPT]\n" + examples["text"] + EOS_TOKEN, }
+        else:
+            raise ValueError(f"Invalid examples")
         
-        #This function should return a batch with input_ids and labels (the ground truth tactic is the label)
-        #The input_ids should be the tokenized prompt
-        input_ids = tokenizer.encode(prompts, add_special_tokens=False)
-        labels = tokenizer.encode(completions, add_special_tokens=False)
-        return {
-            "input_ids": input_ids,
-            #"attention_mask": attention_mask,
-            "labels": labels,
-        }
-    
-    def formatting_func(example):
-    # This will format the raw dict into (input, output) strings
-        prompt = example["prompt"]
-        completion = example["completion"]
-        return prompt, completion
+    processed_train_dataset = processed_train_dataset.map(
+        format_dataset_prompt, batched = True,
+    )
 
 
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
-        response_template = NEWLINE_RESPONSE_TEMPLATE
-        
         trainer = SFTTrainer(
             model=model,
             tokenizer=train_dataset.tokenizer,
-            #dataset_text_field = "text",
-            #data_collator=custom_data_collator,
-            formatting_func=formatting_func,
-            args=training_args,
             train_dataset=processed_train_dataset,
+            dataset_text_field="text",
+            max_seq_length=conf["hard_seq_len"],
+            data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
+            dataset_num_proc = 2,   
+            args=training_args,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
+
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part = "[PROMPT]\n",
+            response_part = "[TACTIC]\n",
+        )
+
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
     
     return trainer
-
 
 def arg_parser():
     parser = argparse.ArgumentParser(
