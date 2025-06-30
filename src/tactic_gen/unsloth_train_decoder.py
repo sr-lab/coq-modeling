@@ -300,14 +300,14 @@ def get_sft_trainer(
             data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
             dataset_num_proc = 2,   
             args=training_args,
-            #callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
+            callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
 
         trainer = train_on_responses_only(
             trainer,
             instruction_part = "[PROMPT]\n",
-            response_part = "\n[TACTIC]\n",
+            response_part = "[TACTIC]",
         )
 
     else:
