@@ -267,7 +267,7 @@ def get_sft_trainer(
     def format_dataset_prompt(examples):
         if "prompt" in examples and "completion" in examples:
             print("Formatting dataset prompt")
-            prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
+            prompt_format = """\n### Instruction:\n{prompt}\n### Response:\n{completion}"""
             prompts = examples["prompt"]
             completions = examples["completion"]
             print("type(prompts): ", type(prompts))
@@ -310,7 +310,7 @@ def get_sft_trainer(
             dataset_text_field="text",
             max_seq_length=conf["hard_seq_len"],
             data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
-            dataset_num_proc = 2,   
+            dataset_num_proc = 16,   
             args=training_args,
             callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
