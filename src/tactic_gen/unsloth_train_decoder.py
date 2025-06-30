@@ -279,6 +279,7 @@ def get_sft_trainer(
             texts = []
             for example_text in examples_text:
                 text = "[PROMPT]\n" + example_text
+                print(text)
                 texts.append(text)
             return { "text" : texts, }
         else:
