@@ -29,11 +29,6 @@ class SimpleCallback(TrainerCallback):
     
     def on_step_begin(self, args, state, control, **kwargs):
         print(f"on_step_begin: {self.callback_type}")
-        delimiters = ["<unk>\n[TACTIC]\n<unk>"]
-        for delimiter in delimiters:
-            print(self.tokenizer.encode(delimiter, add_special_tokens=False))
-        print("==============================")
-        #print(kwargs)
         if 'train_dataloader' in kwargs:
             train_dataloader = kwargs['train_dataloader']
             for batch in train_dataloader:
@@ -42,7 +37,7 @@ class SimpleCallback(TrainerCallback):
                 print("inputs shape: ", inputs.shape)
                 print("labels shape: ", labels.shape)
                 tokenized_inputs = self.tokenizer.decode(inputs[0], skip_special_tokens=False)
-                tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
+                tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=True)
                 print("==============================")
                 print("tokenized_inputs: ", tokenized_inputs[-100:])
                 print("tokenized_labels: ", tokenized_labels)
