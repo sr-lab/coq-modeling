@@ -270,6 +270,8 @@ def get_sft_trainer(
             prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
             prompts = examples["prompt"]
             completions = examples["completion"]
+            print(prompts)
+            print(completions)
             texts = []
             for prompt, completion in zip(prompts, completions):
                 text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
