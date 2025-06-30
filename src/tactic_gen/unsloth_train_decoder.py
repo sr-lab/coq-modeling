@@ -266,6 +266,7 @@ def get_sft_trainer(
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
         if "prompt" in examples and "completion" in examples:
+            print("Formatting dataset prompt")
             prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
             prompts = examples["prompt"]
             completions = examples["completion"]
@@ -275,6 +276,7 @@ def get_sft_trainer(
                 texts.append(text)
             return { "text" : texts, }
         elif "text" in examples:
+            print("Formatting dataset text")
             examples_text = examples["text"]
             texts = []
             for example_text in examples_text:
