@@ -38,7 +38,7 @@ class SimpleCallback(TrainerCallback):
                 print("labels shape: ", labels.shape)
                 tokenized_inputs = self.tokenizer.decode(inputs[0], skip_special_tokens=False)
                 try:
-                    space = self.tokenizer(" ", add_special_tokens = False).input_ids[0]
+                    space = self.tokenizer("b", add_special_tokens = False).input_ids[0]
                     tokenized_labels = self.tokenizer.decode([space if x == -100 else x for x in labels[0]])
                 except Exception as e:
                     print("Error decoding labels: ", e)
