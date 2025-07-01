@@ -263,6 +263,11 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
+    print("Add special tokens...")
+    special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
+    tokenizer.add_special_tokens(special_tokens)
+    model.resize_token_embeddings(len(tokenizer))
+
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
         if "prompt" in examples and "completion" in examples:
@@ -297,13 +302,16 @@ def get_sft_trainer(
         format_dataset_prompt, batched = True,
     )
 
-    print("Add special tokens...")
-    special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
-    tokenizer.add_special_tokens(special_tokens)
-    model.resize_token_embeddings(len(tokenizer))
-
     print("tokenizer.tokenize('[TACTIC]'): ", tokenizer.tokenize("[TACTIC]"))
     print("tokenizer.tokenize('\\n[TACTIC]\\n'): ", tokenizer.tokenize("\n[TACTIC]\n"))
+    print("tokenizer.convert_tokens_to_ids('[TACTIC]'): ", tokenizer.convert_tokens_to_ids('[TACTIC]'))  # Should not be 0
+    print("tokenizer.tokenize('[PROMPT]'): ", tokenizer.tokenize('[PROMPT]'))  # Should be ['[PROMPT]']
+    print("tokenizer.convert_tokens_to_ids('[PROMPT]'): ", tokenizer.convert_tokens_to_ids('[PROMPT]'))  # Should not be 0
+
+    print("tokenizer.tokenize('[PROMPT]'): ", tokenizer.tokenize('[PROMPT]'))  # Should be ['[PROMPT]']
+    print("tokenizer.convert_tokens_to_ids('[PROMPT]'): ", tokenizer.convert_tokens_to_ids('[PROMPT]'))  # Should not be 0
+
+    print("dataset example: ", processed_train_dataset["text"][0][-50:])
     
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
@@ -323,7 +331,7 @@ def get_sft_trainer(
         trainer = train_on_responses_only(
             trainer,
             instruction_part = "[PROMPT]",
-            response_part = "[TACTIC]",
+            response_part = "\n[TACTIC]\n",
         )
 
     else:
