@@ -283,6 +283,10 @@ def get_sft_trainer(
                 user_part = text
                 assistant_part = ""
             messages = [
+                {"role": "system", 
+                 "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
+                and proofs, the current state of the proof and the current written proof script, \
+                generate only the next tactic."},
                 {"role": "user", "content": user_part.strip()},
                 {"role": "assistant", "content": assistant_part.strip()},
             ]
@@ -299,34 +303,6 @@ def get_sft_trainer(
     print("processed_train_dataset: ", processed_train_dataset["text"][0])
     print("EOS_TOKEN: ", EOS_TOKEN)
 
-     # Must add EOS_TOKEN
-    def format_dataset_prompt(examples):
-        if "prompt" in examples and "completion" in examples:
-            print("Formatting dataset prompt")
-            prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
-            prompts = examples["prompt"]
-            completions = examples["completion"]
-            texts = []
-            for prompt, completion in zip(prompts, completions):
-                #print("type(prompt): ", type(prompt))
-                #print("type(completion): ", type(completion))
-                text = prompt_format.format(prompt=prompt, completion=completion) + EOS_TOKEN
-                #print(text)
-                texts.append(text)
-            return { "text" : texts, }
-        elif "text" in examples:
-            print("Formatting dataset text")
-
-            examples_text = examples["text"]
-            texts = []
-            for example_text in examples_text:
-                text = "[PROMPT]\n" + example_text
-                texts.append(text)
-            return { "text" : texts, }
-        else:
-            raise ValueError(f"Invalid examples")
-    
-    return
     
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
@@ -345,8 +321,8 @@ def get_sft_trainer(
 
         trainer = train_on_responses_only(
             trainer,
-            instruction_part = "[PROMPT]",
-            response_part = "\n[TACTIC]\n",
+            instruction_part = "<|im_start|>user\n",
+            response_part = "<|im_start|>assistant\n",
         )
 
     else:
