@@ -263,10 +263,10 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
-    print("Add special tokens...")
-    special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
-    tokenizer.add_special_tokens(special_tokens)
-    model.resize_token_embeddings(len(tokenizer))
+    # print("Add special tokens...")
+    # special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
+    # tokenizer.add_special_tokens(special_tokens)
+    # model.resize_token_embeddings(len(tokenizer))
 
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
