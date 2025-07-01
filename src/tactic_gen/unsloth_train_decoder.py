@@ -303,12 +303,8 @@ def get_sft_trainer(
     model.resize_token_embeddings(len(tokenizer))
 
     print("tokenizer.tokenize('[TACTIC]'): ", tokenizer.tokenize("[TACTIC]"))
-    print("tokenizer.convert_tokens_to_ids('[TACTIC]'): ", tokenizer.convert_tokens_to_ids("[TACTIC]")) 
-    print("tokenizer.tokenize('### Response:\\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Response:\n")))
-    print("tokenizer.tokenize('### Instruction:\\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Instruction:\n")))
-    print("tokenizer.convert_tokens_to_ids('### Response:\\n'): ", tokenizer.convert_tokens_to_ids("### Response:\n"))
-    print("tokenizer.convert_tokens_to_ids('### Instruction:\\n'): ", tokenizer.convert_tokens_to_ids("### Instruction:\n"))
-  
+    print("tokenizer.tokenize('\\n[TACTIC]\\n'): ", tokenizer.tokenize("\n[TACTIC]\n"))
+    
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         trainer = SFTTrainer(
