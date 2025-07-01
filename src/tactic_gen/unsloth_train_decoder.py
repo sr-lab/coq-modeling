@@ -280,7 +280,7 @@ def get_sft_trainer(
     processed_train_dataset = processed_train_dataset.map(
         formatting_prompts_func, batched = True,
     )
-    print("processed_train_dataset: ", processed_train_dataset["text"][0])
+    print("processed_train_dataset: ", processed_train_dataset["text"])
 
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
