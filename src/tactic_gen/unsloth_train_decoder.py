@@ -267,7 +267,7 @@ def get_sft_trainer(
     def format_dataset_prompt(examples):
         if "prompt" in examples and "completion" in examples:
             print("Formatting dataset prompt")
-            prompt_format = """\n### Instruction:\n{prompt}\n### Response:\n{completion}"""
+            prompt_format = """<s>[INST]\n{prompt}\n[/INST]\n{completion}"""
             prompts = examples["prompt"]
             completions = examples["completion"]
             print("type(prompts): ", type(prompts))
@@ -287,8 +287,8 @@ def get_sft_trainer(
             examples_text = examples["text"]
             texts = []
             for example_text in examples_text:
-                text = "### Instruction:\n" + example_text
-                text = text.replace("\n[TACTIC]\n", "\n### Response:\n")
+                text = "<s>[INST]" + example_text
+                text = text.replace("\n[TACTIC]\n", "\n[/INST]\n")
 
                 texts.append(text)
             return { "text" : texts, }
@@ -299,8 +299,13 @@ def get_sft_trainer(
         format_dataset_prompt, batched = True,
     )
 
-    print("processed_train_dataset: ", processed_train_dataset["text"][0])
-
+    print("tokenizer.tokenize('[TACTIC]'): ", tokenizer.tokenize("[TACTIC]"))
+    print("tokenizer.convert_tokens_to_ids('[TACTIC]'): ", tokenizer.convert_tokens_to_ids("[TACTIC]")) 
+    print("tokenizer.tokenize('### Response:\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Response:\n")))
+    print("tokenizer.tokenize('### Instruction:\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Instruction:\n")))
+    print("tokenizer.convert_tokens_to_ids('### Response:\n'): ", tokenizer.convert_tokens_to_ids("### Response:\n"))
+    print("tokenizer.convert_tokens_to_ids('### Instruction:\n'): ", tokenizer.convert_tokens_to_ids("### Instruction:\n"))
+  
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
         trainer = SFTTrainer(
@@ -318,8 +323,8 @@ def get_sft_trainer(
 
         trainer = train_on_responses_only(
             trainer,
-            instruction_part = "### Instruction:\n",
-            response_part = "### Response:\n",
+            instruction_part = "<s>[INST]",
+            response_part = "[/INST]",
         )
 
     else:
