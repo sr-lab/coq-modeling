@@ -274,15 +274,26 @@ def get_sft_trainer(
 
     def formatting_prompts_func(examples):
         texts = examples["text"]
-        print("texts before: ", texts)
-        texts = [tokenizer.apply_chat_template(text, tokenize=False) for text in texts]
-        print("texts after: ", texts)
-        return { "text" : texts, }
+        new_texts = []
+        for text in texts:
+            if "\n[TACTIC]\n" in text:
+                user_part, assistant_part = text.split("\n[TACTIC]\n", 1)
+            else:
+                user_part = text
+                assistant_part = ""
+            messages = [
+                {"role": "user", "content": user_part.strip()},
+                {"role": "assistant", "content": assistant_part.strip()},
+            ]
+            formatted_text = tokenizer.apply_chat_template(messages, tokenize=False)
+            new_texts.append(formatted_text)
+
+        return {"text" : new_texts, }
     
     processed_train_dataset = processed_train_dataset.map(
         formatting_prompts_func, batched = True,
     )
-    #print("processed_train_dataset: ", processed_train_dataset["text"])
+    print("processed_train_dataset: ", processed_train_dataset["text"][0])
 
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
