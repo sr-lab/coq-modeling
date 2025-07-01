@@ -272,6 +272,7 @@ def get_sft_trainer(
         chat_template="qwen-2.5",
     )
 
+    EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
         texts = examples["text"]
         new_texts = []
@@ -286,6 +287,7 @@ def get_sft_trainer(
                 {"role": "assistant", "content": assistant_part.strip()},
             ]
             formatted_text = tokenizer.apply_chat_template(messages, tokenize=False)
+            formatted_text = formatted_text.rsplit("<|im_end|>", 1)[0] + EOS_TOKEN
             new_texts.append(formatted_text)
 
         return {"text" : new_texts, }
@@ -295,7 +297,7 @@ def get_sft_trainer(
     )
     print("processed_train_dataset: ", processed_train_dataset["text"][0])
 
-    EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
+     # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
         if "prompt" in examples and "completion" in examples:
             print("Formatting dataset prompt")
