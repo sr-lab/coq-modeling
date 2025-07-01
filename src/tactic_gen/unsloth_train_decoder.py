@@ -267,7 +267,7 @@ def get_sft_trainer(
     def format_dataset_prompt(examples):
         if "prompt" in examples and "completion" in examples:
             print("Formatting dataset prompt")
-            prompt_format = """<s>[INST]\n{prompt}\n[/INST]\n{completion}"""
+            prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
             prompts = examples["prompt"]
             completions = examples["completion"]
             print("type(prompts): ", type(prompts))
@@ -287,9 +287,7 @@ def get_sft_trainer(
             examples_text = examples["text"]
             texts = []
             for example_text in examples_text:
-                text = "<s>[INST]" + example_text
-                text = text.replace("\n[TACTIC]\n", "\n[/INST]\n")
-
+                text = "[PROMPT]\n" + example_text
                 texts.append(text)
             return { "text" : texts, }
         else:
@@ -299,12 +297,17 @@ def get_sft_trainer(
         format_dataset_prompt, batched = True,
     )
 
+    print("Add special tokens...")
+    special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
+    tokenizer.add_special_tokens(special_tokens)
+    model.resize_token_embeddings(len(tokenizer))
+
     print("tokenizer.tokenize('[TACTIC]'): ", tokenizer.tokenize("[TACTIC]"))
     print("tokenizer.convert_tokens_to_ids('[TACTIC]'): ", tokenizer.convert_tokens_to_ids("[TACTIC]")) 
-    print("tokenizer.tokenize('### Response:\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Response:\n")))
-    print("tokenizer.tokenize('### Instruction:\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Instruction:\n")))
-    print("tokenizer.convert_tokens_to_ids('### Response:\n'): ", tokenizer.convert_tokens_to_ids("### Response:\n"))
-    print("tokenizer.convert_tokens_to_ids('### Instruction:\n'): ", tokenizer.convert_tokens_to_ids("### Instruction:\n"))
+    print("tokenizer.tokenize('### Response:\\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Response:\n")))
+    print("tokenizer.tokenize('### Instruction:\\n'): ", tokenizer.decode(tokenizer.convert_tokens_to_ids("### Instruction:\n")))
+    print("tokenizer.convert_tokens_to_ids('### Response:\\n'): ", tokenizer.convert_tokens_to_ids("### Response:\n"))
+    print("tokenizer.convert_tokens_to_ids('### Instruction:\\n'): ", tokenizer.convert_tokens_to_ids("### Instruction:\n"))
   
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
@@ -323,8 +326,8 @@ def get_sft_trainer(
 
         trainer = train_on_responses_only(
             trainer,
-            instruction_part = "<s>[INST]",
-            response_part = "[/INST]",
+            instruction_part = "[PROMPT]",
+            response_part = "[TACTIC]",
         )
 
     else:
