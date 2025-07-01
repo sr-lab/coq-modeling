@@ -45,11 +45,11 @@ class SimpleCallback(TrainerCallback):
                     return
                     #tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
                 print("==============================")
-                print("tokenized_inputs: ", tokenized_inputs[-100:])
+                print("tokenized_inputs: ", tokenized_inputs)
                 print("tokenized_labels: ", tokenized_labels)
                 print("==============================")
-                print("inputs: ", inputs[0][-100:])
-                print("labels: ", labels[0])
+                print("inputs: ", inputs[0])
+                print("labels: ", labels[0][-200:])
                 print("==============================")
                 break
         else:
