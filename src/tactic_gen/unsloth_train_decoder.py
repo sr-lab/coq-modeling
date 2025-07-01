@@ -66,7 +66,7 @@ valid_files = {}
 # Unsloth imports
 from unsloth import FastModel
 from unsloth import FastLanguageModel
-from unsloth.chat_templates import train_on_responses_only
+from unsloth.chat_templates import train_on_responses_only, get_chat_template
 
 from transformers import DataCollatorForSeq2Seq
 
@@ -267,6 +267,20 @@ def get_sft_trainer(
     # special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
     # tokenizer.add_special_tokens(special_tokens)
     # model.resize_token_embeddings(len(tokenizer))
+    tokenizer = get_chat_template(
+        tokenizer,
+        chat_template="qwen-2.5",
+    )
+
+    def formatting_prompts_func(examples):
+        texts = examples["text"]
+        texts = [tokenizer.apply_chat_template(text, tokenize=False) for text in texts]
+        return { "text" : texts, }
+    
+    processed_train_dataset = processed_train_dataset.map(
+        formatting_prompts_func, batched = True,
+    )
+    print("processed_train_dataset: ", processed_train_dataset["text"][0])
 
     EOS_TOKEN = tokenizer.eos_token # Must add EOS_TOKEN
     def format_dataset_prompt(examples):
@@ -275,10 +289,6 @@ def get_sft_trainer(
             prompt_format = """[PROMPT]\n{prompt}\n[TACTIC]\n{completion}"""
             prompts = examples["prompt"]
             completions = examples["completion"]
-            print("type(prompts): ", type(prompts))
-            print("type(completions): ", type(completions))
-            print("len(prompts): ", len(prompts))
-            print("len(completions): ", len(completions))
             texts = []
             for prompt, completion in zip(prompts, completions):
                 #print("type(prompt): ", type(prompt))
@@ -289,6 +299,7 @@ def get_sft_trainer(
             return { "text" : texts, }
         elif "text" in examples:
             print("Formatting dataset text")
+
             examples_text = examples["text"]
             texts = []
             for example_text in examples_text:
@@ -297,21 +308,8 @@ def get_sft_trainer(
             return { "text" : texts, }
         else:
             raise ValueError(f"Invalid examples")
-        
-    processed_train_dataset = processed_train_dataset.map(
-        format_dataset_prompt, batched = True,
-    )
-
-    print("tokenizer.tokenize('[TACTIC]'): ", tokenizer.tokenize("[TACTIC]"))
-    print("tokenizer.tokenize('\\n[TACTIC]\\n'): ", tokenizer.tokenize("\n[TACTIC]\n"))
-    print("tokenizer.convert_tokens_to_ids('[TACTIC]'): ", tokenizer.convert_tokens_to_ids('[TACTIC]'))  # Should not be 0
-    print("tokenizer.tokenize('[PROMPT]'): ", tokenizer.tokenize('[PROMPT]'))  # Should be ['[PROMPT]']
-    print("tokenizer.convert_tokens_to_ids('[PROMPT]'): ", tokenizer.convert_tokens_to_ids('[PROMPT]'))  # Should not be 0
-
-    print("tokenizer.tokenize('[PROMPT]'): ", tokenizer.tokenize('[PROMPT]'))  # Should be ['[PROMPT]']
-    print("tokenizer.convert_tokens_to_ids('[PROMPT]'): ", tokenizer.convert_tokens_to_ids('[PROMPT]'))  # Should not be 0
-
-    print("dataset example: ", processed_train_dataset["text"][0][-50:])
+    
+    return
     
     print("\n\nBuilding Trainer...")
     if conf["train_type"] == "unsloth-sft":   
