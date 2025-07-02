@@ -255,7 +255,7 @@ def get_sft_trainer(
         tokenizer,
         chat_template="qwen-2.5",
     )
-    
+
     print("\n\nConstructing Dataset...")
     if "dataset_path" not in conf:
         train_dataset_path = Path("unsloth_dataset/train_dataset")
@@ -272,6 +272,7 @@ def get_sft_trainer(
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
+        print("examples: ", examples)
         texts = examples["text"]
         new_texts = []
         for text in texts:
