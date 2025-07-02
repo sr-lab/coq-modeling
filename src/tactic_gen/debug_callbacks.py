@@ -56,7 +56,8 @@ class SimpleCallback(TrainerCallback):
             print("No train_dataloader found")
 
 class GRPOCallback(TrainerCallback):
-    def __init__(self, tokenizer):
+    def __init__(self, callback_type: str, tokenizer):
+        self.callback_type = callback_type
         self.tokenizer = tokenizer
 
     def on_step_begin(self, args, state, control, **kwargs):
@@ -68,7 +69,7 @@ class GRPOCallback(TrainerCallback):
                 break
         else:
             print("No train_dataloader found")
-            
+
         
 class TokenizerInspectionCallback(TrainerCallback):
     def __init__(self, tokenizer, check_frequency=1, max_samples_to_check=3):
