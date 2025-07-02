@@ -31,6 +31,7 @@ from tactic_gen.tactic_data import (
 )
 from model_deployment.model_result import ModelResult, filter_recs
 
+from unsloth.chat_templates import get_chat_template
 
 class TokenMask(Enum):
     STATE = 0
@@ -132,6 +133,24 @@ class DecoderLocalWrapper:
         self.hard_seq_len = hard_seq_len
         self.max_new_tokens = max_new_tokens
         
+    def apply_chat_template(self, collated_input: str) -> str:
+        if "\n[TACTIC]\n" in collated_input:
+            user_part, assistant_part = collated_input.split("\n[TACTIC]\n", 1)
+        else:
+            user_part = collated_input
+            assistant_part = ""
+        messages = [
+            {"role": "system", 
+            "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
+            and proofs, the current state of the proof and the current written proof script, \
+            generate only the next tactic."},
+            {"role": "user", "content": user_part.strip()},
+            #{"role": "assistant", "content": assistant_part.strip()},
+        ]
+        collated_input = self.tokenizer.apply_chat_template(messages, tokenize=False)
+        collated_input = collated_input.rsplit("<|im_end|>", 1)[0] + self.tokenizer.eos_token
+        return collated_input
+    
     def get_recs(
         self,
         example: LmExample,
@@ -144,6 +163,8 @@ class DecoderLocalWrapper:
         if token_mask_str is not None:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
+        collated_input = self.apply_chat_template(collated_input)
+
         inputs = self.tokenizer(
             collated_input,
             max_length=self.hard_seq_len,
@@ -226,6 +247,11 @@ class DecoderLocalWrapper:
             tokenizer = get_tokenizer(
                 get_required_arg("model_name", training_conf), add_eos=False
             )
+
+        tokenizer = get_chat_template(
+            tokenizer,
+            chat_template="qwen-2.5",
+        )
 
         if "max_new_tokens" in conf:
             max_new_tokens = conf["max_new_tokens"]
