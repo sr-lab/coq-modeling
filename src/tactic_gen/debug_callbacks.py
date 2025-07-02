@@ -55,6 +55,21 @@ class SimpleCallback(TrainerCallback):
         else:
             print("No train_dataloader found")
 
+class GRPOCallback(TrainerCallback):
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    def on_step_begin(self, args, state, control, **kwargs):
+        print("on_step_begin")
+        if 'train_dataloader' in kwargs:
+            train_dataloader = kwargs['train_dataloader']
+            for batch in train_dataloader:
+                print("batch: ", batch)
+                break
+        else:
+            print("No train_dataloader found")
+            
+        
 class TokenizerInspectionCallback(TrainerCallback):
     def __init__(self, tokenizer, check_frequency=1, max_samples_to_check=3):
         """

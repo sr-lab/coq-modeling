@@ -58,7 +58,7 @@ from torch.utils.data import Subset
 import logging
 
 from tactic_gen.create_unsloth_dataset import create_unsloth_dataset
-from tactic_gen.debug_callbacks import create_debug_callbacks, SimpleCallback
+from tactic_gen.debug_callbacks import create_debug_callbacks, SimpleCallback, GRPOCallback
 
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
@@ -373,7 +373,7 @@ def get_grpo_trainer(
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        callbacks=[SimpleCallback("train", tokenizer)],
+        callbacks=[GRPOCallback("train", tokenizer)],
     )
     trainer.args.warmup_ratio = 0
 
