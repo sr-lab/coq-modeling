@@ -272,7 +272,7 @@ def get_sft_trainer(
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
-        print("examples: ", examples)
+        print("examples: ", examples.keys())
         texts = examples["text"]
         new_texts = []
         for text in texts:
