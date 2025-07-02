@@ -364,6 +364,7 @@ def get_grpo_trainer(
             except Exception as e:
                 print(f"Error calculating similarity for {completion} and {ans}: {e}")
                 rewards.append(0)
+        print("Rewards: ", rewards)
         return rewards
 
     trainer = GRPOTrainer(
