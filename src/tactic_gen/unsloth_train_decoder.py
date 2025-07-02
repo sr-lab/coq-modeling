@@ -355,11 +355,11 @@ def get_grpo_trainer(
         cleaned_answers = [a.strip() for a in answer]
         
         rewards = []
+        embedding_answer = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True)
         for completion, ans in zip(cleaned_completions, cleaned_answers):
             try:
-                embedding1 = embedding_model.encode(completion, convert_to_tensor=True)
-                embedding2 = embedding_model.encode(ans, convert_to_tensor=True)
-                similarity = util.cos_sim(embedding1, embedding2).item()
+                embedding_completion = embedding_model.encode(completion, convert_to_tensor=True)
+                similarity = util.cos_sim(embedding_completion, embedding_answer).item()
                 rewards.append(similarity)
             except Exception as e:
                 print(f"Error calculating similarity for {completion} and {ans}: {e}")
