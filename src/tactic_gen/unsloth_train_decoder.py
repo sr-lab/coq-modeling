@@ -73,6 +73,8 @@ from transformers import DataCollatorForSeq2Seq
 
 from trl import SFTTrainer, GRPOTrainer
 
+embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
+    
 
 
 def init_valid_files(repo_path: Path) -> set[Path]:
@@ -343,8 +345,7 @@ def get_grpo_trainer(
     )
 
     train_dataset, val_dataset = get_datasets(conf, tokenizer)
-    embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
-    
+
     print("processed_train_dataset: ", train_dataset[0]["prompt"])
 
 
