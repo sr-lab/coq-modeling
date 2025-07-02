@@ -276,7 +276,7 @@ def get_sft_trainer(
         # print(examples["prompt"][0])
         # print(examples["answer"][0])
         prompts = examples["prompt"]
-        completions = examples["answer"]
+        completions = examples["completion"]
         new_texts = []
         for prompt, completion in zip(prompts, completions):
             messages = [
