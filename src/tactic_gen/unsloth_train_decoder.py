@@ -275,21 +275,17 @@ def get_sft_trainer(
     def formatting_prompts_func(examples):
         # print(examples["prompt"][0])
         # print(examples["answer"][0])
-        texts = examples["text"]
+        prompts = examples["prompt"]
+        completions = examples["answer"]
         new_texts = []
-        for text in texts:
-            if "\n[TACTIC]\n" in text:
-                user_part, assistant_part = text.split("\n[TACTIC]\n", 1)
-            else:
-                user_part = text
-                assistant_part = ""
+        for prompt, completion in zip(prompts, completions):
             messages = [
                 {"role": "system", 
                  "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
                 and proofs, the current state of the proof and the current written proof script, \
                 generate only the next tactic."},
-                {"role": "user", "content": user_part.strip()},
-                {"role": "assistant", "content": assistant_part.strip()},
+                {"role": "user", "content": prompt.strip()},
+                {"role": "assistant", "content": completion.strip()},
             ]
             formatted_text = tokenizer.apply_chat_template(messages, tokenize=False)
             formatted_text = formatted_text.rsplit("<|im_end|>", 1)[0] + EOS_TOKEN
