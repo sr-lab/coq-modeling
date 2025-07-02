@@ -791,8 +791,23 @@ class LmProcessedDataset(Dataset):
             clean_example = self.example_collator.collate_input(
                 self.tokenizer, target_lm_example
             )
+
+            if "\n[TACTIC]\n" in clean_example:
+                user_part, assistant_part = clean_example.split("\n[TACTIC]\n", 1)
+            else:
+                user_part = clean_example
+                assistant_part = ""
+            messages = [
+                {"role": "system",  
+                 "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
+                and proofs, the current state of the proof and the current written proof script, \
+                generate only the next tactic."},
+                {"role": "user", "content": user_part.strip()},
+            ]
+            formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False)
+            
             return {
-                "prompt": clean_example,
+                "prompt": formatted_text,
                 "answer": target_lm_example.next_steps[0],
                 "file_name": target_lm_example.file_name,
                 "proof_idx": target_lm_example.proof_idx,

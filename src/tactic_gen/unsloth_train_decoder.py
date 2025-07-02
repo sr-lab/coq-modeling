@@ -337,42 +337,15 @@ def get_grpo_trainer(
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     model, tokenizer = process_model(model_name, conf)
-    train_dataset, val_dataset = get_datasets(conf, tokenizer)
-    embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
     tokenizer = get_chat_template(
         tokenizer,
         chat_template="qwen-2.5",
     )
 
-    def formatting_prompts_func_grpo(examples):
-        raw_prompts = examples["prompt"]
-        formatted_prompts = []
-        for raw_prompt in raw_prompts:
-            if "\n[TACTIC]\n" in raw_prompt:
-                user_part, assistant_part = raw_prompt.split("\n[TACTIC]\n", 1)
-            else:
-                user_part = raw_prompt
-                assistant_part = ""
-            messages = [
-                {"role": "system",
-                "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
-                and proofs, the current state of the proof and the current written proof script, \
-                generate only the next tactic."},
-                {"role": "user", "content": user_part.strip()},
-                #{"role": "assistant", "content": assistant_part.strip()},
-            ]
-            formatted = tokenizer.apply_chat_template(messages, tokenize=False)
-            formatted_prompts.append(formatted)
-
-        # Return *all* original fields, with the modified 'prompt'
-        new_examples = {key: examples[key] for key in examples}
-        new_examples["prompt"] = formatted_prompts
-        return new_examples
+    train_dataset, val_dataset = get_datasets(conf, tokenizer)
+    embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
     
-    processed_train_dataset = train_dataset.map(
-        formatting_prompts_func_grpo, batched = True,
-    )
-    print("processed_train_dataset: ", processed_train_dataset["prompt"][0])
+    print("processed_train_dataset: ", train_dataset[0]["prompt"])
 
 
     def check_answer(prompts, completions, answer, **kwargs):
@@ -398,7 +371,7 @@ def get_grpo_trainer(
         processing_class=tokenizer,
         reward_funcs=[check_answer],
         args=training_args,
-        train_dataset=processed_train_dataset,
+        train_dataset=train_dataset,
         eval_dataset=val_dataset,
         callbacks=[SimpleCallback("train", tokenizer)],
     )
