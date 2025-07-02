@@ -269,10 +269,12 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
+    print(processed_train_dataset[0])
 
     EOS_TOKEN = tokenizer.eos_token
-    def formatting_prompts_func(examples: dict[str, Any]) -> dict[str, Any]:
-        print(examples["prompt"][0])
+    def formatting_prompts_func(examples):
+        # print(examples["prompt"][0])
+        # print(examples["answer"][0])
         texts = examples["text"]
         new_texts = []
         for text in texts:
