@@ -432,7 +432,12 @@ if __name__ == "__main__":
     train_from_checkpoint = (
         conf["checkpoint_name"] if "checkpoint_name" in conf else None
     )
-    trainer = get_sft_trainer(conf, args.local_rank, train_from_checkpoint)  # Fixed function name
+    if conf["train_type"] == "unsloth-sft":
+        trainer = get_sft_trainer(conf, args.local_rank, train_from_checkpoint)  # Fixed function name
+    elif conf["train_type"] == "unsloth-grpo":
+        trainer = get_grpo_trainer(conf, args.local_rank, train_from_checkpoint)  # Fixed function name
+    else:
+        raise ValueError(f"Invalid train type: {conf['train_type']}")
 
     if train_from_checkpoint:
         print("Starting training from checkpoint...")
