@@ -373,7 +373,7 @@ def get_grpo_trainer(
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
-        callbacks=[GRPOCallback("train", tokenizer)],
+        #callbacks=[GRPOCallback("train", tokenizer)],
     )
     trainer.args.warmup_ratio = 0
 
