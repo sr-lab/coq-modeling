@@ -349,12 +349,9 @@ def get_grpo_trainer(
 
 
     def check_answer(prompts, completions, answer, **kwargs):
-        print("Completions: ", completions)
-        print("Answer: ", answer)
         cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
         cleaned_answers = [a.strip() for a in answer]
-
-
+        
         try:
             embedding_completions = embedding_model.encode(cleaned_completions, convert_to_tensor=True)
             # Since all answers are the same, just encode one answer
