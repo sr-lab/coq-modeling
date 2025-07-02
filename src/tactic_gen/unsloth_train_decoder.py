@@ -358,11 +358,12 @@ def get_grpo_trainer(
 
         try:
             embedding_completions = embedding_model.encode(cleaned_completions, convert_to_tensor=True)
-            # all answers are the same. Encode only the first one and create a tensor of the same shape as the completions
-            embedding_answers = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True).repeat(len(cleaned_completions), 1)
+            # Since all answers are the same, just encode one answer
+            embedding_answer = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True).unsqueeze(0)
 
-            similarities = util.cos_sim(embedding_completions, embedding_answers)
-            rewards = [similarity.item() for similarity in similarities]
+            similarities = util.cos_sim(embedding_completions, embedding_answer)
+            # This gives us a len(completions) x 1 tensor, flatten to get rewards
+            rewards = similarities.squeeze().tolist()
         except Exception as e:
             print(f"Error calculating similarity: {e}")
             rewards = [0] * len(cleaned_completions)
