@@ -26,6 +26,7 @@ from transformers import (
 )
 import torch
 from transformers import AutoTokenizer
+from sentence_transformers import SentenceTransformer, util
 
 from util.train_utils import (
     get_optional_arg,
@@ -70,7 +71,7 @@ from unsloth.chat_templates import train_on_responses_only, get_chat_template
 
 from transformers import DataCollatorForSeq2Seq
 
-from trl import SFTTrainer, DataCollatorForCompletionOnlyLM
+from trl import SFTTrainer, GRPOTrainer
 
 
 
@@ -101,7 +102,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, P
     return model, tokenizer
 
 def process_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
-    if conf["train_type"] == "unsloth-sft":    
+    if conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":    
         raw_model, tokenizer = get_model(model_name, conf)
         try:
             model = FastLanguageModel.get_peft_model(
@@ -243,7 +244,6 @@ def get_sft_trainer(
         checkpoint_name: Optional[str]
     ) -> "SFTTrainer":
     
-    
     print("\n\nBuilding Training Config...")
     training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
@@ -263,10 +263,6 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
-    # print("Add special tokens...")
-    # special_tokens = {"additional_special_tokens": ["[TACTIC]", "[PROMPT]"]}
-    # tokenizer.add_special_tokens(special_tokens)
-    # model.resize_token_embeddings(len(tokenizer))
     tokenizer = get_chat_template(
         tokenizer,
         chat_template="qwen-2.5",
@@ -330,6 +326,86 @@ def get_sft_trainer(
     
     return trainer
 
+
+def get_grpo_trainer(
+        conf: dict[str, Any], 
+        local_rank: Optional[int], 
+        checkpoint_name: Optional[str]
+    ) -> "GRPOTrainer":
+    print("\n\nBuilding Training Config...")
+    training_args = get_training_args(conf, local_rank)
+    print("\n\nRetrieving Model...")
+    model_name = get_required_arg("model_name", conf)
+    model, tokenizer = process_model(model_name, conf)
+    train_dataset, val_dataset = get_datasets(conf, tokenizer)
+    embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
+    tokenizer = get_chat_template(
+        tokenizer,
+        chat_template="qwen-2.5",
+    )
+
+    def formatting_prompts_func_grpo(examples):
+        raw_prompts = examples["prompt"]
+        formatted_prompts = []
+        for raw_prompt in raw_prompts:
+            if "\n[TACTIC]\n" in raw_prompt:
+                user_part, assistant_part = raw_prompt.split("\n[TACTIC]\n", 1)
+            else:
+                user_part = raw_prompt
+                assistant_part = ""
+            messages = [
+                {"role": "system",
+                "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
+                and proofs, the current state of the proof and the current written proof script, \
+                generate only the next tactic."},
+                {"role": "user", "content": user_part.strip()},
+                #{"role": "assistant", "content": assistant_part.strip()},
+            ]
+            formatted = tokenizer.apply_chat_template(messages, tokenize=False)
+            formatted_prompts.append(formatted)
+
+        # Return *all* original fields, with the modified 'prompt'
+        new_examples = {key: examples[key] for key in examples}
+        new_examples["prompt"] = formatted_prompts
+        return new_examples
+    
+    processed_train_dataset = train_dataset.map(
+        formatting_prompts_func_grpo, batched = True,
+    )
+    print("processed_train_dataset: ", processed_train_dataset["prompt"][0])
+
+
+    def check_answer(prompts, completions, answer, **kwargs):
+        print("Completions: ", completions)
+        print("Answer: ", answer)
+        cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
+        cleaned_answers = [a.strip() for a in answer]
+        
+        rewards = []
+        for completion, ans in zip(cleaned_completions, cleaned_answers):
+            try:
+                embedding1 = embedding_model.encode(completion, convert_to_tensor=True)
+                embedding2 = embedding_model.encode(ans, convert_to_tensor=True)
+                similarity = util.cos_sim(embedding1, embedding2).item()
+                rewards.append(similarity)
+            except Exception as e:
+                print(f"Error calculating similarity for {completion} and {ans}: {e}")
+                rewards.append(0)
+        return rewards
+
+    trainer = GRPOTrainer(
+        model=model,
+        processing_class=tokenizer,
+        reward_funcs=[check_answer],
+        args=training_args,
+        train_dataset=processed_train_dataset,
+        eval_dataset=val_dataset,
+        callbacks=[SimpleCallback("train", tokenizer)],
+    )
+    trainer.args.warmup_ratio = 0
+
+    return trainer
+    
 def arg_parser():
     parser = argparse.ArgumentParser(
         description="Train code llama by providing a .yaml config file. As an example, see src/tactic_gen/confs/basic_train.yaml"
