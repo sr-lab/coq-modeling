@@ -251,7 +251,11 @@ def get_sft_trainer(
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
     model, tokenizer = process_model(model_name, conf)
-    train_dataset, val_dataset = get_datasets(conf, tokenizer)
+    tokenizer = get_chat_template(
+        tokenizer,
+        chat_template="qwen-2.5",
+    )
+    
     print("\n\nConstructing Dataset...")
     if "dataset_path" not in conf:
         train_dataset_path = Path("unsloth_dataset/train_dataset")
@@ -265,10 +269,6 @@ def get_sft_trainer(
     else:
         processed_train_dataset = datasets.load_from_disk(conf["dataset_path"])
 
-    tokenizer = get_chat_template(
-        tokenizer,
-        chat_template="qwen-2.5",
-    )
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
@@ -306,7 +306,7 @@ def get_sft_trainer(
     if conf["train_type"] == "unsloth-sft":   
         trainer = SFTTrainer(
             model=model,
-            tokenizer=train_dataset.tokenizer,
+            tokenizer=tokenizer,
             train_dataset=processed_train_dataset,
             dataset_text_field="text",
             max_seq_length=conf["hard_seq_len"],
