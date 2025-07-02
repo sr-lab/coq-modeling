@@ -354,19 +354,21 @@ def get_grpo_trainer(
         print("Answer: ", answer)
         cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
         cleaned_answers = [a.strip() for a in answer]
-        
-        rewards = []
-        embedding_answer = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True)
-        for completion, ans in zip(cleaned_completions, cleaned_answers):
-            try:
-                embedding_completion = embedding_model.encode(completion, convert_to_tensor=True)
-                similarity = util.cos_sim(embedding_completion, embedding_answer).item()
-                rewards.append(similarity)
-            except Exception as e:
-                print(f"Error calculating similarity for {completion} and {ans}: {e}")
-                rewards.append(0)
+
+
+        try:
+            embedding_completions = embedding_model.encode(cleaned_completions, convert_to_tensor=True)
+            # all answers are the same. Encode only the first one and create a tensor of the same shape as the completions
+            embedding_answers = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True).repeat(len(cleaned_completions), 1)
+
+            similarities = util.cos_sim(embedding_completions, embedding_answers)
+            rewards = [similarity.item() for similarity in similarities]
+        except Exception as e:
+            print(f"Error calculating similarity: {e}")
+            rewards = [0] * len(cleaned_completions)
         print("Rewards: ", rewards)
         return rewards
+
 
     trainer = GRPOTrainer(
         model=model,
