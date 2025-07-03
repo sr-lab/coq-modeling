@@ -108,6 +108,12 @@ class GoBackNSearcher:
         start_time = time.time()
         attempts: list[str] = []
 
+        # Print ground truth proof at the beginning
+        if self.print_proofs:
+            print("Ground Truth Proof:")
+            print(self.initial_proof_obj.proof_text_to_string())
+            print("-" * 50)
+
         maybe_complete, attempt = self.search_step(
             start_time,
             self.tactic_clients[len(attempts) % len(self.tactic_clients)],
@@ -143,7 +149,9 @@ class GoBackNSearcher:
             if cur_proof_result.tactic_result == TacticResult.INVALID:
                 attempts.append(last_proof_script)
                 if self.print_proofs:
+                    print("Proof:")
                     print(last_proof_script)
+                    
                     
                 # Go back a random number of steps between 0 and the length of the current proof
                 cur_dset_file = self.proof_manager.build_dset_file(
