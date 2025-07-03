@@ -142,13 +142,13 @@ class DecoderLocalWrapper:
         messages = [
             {"role": "system", 
             "content": "You are a Coq tactic predictor. Given a set of relevant premises, \
-            and proofs, the current state of the proof and the current written proof script, \
-            generate only the next tactic."},
+and proofs, the current state of the proof and the current written proof script, \
+generate only the next tactic."},
             {"role": "user", "content": user_part.strip()},
-            #{"role": "assistant", "content": assistant_part.strip()},
+            {"role": "assistant", "content": ""},
         ]
         collated_input = self.tokenizer.apply_chat_template(messages, tokenize=False)
-        collated_input = collated_input.rsplit("<|im_end|>", 1)[0] + self.tokenizer.eos_token
+        collated_input = collated_input.rsplit("<|im_end|>", 1)[0]
         return collated_input
     
     def get_recs(
