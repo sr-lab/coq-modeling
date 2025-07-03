@@ -165,6 +165,24 @@ generate only the next tactic."},
         collated_input = self.collator.collate_input(self.tokenizer, example)
         collated_input = self.apply_chat_template(collated_input)
 
+        from vllm import SamplingParams
+        sampling_params = SamplingParams(
+            temperature=0.8,
+            max_tokens=self.max_new_tokens,
+            top_p=0.95,
+            top_k=1,
+        )
+        
+        output = self.model.fast_generate(
+            [collated_input],
+            sampling_params = sampling_params,
+            lora_request = None,
+        )[0].outputs[0].text
+
+        print("OUTPUT:")
+        print(output)
+        print("-" * 50)
+
 
         inputs = self.tokenizer(
             collated_input,
