@@ -106,6 +106,13 @@ class StraightLineSearcher:
         attempts: list[str] = []
         cur_time = time.time() - start_time
         count = 0
+        
+        # Print ground truth proof at the beginning
+        if self.print_proofs:
+            print("Ground Truth Proof:")
+            print(self.initial_proof_obj.proof_text_to_string())
+            print("-" * 50)
+        
         while cur_time < self.timeout:
             maybe_complete, attempt = self.search_step(
                 start_time,
