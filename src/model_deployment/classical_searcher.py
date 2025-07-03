@@ -140,6 +140,13 @@ class ClassicalSearcher:
     ) -> ClassicalSuccess | ClassicalFailure:
         start = time.time()
         num_steps = 0
+        
+        # Print ground truth proof at the beginning
+        if print_proofs:
+            print("Ground Truth Proof:")
+            print(self.initial_dset_file.proofs[-1].proof_text_to_string())
+            print("-" * 50)
+        
         for i in range(self.max_search_steps):
             cur = time.time()
             if self.timeout <= cur - start:
