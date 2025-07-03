@@ -803,11 +803,14 @@ class LmProcessedDataset(Dataset):
                 and proofs, the current state of the proof and the current written proof script, \
                 generate only the next tactic."},
                 {"role": "user", "content": user_part.strip()},
+                {"role": "assistant", "content": ""},
             ]
-            formatted_text = self.tokenizer.apply_chat_template(messages, tokenize=False)
+
+            collated_input = self.tokenizer.apply_chat_template(messages, tokenize=False)
+            collated_input = collated_input.rsplit("<|im_end|>", 1)[0]
             
             return {
-                "prompt": formatted_text,
+                "prompt": collated_input,
                 "answer": target_lm_example.next_steps[0],
                 "file_name": target_lm_example.file_name,
                 "proof_idx": target_lm_example.proof_idx,
