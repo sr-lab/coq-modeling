@@ -263,7 +263,8 @@ def get_sft_trainer(
                 conf=conf,
                 output_path="unsloth_dataset",
                 split="train",
-                max_examples=conf.get("max_steps", None) * conf.get("per_device_train_batch_size", 1)
+                max_examples=conf.get("max_steps", None) * conf.get("per_device_train_batch_size", 1),
+                skip_instances=conf.get("skip_instances", 0)
             )
         processed_train_dataset = datasets.load_from_disk(str(train_dataset_path))
     else:

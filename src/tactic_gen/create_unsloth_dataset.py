@@ -39,7 +39,8 @@ def create_unsloth_dataset(
     conf: dict,
     output_path: str = "unsloth_dataset",
     split: str = "train",
-    max_examples: int = None
+    max_examples: int = None,
+    skip_instances: int = 0
 ) -> None:
     """
     Create a dataset for Unsloth SFT training.
@@ -86,7 +87,8 @@ def create_unsloth_dataset(
         example_collator,
         hard_seq_len,
         max_examples,
-        train_type="unsloth-sft"
+        train_type="unsloth-sft",
+        skip_instances=skip_instances
     )
     
     print(f"Dataset size: {len(dataset)}")
