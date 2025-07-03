@@ -167,10 +167,10 @@ class StraightLineSearcher:
             next_tactic = result.next_tactic_list[0]
             self.total_model_time += end_model_time - start_model_time
             proof_check_result = self.proof_manager.check_proof(
-                cur_proof_script + next_tactic,
+                cur_proof_script + "\n" + next_tactic,
                 cur_proof_result.new_proof.theorem,
             )
-            last_proof_script = cur_proof_script + next_tactic
+            last_proof_script = cur_proof_script + "\n" +  next_tactic
             cur_proof_result = proof_check_result
             cur_time = time.time() - start_time
 
