@@ -50,6 +50,7 @@ from model_deployment.tactic_gen_client import (
     FidTacticGenConf,
     DecoderTacticGenConf,
     LocalTacticGenClientConf,
+    UnslothDecoderTacticGenConf,
 )
 from evaluation.eval_utils import EvalConf, PremiseEvalConf
 from util.util import get_basic_logger, read_port_map
@@ -511,6 +512,8 @@ def get_tactic_server_alias(conf: FidTacticGenConf | DecoderTacticGenConf) -> st
             return "fid-local"
         case DecoderTacticGenConf():
             return "decoder-local"
+        case UnslothDecoderTacticGenConf():
+            return "unsloth-decoder-local"
 
 
 def get_tactic_gen_command(

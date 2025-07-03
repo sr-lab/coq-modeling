@@ -19,7 +19,8 @@ from tactic_gen.lm_example import (
 # from tactic_gen.train_decoder import (
 #     get_tokenizer,
 # )
-from tactic_gen.unsloth_train_decoder import process_model
+from tactic_gen.train_decoder import process_model
+from tactic_gen.unsloth_train_decoder import unsloth_process_model
 from tactic_gen.tactic_data import (
     ExampleCollator,
     ProofPremiseCollator,
@@ -374,7 +375,7 @@ generate only the next tactic."},
         )
         example_collator = example_collator_from_conf(example_collator_conf)
 
-        model, tokenizer = process_model(str(checkpoint_loc.resolve()), training_conf)
+        model, tokenizer = unsloth_process_model(str(checkpoint_loc.resolve()), training_conf)
         model.to("cuda")
         
         if tokenizer is None:

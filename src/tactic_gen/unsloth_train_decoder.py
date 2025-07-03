@@ -93,7 +93,7 @@ def init_valid_files(repo_path: Path) -> set[Path]:
 
 # ================================= Model Functions =================================
 
-def get_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+def unsloth_get_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
     model, tokenizer = FastModel.from_pretrained(
         model_name = model_name,
         max_seq_length = conf["hard_seq_len"],
@@ -103,10 +103,10 @@ def get_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, P
     )
     return model, tokenizer
 
-def process_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
+def unsloth_process_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
     if conf["train_type"] == "unsloth-sft" or conf["train_type"] == "unsloth-grpo":    
-        raw_model, tokenizer = get_model(model_name, conf)
-        try:
+        raw_model, tokenizer = unsloth_get_model(model_name, conf)
+        try:    
             model = FastLanguageModel.get_peft_model(
                 raw_model,
                 r = conf["peft_lora_r"],
@@ -250,7 +250,7 @@ def get_sft_trainer(
     training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
-    model, tokenizer = process_model(model_name, conf)
+    model, tokenizer = unsloth_process_model(model_name, conf)
     tokenizer = get_chat_template(
         tokenizer,
         chat_template="qwen-2.5",
@@ -337,7 +337,7 @@ def get_grpo_trainer(
     training_args = get_training_args(conf, local_rank)
     print("\n\nRetrieving Model...")
     model_name = get_required_arg("model_name", conf)
-    model, tokenizer = process_model(model_name, conf)
+    model, tokenizer = unsloth_process_model(model_name, conf)
     tokenizer = get_chat_template(
         tokenizer,
         chat_template="qwen-2.5",

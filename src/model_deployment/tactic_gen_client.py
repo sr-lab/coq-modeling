@@ -97,6 +97,31 @@ class DecoderTacticGenConf:
             yaml_data["hard_seq_len"],
             yaml_data["max_new_tokens"],
         )
+    
+@dataclass
+class UnslothDecoderTacticGenConf:
+    ALIAS = "unsloth-decoder"
+    checkpoint_loc: Path
+    formatter_confs: Optional[list[FormatterConf]]
+    train_type: str
+    hard_seq_len: int
+    max_new_tokens: int
+
+    @classmethod
+    def from_yaml(cls, yaml_data: Any) -> DecoderTacticGenConf:
+        formatter_confs = None
+        if "formatters" in yaml_data:
+            formatter_confs = [
+                formatter_conf_from_yaml(f) for f in yaml_data["formatters"]
+            ]
+        return cls(
+            Path(yaml_data["checkpoint_loc"]),
+            formatter_confs,
+            yaml_data["train_type"],
+            yaml_data["hard_seq_len"],
+            yaml_data["max_new_tokens"],
+        )
+
 
 
 @dataclass
