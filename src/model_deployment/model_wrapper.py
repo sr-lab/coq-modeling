@@ -174,15 +174,15 @@ generate only the next tactic."},
             top_k=1,
         )
 
-        output = self.model.fast_generate(
-            [collated_input],
-            sampling_params = sampling_params,
-            lora_request = None,
-        )[0].outputs[0].text
+        # output = self.model.fast_generate(
+        #     [collated_input],
+        #     sampling_params = sampling_params,
+        #     lora_request = None,
+        # )[0].outputs[0].text
 
-        print("OUTPUT:")
-        print(output)
-        print("-" * 50)
+        # print("OUTPUT:")
+        # print(output)
+        # print("-" * 50)
 
 
         inputs = self.tokenizer(

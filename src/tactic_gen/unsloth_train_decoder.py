@@ -94,13 +94,12 @@ def init_valid_files(repo_path: Path) -> set[Path]:
 # ================================= Model Functions =================================
 
 def get_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, PreTrainedTokenizer]:
-    model, tokenizer = FastLanguageModel.from_pretrained(
+    model, tokenizer = FastModel.from_pretrained(
         model_name = model_name,
         max_seq_length = conf["hard_seq_len"],
         load_in_4bit = True,
         load_in_8bit = False,
         full_finetuning = False,
-        fast_inference = True,
     )
     return model, tokenizer
 
