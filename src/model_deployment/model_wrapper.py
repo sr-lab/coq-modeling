@@ -165,12 +165,21 @@ class DecoderLocalWrapper:
         collated_input = self.collator.collate_input(self.tokenizer, example)
         collated_input = self.apply_chat_template(collated_input)
 
+        print("COLLATED INPUT:")
+        print(collated_input)
+        print("-" * 50)
+
         inputs = self.tokenizer(
             collated_input,
             max_length=self.hard_seq_len,
             truncation=True,
             return_tensors="pt",
         )
+
+        print("INPUTS:")
+        print(inputs)
+        print("-" * 50)
+
         attention_mask = transform_attention_mask(
             self.collator,
             self.tokenizer,
