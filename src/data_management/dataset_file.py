@@ -396,7 +396,7 @@ class Proof:
         for step in self.steps:
             if step == stop_step:
                 break
-            proof += step.step.text
+            proof += f"\n{step.step.text}"
         return proof
 
     def to_json(self, sentence_db: SentenceDB, insert_allowed: bool) -> Any:
