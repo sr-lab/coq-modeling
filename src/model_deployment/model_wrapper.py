@@ -16,10 +16,10 @@ from util.train_utils import get_required_arg
 from tactic_gen.lm_example import (
     LmExample,
 )
-from tactic_gen.train_decoder import (
-    get_tokenizer,
-    process_model,
-)
+# from tactic_gen.train_decoder import (
+#     get_tokenizer,
+# )
+from tactic_gen.unsloth_train_decoder import process_model
 from tactic_gen.tactic_data import (
     ExampleCollator,
     ProofPremiseCollator,
@@ -27,6 +27,7 @@ from tactic_gen.tactic_data import (
     ReasoningCollator,
     example_collator_from_conf,
     example_collator_conf_from_yaml,
+    get_tokenizer,
     NEWLINE_RESPONSE_TEMPLATE,
 )
 from model_deployment.model_result import ModelResult, filter_recs
@@ -172,7 +173,7 @@ generate only the next tactic."},
             top_p=0.95,
             top_k=1,
         )
-        
+
         output = self.model.fast_generate(
             [collated_input],
             sampling_params = sampling_params,
