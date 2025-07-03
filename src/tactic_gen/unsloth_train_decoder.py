@@ -100,6 +100,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> tuple[PreTrainedModel, P
         load_in_4bit = True,
         load_in_8bit = False,
         full_finetuning = False,
+        fast_inference = True,
     )
     return model, tokenizer
 
