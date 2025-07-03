@@ -151,7 +151,7 @@ def get_training_args(
             max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
             max_prompt_length=get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
             #scale_rewards=False,
-            beta=0.05,
+            #beta=0.05,
         )
     elif conf["train_type"] == "sft":
         from transformers import TrainingArguments
