@@ -358,8 +358,13 @@ def get_grpo_trainer(
             embedding_answer = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True).unsqueeze(0)
 
             similarities = util.cos_sim(embedding_completions, embedding_answer)
+            # Use exact match as part of reward (e.g., r = α * cosine + (1 - α) * exact_match).
+            exact_match = [1 if completion == answer else 0 for completion, answer in zip(cleaned_completions, cleaned_answers)]
+
             # This gives us a len(completions) x 1 tensor, flatten to get rewards
             rewards = similarities.squeeze().tolist()
+            alpha = 0.5
+            rewards = [alpha * similarity + (1 - alpha) * exact_match for similarity, exact_match in zip(rewards, exact_match)]
         except Exception as e:
             print(f"Error calculating similarity: {e}")
             rewards = [0] * len(cleaned_completions)

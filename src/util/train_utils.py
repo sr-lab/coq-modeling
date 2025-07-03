@@ -149,8 +149,9 @@ def get_training_args(
             temperature=get_optional_arg("temperature", conf, 0.9),
             report_to = "tensorboard",
             max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
-            max_prompt_length=get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"])
+            max_prompt_length=get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
             #scale_rewards=False,
+            beta=0.05,
         )
     elif conf["train_type"] == "sft":
         from transformers import TrainingArguments
