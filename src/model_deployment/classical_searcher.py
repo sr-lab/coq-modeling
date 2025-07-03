@@ -140,7 +140,7 @@ class ClassicalSearcher:
     ) -> ClassicalSuccess | ClassicalFailure:
         start = time.time()
         num_steps = 0
-        
+        print("STARTING SEARCH")
         # Print ground truth proof at the beginning
         if print_proofs:
             print("Ground Truth Proof:")
@@ -198,7 +198,7 @@ class ClassicalSearcher:
     def search_step(self, attempt_num: int, print_proofs: bool) -> Optional[Candidate]:
         cur_candidate = heapq.heappop(self.frontier)
         if print_proofs:
-            print(f"===== Attempt {attempt_num} ======")
+            print(f">>>>>>>>>>===== Attempt {attempt_num} ======")
             print(cur_candidate.proof_str)
             print()
         proof_check_result = self.proof_manager.check_proof(
