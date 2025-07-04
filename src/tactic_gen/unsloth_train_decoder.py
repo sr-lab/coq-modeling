@@ -274,10 +274,24 @@ def get_sft_trainer(
 
     EOS_TOKEN = tokenizer.eos_token
     def formatting_prompts_func(examples):
-        # print(examples["prompt"][0])
-        # print(examples["answer"][0])
-        prompts = examples["prompt"]
-        completions = examples["completion"]
+        if "prompt" in examples and "completion" in examples:
+            prompts = examples["prompt"]
+            completions = examples["completion"]
+        elif "text" in examples:
+            full_texts = examples["text"]
+            # split texts in [TACTIC]
+            prompts = []
+            completions = []
+            for text in full_texts:
+                    if "\n[TACTIC]\n" in text:
+                        prompt, completion = text.split("\n[TACTIC]\n", 1)
+                        prompts.append(prompt)
+                        completions.append(completion)
+                    else:
+                        prompts.append(text)
+                        completions.append("")   
+        else:
+            raise ValueError(f"Invalid dataset format: {examples.keys()}")
         new_texts = []
         for prompt, completion in zip(prompts, completions):
             messages = [
