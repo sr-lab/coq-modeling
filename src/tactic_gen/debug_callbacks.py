@@ -49,7 +49,9 @@ class SimpleCallback(TrainerCallback):
                 print("tokenized_labels: ", tokenized_labels)
                 print("==============================")
                 print("inputs: ", inputs[0])
-                print("labels: ", labels[0][-200:])
+                # print indexes where labels are not -100
+                print("inputs shape", inputs[0].shape)
+                print("indexes where labels are -100: ", np.where(labels[0] == -100))
                 print("==============================")
                 break
         else:
