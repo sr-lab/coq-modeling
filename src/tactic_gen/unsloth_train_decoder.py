@@ -327,7 +327,7 @@ def get_sft_trainer(
             data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
             dataset_num_proc = 16,   
             args=training_args,
-            callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
+            #callbacks=[SimpleCallback("train", tokenizer)],  # Add debug callbacks
         )
         trainer.args.warmup_ratio = 0
 
