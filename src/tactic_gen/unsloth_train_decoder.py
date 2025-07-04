@@ -361,13 +361,41 @@ def get_grpo_trainer(
     train_dataset, val_dataset = get_datasets(conf, tokenizer)
 
     print("processed_train_dataset: ", train_dataset[0]["prompt"])
+    print(f"Train dataset size: {len(train_dataset)}")
+    print(f"Val dataset size: {len(val_dataset) if val_dataset else 0}")
+    print(f"Model device: {next(model.parameters()).device}")
+    print(f"Embedding model device: {embedding_model.device}")
+    print(f"Temperature: {training_args.temperature}")
+    print(f"Num generations: {training_args.num_generations}")
+    print(f"Max completion length: {training_args.max_completion_length}")
+    print(f"Max prompt length: {training_args.max_prompt_length}")
 
+    def check_format(prompts, completions, **kwargs):
+        """Check if completions follow expected Coq tactic format."""
+        def is_valid_tactic(completion):
+            cleaned = completion.strip(tokenizer.eos_token).strip()
+            # Basic checks for Coq tactic format
+            return (
+                cleaned.startswith(("\n", " ")) and
+                cleaned.endswith(".") and
+                cleaned.count(".") == 1 and
+                len(cleaned.strip()) > 2  # At least some content
+            )
+        
+        rewards = [1 if is_valid_tactic(completion) else 0 for completion in completions]
+        print(f"Format rewards: {rewards}")
+        return rewards
 
     def check_answer(prompts, completions, answer, **kwargs):
         cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
         cleaned_answers = [a.strip() for a in answer]
         
         try:
+            # Move embedding model to the same device as the model if needed
+            device = next(model.parameters()).device
+            if embedding_model.device != device:
+                embedding_model.to(device)
+            
             embedding_completions = embedding_model.encode(cleaned_completions, convert_to_tensor=True)
             # Since all answers are the same, just encode one answer
             embedding_answer = embedding_model.encode(cleaned_answers[0], convert_to_tensor=True).unsqueeze(0)
@@ -382,8 +410,12 @@ def get_grpo_trainer(
             rewards = [alpha * similarity + (1 - alpha) * exact_match for similarity, exact_match in zip(rewards, exact_match)]
         except Exception as e:
             print(f"Error calculating similarity: {e}")
-            rewards = [0] * len(cleaned_completions)
-        print("Rewards: ", rewards)
+            print(f"Completions: {cleaned_completions}")
+            print(f"Answers: {cleaned_answers}")
+            # Return small negative rewards instead of zeros to avoid masking issues
+            rewards = [-0.1] * len(cleaned_completions)
+        
+        print(f"Final rewards: {rewards}")
         return rewards
 
 
