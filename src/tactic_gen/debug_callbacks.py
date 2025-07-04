@@ -45,13 +45,20 @@ class SimpleCallback(TrainerCallback):
                     return
                     #tokenized_labels = self.tokenizer.decode(labels[0], skip_special_tokens=False)
                 print("==============================")
-                print("tokenized_inputs: ", tokenized_inputs)
-                print("tokenized_labels: ", tokenized_labels)
+                #print("tokenized_inputs: ", tokenized_inputs)
+                #print("tokenized_labels: ", tokenized_labels)
                 print("==============================")
-                print("inputs: ", inputs[0])
+                #print("inputs: ", inputs[0])
                 # print indexes where labels are not -100
                 print("inputs shape", len(inputs[0]))
-                print("indexes where labels are -100: ", np.where(labels[0].cpu().numpy() == -100))
+                print("indexes where labels are not -100: ", np.where(labels[0].cpu().numpy() != -100))
+                # Now get the inputs correspoinding to the indexes where labels are not -100 and decode them
+                inputs_not_ignored = inputs[0][np.where(labels[0].cpu().numpy() != -100)]
+                print("inputs_not_ignored: ", inputs_not_ignored)
+                print("inputs_not_ignored shape: ", inputs_not_ignored.shape)
+                print("inputs_not_ignored dtype: ", inputs_not_ignored.dtype)
+                print("inputs_not_ignored device: ", inputs_not_ignored.device)
+                print("inputs_not_ignored: ", self.tokenizer.decode(inputs_not_ignored, skip_special_tokens=False))
                 print("==============================")
                 break
         else:
