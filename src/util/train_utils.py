@@ -205,8 +205,6 @@ def get_training_args(
             logging_steps = get_required_arg("logging_steps", conf),
             output_dir = get_required_arg("output_dir", conf),
             report_to = "tensorboard",
-            warmup_ratio = get_optional_arg("warmup_ratio", conf, 0.01),
-            warmup_steps = get_optional_arg("warmup_steps", conf, 100),
         )
     else:
         raise ValueError(f"Invalid train type: {conf['train_type']}")
