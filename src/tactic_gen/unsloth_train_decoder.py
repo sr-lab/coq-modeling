@@ -387,10 +387,13 @@ def get_grpo_trainer(
         return rewards
 
     def check_answer(prompts, completions, answer, **kwargs):
-        print("completions: ", completions)
+        if type(completions[0]) == list:
+            completions = [completion[0]["content"] for completion in completions]
+
         cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
         cleaned_answers = [a.strip() for a in answer]
-        
+        print(f"Cleaned completions: {cleaned_completions}")
+        print(f"Cleaned answers: {cleaned_answers[0]}")
         try:
             # Move embedding model to the same device as the model if needed
             device = next(model.parameters()).device
