@@ -50,7 +50,7 @@ class SimpleCallback(TrainerCallback):
                 print("==============================")
                 print("inputs: ", inputs[0])
                 # print indexes where labels are not -100
-                print("inputs shape", inputs[0].shape)
+                print("inputs shape", len(inputs[0]))
                 print("indexes where labels are -100: ", np.where(labels[0] == -100))
                 print("==============================")
                 break
