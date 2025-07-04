@@ -191,6 +191,7 @@ def get_training_args(
             max_seq_length = get_required_arg("hard_seq_len", conf),
             per_device_train_batch_size = get_required_arg("per_device_train_batch_size", conf),
             gradient_accumulation_steps = get_optional_arg("gradient_accumulation_steps", conf, 2),
+            max_steps = get_optional_arg("max_steps", conf, -1),
             save_strategy = "steps",
             save_steps = get_required_arg("save_steps", conf),
             save_total_limit = get_required_arg("save_total_limit", conf),
