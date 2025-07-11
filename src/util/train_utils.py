@@ -148,8 +148,8 @@ def get_training_args(
             ddp_find_unused_parameters=False,
             temperature=get_optional_arg("temperature", conf, 0.9),
             #report_to = "tensorboard",
-            #max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
-            #max_prompt_length=get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
+            max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
+            max_prompt_length= 3072#get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
             #scale_rewards=False,
             #beta=0.05,
         )
