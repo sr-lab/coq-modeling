@@ -846,7 +846,7 @@ class LmProcessedDataset(Dataset):
             clean_example = self.example_collator.collate_input(self.tokenizer, target_lm_example)
             return {
                 "prompt": clean_example,
-                "answer": None,
+                "answer": target_lm_example.next_steps[0],
                 "file_name": target_lm_example.file_name,
                 "proof_idx": target_lm_example.proof_idx,
                 "step_idx": target_lm_example.step_idx,

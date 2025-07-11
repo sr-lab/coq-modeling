@@ -340,13 +340,13 @@ def get_trainer(
         return rewards
 
     def check_answer(prompts, completions, answer, **kwargs):
-        print("Completions", completions)
+        #print("Completions", completions)
         
         # Clean the completions and answers
         cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
-        print("Tokenizer", tokenizer)
-        print("Tokenizer EOS Token", tokenizer.eos_token)
-        print("Cleaned Completions", cleaned_completions)
+        #print("Tokenizer", tokenizer)
+        #print("Tokenizer EOS Token", tokenizer.eos_token)
+        #print("Cleaned Completions", cleaned_completions)
         cleaned_answers = [a.strip() for a in answer]
         
         # Calculate cosine similarities
