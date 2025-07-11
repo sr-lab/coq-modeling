@@ -344,6 +344,9 @@ def get_trainer(
         
         # Clean the completions and answers
         cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
+        print("Tokenizer", tokenizer)
+        print("Tokenizer EOS Token", tokenizer.eos_token)
+        print("Cleaned Completions", cleaned_completions)
         cleaned_answers = [a.strip() for a in answer]
         
         # Calculate cosine similarities
