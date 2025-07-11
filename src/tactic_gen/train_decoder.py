@@ -78,7 +78,7 @@ _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
 valid_files = {}
 
-accelerator = Accelerator()
+#accelerator = Accelerator()
 
 TRAIN_DATASET_PATH = "train_dataset"
 
