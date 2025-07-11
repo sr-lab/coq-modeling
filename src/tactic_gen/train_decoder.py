@@ -1,6 +1,7 @@
 from typing import Optional, Any
 
 #import unsloth
+from accelerate import Accelerator
 import os
 import csv
 import sys
@@ -61,10 +62,15 @@ from sentence_transformers import util
 from torch.utils.data import Subset
 import logging
 
+# Add safe globals for PyTorch 2.6+ compatibility
+import numpy as np
+torch.serialization.add_safe_globals([np.core.multiarray._reconstruct])
+
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
 valid_files = {}
 
+accelerator = Accelerator()
 
 TRAIN_DATASET_PATH = "train_dataset"
 
@@ -108,6 +114,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
+            use_safetensors=True,
 
         )
     elif conf["train_type"] == "sft":
