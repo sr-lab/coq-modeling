@@ -15,7 +15,7 @@ DESIDER_REASONING_LENGTH = 1024
 MAX_REASONING_LENGTH = 4096
 DESIDER_TACTIC_LENGTH = 128
 
-embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True).to('cpu')
+embedding_model = SentenceTransformer('nomic-ai/CodeRankEmbed', trust_remote_code=True)
 
 def calculate_reasoning_format_reward(prompts, completions, answer, **kwargs):
     rewards = []
