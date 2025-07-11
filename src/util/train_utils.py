@@ -122,7 +122,7 @@ def get_training_args(
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOConfig
         return GRPOConfig(
-            #logging_dir="train_logs",
+            logging_dir="train_logs",
             output_dir=get_required_arg("output_dir", conf),
             per_device_train_batch_size=get_required_arg(
                 "per_device_train_batch_size", conf
@@ -147,9 +147,9 @@ def get_training_args(
             local_rank=(local_rank if local_rank else -1),
             ddp_find_unused_parameters=False,
             temperature=get_optional_arg("temperature", conf, 0.9),
-            #report_to = "tensorboard",
-            max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
-            max_prompt_length= 3072#get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
+            report_to = "tensorboard",
+            #max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
+            #max_prompt_length= 3072#get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
             #scale_rewards=False,
             #beta=0.05,
         )

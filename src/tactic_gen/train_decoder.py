@@ -31,7 +31,7 @@ from tactic_gen.reward_utils import (
     get_proof_goals,
     calculate_reasoning_format_reward,
     calculate_unchanged_reward,
-    #embedding_model
+    embedding_model
 )
 from util.train_utils import (
     get_optional_arg,
@@ -336,32 +336,32 @@ def get_trainer(
         print("Rewards Format", rewards, len(rewards))
         return rewards
 
-    # def check_answer(prompts, completions, answer, **kwargs):
-    #     #print("Completions", completions)
+    def check_answer(prompts, completions, answer, **kwargs):
+        #print("Completions", completions)
         
-    #     # Clean the completions and answers
-    #     cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
-    #     #print("Tokenizer", tokenizer)
-    #     #print("Tokenizer EOS Token", tokenizer.eos_token)
-    #     #print("Cleaned Completions", cleaned_completions)
-    #     cleaned_answers = [a.strip() for a in answer]
+        # Clean the completions and answers
+        cleaned_completions = [completion.strip(tokenizer.eos_token).strip() for completion in completions]
+        #print("Tokenizer", tokenizer)
+        #print("Tokenizer EOS Token", tokenizer.eos_token)
+        #print("Cleaned Completions", cleaned_completions)
+        cleaned_answers = [a.strip() for a in answer]
         
-    #     # Calculate cosine similarities
-    #     rewards = []
-    #     for completion, ans in zip(cleaned_completions, cleaned_answers):
-    #         try:
-    #             # Encode both completion and answer
-    #             embedding1 = embedding_model.encode(completion, convert_to_tensor=True)
-    #             embedding2 = embedding_model.encode(ans, convert_to_tensor=True)
-    #             # Calculate cosine similarity
-    #             similarity = util.cos_sim(embedding1, embedding2).item()
-    #             rewards.append(similarity)
-    #         except Exception as e:
-    #             print(f"Error calculating similarity: {e}")
-    #             rewards.append(0.0)
+        # Calculate cosine similarities
+        rewards = []
+        for completion, ans in zip(cleaned_completions, cleaned_answers):
+            try:
+                # Encode both completion and answer
+                embedding1 = embedding_model.encode(completion, convert_to_tensor=True)
+                embedding2 = embedding_model.encode(ans, convert_to_tensor=True)
+                # Calculate cosine similarity
+                similarity = util.cos_sim(embedding1, embedding2).item()
+                rewards.append(similarity)
+            except Exception as e:
+                print(f"Error calculating similarity: {e}")
+                rewards.append(0.0)
         
-    #     print("Rewards Answer (cosine similarity)", rewards, len(rewards))
-    #     return rewards
+        print("Rewards Answer (cosine similarity)", rewards, len(rewards))
+        return rewards
 
     def check_reward(prompts, completions, answer, **kwargs):
         file_name = kwargs["file_name"][0]
@@ -425,7 +425,7 @@ def get_trainer(
         trainer = GRPOTrainer(
             model=model,
             processing_class=train_dataset.tokenizer,
-            reward_funcs=[check_format],
+            reward_funcs=[check_format, check_answer],
             args=training_args,
             train_dataset=train_dataset,
             eval_dataset=val_dataset
