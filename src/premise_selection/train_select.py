@@ -5,6 +5,20 @@ import shutil
 from typing import Any, Optional
 from pathlib import Path
 
+import torch
+import numpy as np
+
+# Monkey-patch torch.load to handle PyTorch 2.6+ weights_only issue
+original_torch_load = torch.load
+
+def patched_torch_load(*args, **kwargs):
+    # If weights_only is not explicitly set, set it to False for backward compatibility
+    if 'weights_only' not in kwargs:
+        kwargs['weights_only'] = False
+    return original_torch_load(*args, **kwargs)
+
+torch.load = patched_torch_load
+
 from data_management.splits import split_file_path, Split
 from premise_selection.select_data import PremiseSelectionDataset
 from premise_selection.model import PremiseRetriever, PremiseRetrieverConfig
@@ -24,7 +38,6 @@ from util.train_utils import (
 import transformers
 from transformers import TrainingArguments, Trainer, GPT2Tokenizer
 from torch.utils.data import Dataset, DataLoader
-import torch
 import torch.nn.functional as F
 
 

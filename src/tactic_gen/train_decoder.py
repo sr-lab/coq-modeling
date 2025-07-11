@@ -62,9 +62,17 @@ from sentence_transformers import util
 from torch.utils.data import Subset
 import logging
 
-# Add safe globals for PyTorch 2.6+ compatibility
+# Monkey-patch torch.load to handle PyTorch 2.6+ weights_only issue
 import numpy as np
-torch.serialization.add_safe_globals([np.core.multiarray._reconstruct])
+original_torch_load = torch.load
+
+def patched_torch_load(*args, **kwargs):
+    # If weights_only is not explicitly set, set it to False for backward compatibility
+    if 'weights_only' not in kwargs:
+        kwargs['weights_only'] = False
+    return original_torch_load(*args, **kwargs)
+
+torch.load = patched_torch_load
 
 _logger = logging.getLogger(RANGO_LOGGER)
 # {file_path: workspace_path}
