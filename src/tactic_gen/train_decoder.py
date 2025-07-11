@@ -317,7 +317,7 @@ def get_trainer(
         check = lambda completion: (
             completion.strip(tokenizer.eos_token).startswith(("\n", " "))
             and completion.strip(tokenizer.eos_token).endswith(".")
-            and completion.strip(tokenizer.eos_token).count(".") == 1
+            #and completion.strip(tokenizer.eos_token).count(".") == 1
         )
         rewards = [1 if check(completion) else 0 for completion in completions]
         print("Rewards Format", rewards, len(rewards))

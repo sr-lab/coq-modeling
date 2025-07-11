@@ -756,13 +756,18 @@ class LmProcessedDataset(Dataset):
         max_n_examples: Optional[int] = None,
         train_type: str = "sft",
         skip_instances: int = 0,
+        shuffle: bool = True,
     ) -> None:
         super(LmProcessedDataset, self).__init__()
         self.edb = ExampleDB.load(data_path)
         __shuffled_list = list(range(self.edb.size()))
-        random.seed(0)
-        random.shuffle(__shuffled_list)
-        self.edb_map = dict(zip(range(self.edb.size()), __shuffled_list))
+        self.shuffle = shuffle
+        if shuffle:
+            random.seed(0)
+            random.shuffle(__shuffled_list)
+            self.edb_map = dict(zip(range(self.edb.size()), __shuffled_list))
+        else:
+            self.edb_map = dict(zip(range(self.edb.size()), range(self.edb.size())))
         self.raw_examples: list[LmExample] = []
         self.collator = DataCollatorForCompletionOnlyLM(
             response_template=NEWLINE_RESPONSE_TEMPLATE,
@@ -965,6 +970,7 @@ class LmDataset(Dataset):
         cache_loc: Path,
         hard_seq_len: int,
         max_n_examples: Optional[int],
+
     ) -> None:
         super(LmDataset, self).__init__()
         self.data_loc = data_loc
