@@ -329,6 +329,8 @@ def get_trainer(
     print("\n\nBuilding Trainer...")
 
     def check_format(prompts, completions, **kwargs):
+        print("Completions", completions, len(completions))
+        print("Completion", completions[0])
         check = lambda completion: (
             completion.strip(tokenizer.eos_token).startswith(("\n", " "))
             and completion.strip(tokenizer.eos_token).endswith(".")
