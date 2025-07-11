@@ -114,7 +114,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
-            use_safetensors=True,
+            #use_safetensors=True,
 
         )
     elif conf["train_type"] == "sft":
