@@ -125,6 +125,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             #use_safetensors=True,
 
         )
+        tokenizer = get_tokenizer(get_required_arg("model_name", conf))
     elif conf["train_type"] == "sft":
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
@@ -329,8 +330,6 @@ def get_trainer(
     print("\n\nBuilding Trainer...")
 
     def check_format(prompts, completions, **kwargs):
-        print("Completions", completions, len(completions))
-        print("Completion", completions[0])
         check = lambda completion: (
             completion.strip(tokenizer.eos_token).startswith(("\n", " "))
             and completion.strip(tokenizer.eos_token).endswith(".")
