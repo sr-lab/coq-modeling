@@ -122,7 +122,6 @@ def get_training_args(
     if conf["train_type"] == "grpo" or conf["train_type"] == "unsloth-grpo":
         from trl import GRPOConfig
         return GRPOConfig(
-            logging_dir="train_logs",
             output_dir=get_required_arg("output_dir", conf),
             per_device_train_batch_size=get_required_arg(
                 "per_device_train_batch_size", conf
@@ -135,23 +134,18 @@ def get_training_args(
             logging_steps=get_required_arg("logging_steps", conf),
             num_train_epochs=get_required_arg("num_train_epochs", conf),
             max_steps=get_optional_arg("max_steps", conf, -1),
-            save_strategy="steps",
+            save_strategy="no",
             save_steps=get_required_arg("save_steps", conf),
-            #save_total_limit=get_required_arg("save_total_limit", conf),
+            save_total_limit=get_required_arg("save_total_limit", conf),
             eval_strategy="no",
             eval_steps=get_required_arg("eval_steps", conf),
             per_device_eval_batch_size=get_required_arg("per_device_eval_batch_size", conf),
             eval_accumulation_steps=get_optional_arg("eval_accumulation_steps", conf, 1),
-            load_best_model_at_end=False,
+            load_best_model_at_end=True,
             # deepspeed=__get_required_arg("deepspeed", conf),
             local_rank=(local_rank if local_rank else -1),
             ddp_find_unused_parameters=False,
             temperature=get_optional_arg("temperature", conf, 0.9),
-            report_to = "tensorboard",
-            max_completion_length=get_required_arg("out_tokens", conf["example_collator"]),
-            max_prompt_length=get_required_arg("hard_seq_len", conf) - get_required_arg("out_tokens", conf["example_collator"]),
-            #scale_rewards=False,
-            #beta=0.05,
         )
     elif conf["train_type"] == "sft":
         from transformers import TrainingArguments

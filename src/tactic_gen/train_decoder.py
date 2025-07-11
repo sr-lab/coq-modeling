@@ -108,10 +108,7 @@ def get_lora_conf(conf: dict[str, Any]) -> LoraConfig:
         r=conf["peft_lora_r"],
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj"
-        ],
+        target_modules="all-linear",
     )
     return peft_config
 
