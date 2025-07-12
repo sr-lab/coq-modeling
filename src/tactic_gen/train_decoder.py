@@ -280,6 +280,13 @@ def get_datasets(
         )
         return train_dataset, val_dataset
 
+def get_processed_model(model_name: str, checkpoint_loc: str, training_conf: dict[str, Any]) -> PreTrainedModel:
+    if training_conf["train_type"] == "grpo" or training_conf["train_type"] == "sft":
+        raw_model, tokenizer = get_model(model_name, training_conf)
+        from peft import PeftModel
+        model = PeftModel.from_pretrained(raw_model, checkpoint_loc)
+    
+    return model, get_tokenizer(get_required_arg("model_name", training_conf))
 
 def process_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
     if conf["train_type"] == "grpo" or conf["train_type"] == "sft":

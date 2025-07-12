@@ -19,7 +19,7 @@ from tactic_gen.lm_example import (
 # from tactic_gen.train_decoder import (
 #     get_tokenizer,
 # )
-from tactic_gen.train_decoder import process_model
+from tactic_gen.train_decoder import get_processed_model
 from tactic_gen.tactic_data import (
     ExampleCollator,
     ProofPremiseCollator,
@@ -223,7 +223,7 @@ class DecoderLocalWrapper:
         )
         example_collator = example_collator_from_conf(example_collator_conf)
 
-        model, tokenizer = process_model(str(checkpoint_loc.resolve()), training_conf)
+        model, tokenizer = get_processed_model(str(checkpoint_loc.resolve()), conf["tactic_gen"]["checkpoint_loc"], training_conf)
         model.to("cuda")
         
         if tokenizer is None:
@@ -369,7 +369,7 @@ generate only the next tactic."},
     def from_checkpoint(cls, checkpoint_loc: Path, conf: dict[str, Any]) -> DecoderLocalWrapper:
         from tactic_gen.unsloth_train_decoder import unsloth_process_model
         from unsloth.chat_templates import get_chat_template
-        
+
         training_conf = cls.get_training_conf(checkpoint_loc)
         hard_seq_length = get_required_arg("hard_seq_len", training_conf)
         example_collator_conf = example_collator_conf_from_yaml(
