@@ -222,8 +222,7 @@ class DecoderLocalWrapper:
             training_conf["example_collator"]
         )
         example_collator = example_collator_from_conf(example_collator_conf)
-        print(conf)
-        model, tokenizer = get_processed_model(str(checkpoint_loc.resolve()), conf["tactic_gen"]["checkpoint_loc"], training_conf)
+        model, tokenizer = get_processed_model(str(checkpoint_loc.resolve()), conf["checkpoint_loc"], training_conf)
         model.to("cuda")
         
         if tokenizer is None:
