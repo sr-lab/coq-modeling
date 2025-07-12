@@ -20,7 +20,6 @@ from tactic_gen.lm_example import (
 #     get_tokenizer,
 # )
 from tactic_gen.train_decoder import process_model
-from tactic_gen.unsloth_train_decoder import unsloth_process_model
 from tactic_gen.tactic_data import (
     ExampleCollator,
     ProofPremiseCollator,
@@ -33,7 +32,7 @@ from tactic_gen.tactic_data import (
 )
 from model_deployment.model_result import ModelResult, filter_recs
 
-from unsloth.chat_templates import get_chat_template
+
 
 class TokenMask(Enum):
     STATE = 0
@@ -368,6 +367,9 @@ generate only the next tactic."},
 
     @classmethod
     def from_checkpoint(cls, checkpoint_loc: Path, conf: dict[str, Any]) -> DecoderLocalWrapper:
+        from tactic_gen.unsloth_train_decoder import unsloth_process_model
+        from unsloth.chat_templates import get_chat_template
+        
         training_conf = cls.get_training_conf(checkpoint_loc)
         hard_seq_length = get_required_arg("hard_seq_len", training_conf)
         example_collator_conf = example_collator_conf_from_yaml(
@@ -383,6 +385,7 @@ generate only the next tactic."},
                 get_required_arg("model_name", training_conf), add_eos=False
             )
 
+        
         tokenizer = get_chat_template(
             tokenizer,
             chat_template="qwen-2.5",
