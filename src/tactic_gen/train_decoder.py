@@ -138,7 +138,7 @@ def get_model(model_name: str, conf: dict[str, Any]) -> PreTrainedModel:
             quantization_config=bnb_config,
             torch_dtype=torch.bfloat16,
             # device_map="auto",  # Remove this for accelerate launch multi-GPU training
-            attn_implementation="flash_attention_2"
+            #attn_implementation="flash_attention_2"
         )
         #model.gradient_checkpointing_enable()
         #model.gradient_checkpointing_enable()
