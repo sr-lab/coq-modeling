@@ -145,8 +145,16 @@ class ClassicalSearcher:
         if print_proofs:
             print("Ground Truth Proof:")
             print(self.initial_dset_file.proofs[-1].proof_text_to_string())
+
             print("-" * 50)
-        
+        if "Admitted" in self.initial_dset_file.proofs[-1].proof_text_to_string():
+            return ClassicalSuccess(
+                time.time() - start,
+                self.total_model_time,
+                num_steps,
+                self.root_candidate,
+                self.root_candidate,
+            )
         for i in range(self.max_search_steps):
             cur = time.time()
             if self.timeout <= cur - start:

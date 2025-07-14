@@ -146,6 +146,8 @@ class DecoderLocalWrapper:
         if token_mask_str is not None:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
+        print(f"Collated input length: {len(collated_input)} characters")
+        print(f"Input preview: {collated_input[:200]}...")
 
         inputs = self.tokenizer(
             collated_input,
@@ -153,6 +155,8 @@ class DecoderLocalWrapper:
             truncation=True,
             return_tensors="pt",
         )
+        print(f"Tokenized input shape: {inputs['input_ids'].shape}")
+        print(f"Using hard_seq_len: {self.hard_seq_len}, max_new_tokens: {self.max_new_tokens}")
 
         attention_mask = transform_attention_mask(
             self.collator,
@@ -162,6 +166,7 @@ class DecoderLocalWrapper:
             inputs["attention_mask"],
         )
         with torch.no_grad():
+            print("Starting model generation...")
             outputs = self.model.generate(
                 inputs["input_ids"].cuda(),
                 max_new_tokens=self.max_new_tokens,
@@ -174,9 +179,15 @@ class DecoderLocalWrapper:
                 num_beams=n if beam and 1 < n else 1,
                 attention_mask=attention_mask.cuda(),
             )
+            print("Model generation completed")
         input_num_tokens = inputs["input_ids"].shape[1]
         generated_seqs = outputs.sequences[:, input_num_tokens:]
+        print(f"Generated sequences shape: {generated_seqs.shape}")
         aux_tactics = self.tokenizer.batch_decode(generated_seqs, skip_special_tokens=True)
+        print(f"Decoded {len(aux_tactics)} tactics")
+        for i, tactic in enumerate(aux_tactics):
+            print(f"Tactic {i}: {tactic[:100]}...")
+        
         non_special_tokens = torch.concat(
             [(generated_seqs != t)[:, :, None] for t in self.tokenizer.all_special_ids],
             axis=2,
@@ -184,28 +195,12 @@ class DecoderLocalWrapper:
         lengths = non_special_tokens.sum(axis=1).tolist()
 
         tactics = []
-        for tactic in aux_tactics:
-            if ReasoningCollator.check_format(tactic):
-                tactics.append(ReasoningCollator.extract_tactic(tactic))
-            else:
-                tactics.append(tactic)
+        scores = []
+        for i, tactic in enumerate(aux_tactics):
+            tactics.append(tactic)
+            scores.append(1)
 
-        if beam and 1 < n:
-            scores = outputs.sequences_scores.tolist()
-            return ModelResult(tactics, scores, lengths)
-        else:
-            with torch.no_grad():
-                transition_scores = self.model.compute_transition_scores(
-                    generated_seqs, outputs.scores, normalize_logits=True
-                )
-                scores = (
-                    transition_scores.where(
-                        transition_scores != -torch.inf, torch.tensor(0.0)
-                    )
-                    .sum(axis=1)
-                    .tolist()
-                )
-                return ModelResult(tactics, scores, lengths)
+        return ModelResult(tactics, scores, lengths, [0])
 
     @classmethod
     def get_training_conf(cls, checkpoint_loc: Path) -> Any:

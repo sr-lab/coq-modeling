@@ -129,9 +129,13 @@ def run_proof(conf: RunProofConf) -> SuccessfulSearch | FailedSearch:
             conf.search_conf, conf.tactic_gens, proof_manager
         )
         print("Starting search...")
+        print(f"Search config: {conf.search_conf.__class__.__name__}")
+        print(f"Number of tactic generators: {len(conf.tactic_gens)}")
+        print(f"Timeout: {conf.search_conf.timeout}")
         result = tree_manager.search(
             print_proofs=conf.print_proofs, print_trees=conf.print_trees
         )
+        print(f"Search completed, result type: {type(result).__name__}")
         return result
 
 

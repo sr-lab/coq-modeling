@@ -455,6 +455,11 @@ class LocalTacticGenClient:
         example = self.formatters[0].example_from_step(
             step_idx, proof.proof_idx, dset_file
         )
+        print(f"Generated example for step {step_idx}, proof {proof.proof_idx}")
+        print(f"Example has {len(example.next_steps)} next steps")
+        print(f"Example has {len(example.proofs) if example.proofs else 0} proofs")
+        print(f"Example has {len(example.premises) if example.premises else 0} premises")
+        
         request_id = hash(example)
         request_data = {
             "method": "get_recs",
@@ -470,14 +475,23 @@ class LocalTacticGenClient:
         }
 
         chosen_url = random.choice(self.urls)
+        print(f"Making request to {chosen_url}")
 
         start = time.time()
         response = self.session.post(chosen_url, json=request_data).json()
         end = time.time()
+        print(f"Model response time: {end - start:.2f}s")
+        
         if request_id != request_id:
             _logger.error("ID MISMATCH IN REQUESTS")
         assert response["id"] == request_id
-        return ModelResult.from_json(response["result"])
+        
+        result = ModelResult.from_json(response["result"])
+        print(f"Model returned {len(result.next_tactic_list)} tactics")
+        if result.next_tactic_list:
+            print(f"First tactic: {result.next_tactic_list[0][:100]}...")
+        
+        return result
 
     def set_seed(self, seed: int) -> None:
         request_data = {
