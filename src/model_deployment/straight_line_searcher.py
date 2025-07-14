@@ -118,8 +118,8 @@ class StraightLineSearcher:
                 0,
                 self.total_model_time,
                 1,
-                self.root_candidate,
-                self.root_candidate,
+                None,
+                None,
             )
         
         while cur_time < self.timeout:
