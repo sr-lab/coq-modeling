@@ -112,6 +112,15 @@ class StraightLineSearcher:
             print("Ground Truth Proof:")
             print(self.initial_proof_obj.proof_text_to_string())
             print("-" * 50)
+
+        if "Admitted" in self.initial_dset_file.proofs[-1].proof_text_to_string():
+            return StraightLineSuccess(
+                0,
+                self.total_model_time,
+                1,
+                self.root_candidate,
+                self.root_candidate,
+            )
         
         while cur_time < self.timeout:
             maybe_complete, attempt = self.search_step(
@@ -165,6 +174,7 @@ class StraightLineSearcher:
                 last_proof,
                 cur_dset_file,
                 1,
+
                 token_mask=self.token_mask,
                 file_prefix=self.proof_manager.file_prefix,
             )

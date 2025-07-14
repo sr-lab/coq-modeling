@@ -142,12 +142,16 @@ class DecoderLocalWrapper:
         beam: bool,
         token_mask_str,
     ) -> ModelResult:
+        
+        
         token_mask = None
         if token_mask_str is not None:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
         print(f"Collated input length: {len(collated_input)} characters")
         print(f"Input preview: {collated_input[:200]}...")
+
+        
 
         inputs = self.tokenizer(
             collated_input,
