@@ -117,7 +117,6 @@ class StraightLineSearcher:
             return StraightLineSuccess(
                 0,
                 self.total_model_time,
-                1,
                 None,
                 None,
             )
