@@ -475,8 +475,8 @@ class LocalTacticGenClient:
         print(f"\n{'='*50}")
         print(f"DEBUG: Model input example details:")
         # print(f"DEBUG: Script: {example.script}...")
-        print(f"DEBUG: Goals: {example.goals}")
-        print(f"DEBUG: Next steps: {example.next_steps}")
+        #print(f"DEBUG: Goals: {example.goals}")
+        #print(f"DEBUG: Next steps: {example.next_steps}")
         if example.proofs:
             print(f"DEBUG: Similar proofs (first 2):")
             for i, proof_text in enumerate(example.proofs[:2]):
