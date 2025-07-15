@@ -149,7 +149,7 @@ class DecoderLocalWrapper:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
         #print(f"Collated input length: {len(collated_input)} characters")
-        print(f"Input preview: \n{collated_input}")
+        #print(f"Input preview: \n{collated_input}")
 
         
 
@@ -159,8 +159,8 @@ class DecoderLocalWrapper:
             truncation=True,
             return_tensors="pt",
         )
-        print(f"Tokenized input shape: {inputs['input_ids'].shape}")
-        print(f"Using hard_seq_len: {self.hard_seq_len}, max_new_tokens: {self.max_new_tokens}")
+        #print(f"Tokenized input shape: {inputs['input_ids'].shape}")
+        #print(f"Using hard_seq_len: {self.hard_seq_len}, max_new_tokens: {self.max_new_tokens}")
 
         attention_mask = transform_attention_mask(
             self.collator,
