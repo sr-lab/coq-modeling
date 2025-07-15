@@ -485,9 +485,9 @@ class LocalTacticGenClient:
             print(f"DEBUG: Premises (first 3):")
             for i, premise in enumerate(example.premises[:3]):
                 print(f"DEBUG: Premise {i}: {premise[:200]}...")
-        print(f"DEBUG: File repos path: {example.file_repos_path}")
-        print(f"DEBUG: Proof idx: {example.proof_idx}")
-        print(f"DEBUG: Step idx: {example.step_idx}")
+        #print(f"DEBUG: File repos path: {example.file_repos_path}")
+        #print(f"DEBUG: Proof idx: {example.proof_idx}")
+        #print(f"DEBUG: Step idx: {example.step_idx}")
         print(f"{'='*50}\n")
         
         request_id = hash(example)
