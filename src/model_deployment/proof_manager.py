@@ -204,7 +204,6 @@ class ProofManager:
         initial_proof_result = self.check_proof(
             "", self.proof_info.proof_term, initial_proof=True
         )
-        print("Tactic result:", initial_proof_result.tactic_result)
         assert initial_proof_result.new_proof is not None
         return DatasetFile(
             self.file_context, self.same_file_proofs + [initial_proof_result.new_proof]
@@ -247,8 +246,6 @@ class ProofManager:
         theorem: dataset_file.Term,
         initial_proof: bool = False,
     ) -> ProofCheckResult:
-        print(f"Checking proof (initial: {initial_proof}): {partial_proof[-100:]}...")
-        
         if (
             ("Theorem" in partial_proof)
             or ("Lemma" in partial_proof)
@@ -260,26 +257,21 @@ class ProofManager:
             or ("admit." in partial_proof)
             or ("Abort." in partial_proof)
         ):
-            print("Proof contains invalid keywords, returning invalid")
             return ProofCheckResult.get_invalid([])
         contents = f"{self.file_prefix}{partial_proof}"
         try:
-            print("Writing proof to Coq and getting steps...")
             steps = self.fast_client.write_and_get_steps(contents)
-            print(f"Got {len(steps)} steps from Coq")
+
         except ResponseError as e:
             _logger.warning(f"Got repsonse error on proof: {partial_proof[-30:]}")
-            print(f"Response error: {e}")
             self.__restart_clients()
             return ProofCheckResult.get_invalid([])
         except TimeoutError as t:
             _logger.warning(f"Got timeout error on proof: {partial_proof[-30:]}")
-            print(f"Timeout error: {t}")
             self.__restart_clients()
             return ProofCheckResult.get_invalid([])
 
         if not self.check_valid(self.fast_client.client):
-            print("Proof validation failed")
             return ProofCheckResult.get_invalid([s.text for s in steps])
 
         if 0 < len(partial_proof) and "Qed." in steps[-1].text:
@@ -287,8 +279,7 @@ class ProofManager:
 
         prefix_steps, new_steps = self.gather_steps(steps)
         new_step_strs = [s.text for s in new_steps]
-        print(f"New steps: {new_step_strs}")
-
+       
         farther_end = steps[-1].ast.range.end
         try:
             
@@ -297,37 +288,30 @@ class ProofManager:
             )
         except ResponseError as e:
             _logger.warning(f"Got repsonse error on proof: {partial_proof[-10:]}")
-            print(f"Goals response error: {e}")
             self.__restart_clients()
             return ProofCheckResult.get_invalid(new_step_strs)
         except TimeoutError as t:
             _logger.warning(f"Got timeout error on proof: {partial_proof[-10:]}")
-            print(f"Goals timeout error: {t}")
             self.__restart_clients()
             return ProofCheckResult.get_invalid(new_step_strs)
         # self.fast_client.client.lsp_endpoint.timeout = 5
 
         if current_goals is None:
-            print("No current goals, returning invalid")
             return ProofCheckResult.get_invalid(new_step_strs)
         if current_goals.goals is None:
-            print("Goals is None, returning invalid")
             return ProofCheckResult.get_invalid(new_step_strs)
 
         if initial_proof:
             self.first_goals = current_goals
 
         if self.__can_close_proof(current_goals):
-            print("Proof can be closed, checking final proof...")
             must_be_valid = "".join([s.text for s in steps]) + "\nQed."
             steps = self.fast_client.write_and_get_steps(must_be_valid)
             if not self.check_valid(self.fast_client.client):
-                print("Final proof validation failed")
                 return ProofCheckResult.get_invalid(new_step_strs)
             new_proof = self.get_proof_shell(
                 new_step_strs, current_goals, theorem, complete=True
             )
-            print("Proof completed successfully!")
             return ProofCheckResult(
                 TacticResult.COMPLETE,
                 new_step_strs,
@@ -337,7 +321,6 @@ class ProofManager:
             )
 
         new_proof = self.get_proof_shell(new_step_strs, current_goals, theorem)
-        print("Proof step valid, continuing...")
         return ProofCheckResult(
             TacticResult.VALID,
             new_step_strs,

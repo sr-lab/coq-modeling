@@ -454,11 +454,7 @@ class LocalTacticGenClient:
         example = self.formatters[0].example_from_step(
             step_idx, proof.proof_idx, dset_file
         )
-        print(f"Generated example for step {step_idx}, proof {proof.proof_idx}")
-        print(f"Example has {len(example.next_steps)} next steps")
-        print(f"Example has {len(example.proofs) if example.proofs else 0} proofs")
-        print(f"Example has {len(example.premises) if example.premises else 0} premises")
-    
+        
         
         request_id = hash(example)
         request_data = {
