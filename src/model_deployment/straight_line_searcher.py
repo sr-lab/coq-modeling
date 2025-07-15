@@ -167,11 +167,11 @@ class StraightLineSearcher:
             print(f"DEBUG: Current proof script:")
             print(f"DEBUG: {cur_proof_script}")
             print(f"DEBUG: Current goals:")
-            if admitted_step.goals:
-                for i, goal in enumerate(admitted_step.goals):
-                    print(f"DEBUG: Goal {i}: {goal.text}")
-            else:
-                print(f"DEBUG: No goals available")
+            # if admitted_step.goals:
+            #     for i, goal in enumerate(admitted_step.goals):
+            #         print(f"DEBUG: Goal {i}: {goal.text}")
+            # else:
+            #     print(f"DEBUG: No goals available")
             print(f"DEBUG: File prefix: {self.proof_manager.file_prefix}")
             print(f"{'='*40}\n")
             
