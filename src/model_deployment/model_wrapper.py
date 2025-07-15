@@ -148,8 +148,8 @@ class DecoderLocalWrapper:
         if token_mask_str is not None:
             token_mask = TokenMask.from_str(token_mask_str)
         collated_input = self.collator.collate_input(self.tokenizer, example)
-        print(f"Collated input length: {len(collated_input)} characters")
-        print(f"Input preview: {collated_input[:200]}...")
+        #print(f"Collated input length: {len(collated_input)} characters")
+        print(f"Input preview: \n{collated_input}")
 
         
 
@@ -170,7 +170,7 @@ class DecoderLocalWrapper:
             inputs["attention_mask"],
         )
         with torch.no_grad():
-            print("Starting model generation...")
+            #print("Starting model generation...")
             outputs = self.model.generate(
                 inputs["input_ids"].cuda(),
                 max_new_tokens=self.max_new_tokens,
@@ -183,14 +183,14 @@ class DecoderLocalWrapper:
                 num_beams=n if beam and 1 < n else 1,
                 attention_mask=attention_mask.cuda(),
             )
-            print("Model generation completed")
+            #print("Model generation completed")
         input_num_tokens = inputs["input_ids"].shape[1]
         generated_seqs = outputs.sequences[:, input_num_tokens:]
-        print(f"Generated sequences shape: {generated_seqs.shape}")
+        #print(f"Generated sequences shape: {generated_seqs.shape}")
         aux_tactics = self.tokenizer.batch_decode(generated_seqs, skip_special_tokens=True)
-        print(f"Decoded {len(aux_tactics)} tactics")
-        for i, tactic in enumerate(aux_tactics):
-            print(f"Tactic {i}: {tactic[:100]}...")
+        #print(f"Decoded {len(aux_tactics)} tactics")
+        #for i, tactic in enumerate(aux_tactics):
+        #    print(f"Tactic {i}: {tactic[:100]}...")
         
         non_special_tokens = torch.concat(
             [(generated_seqs != t)[:, :, None] for t in self.tokenizer.all_special_ids],

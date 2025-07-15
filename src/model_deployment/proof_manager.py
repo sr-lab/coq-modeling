@@ -291,11 +291,10 @@ class ProofManager:
 
         farther_end = steps[-1].ast.range.end
         try:
-            print("Getting current goals...")
+            
             current_goals = self.fast_client.client.proof_goals(
                 TextDocumentIdentifier(self.fast_client.file_uri), farther_end
             )
-            print(f"Current goals: {current_goals is not None}")
         except ResponseError as e:
             _logger.warning(f"Got repsonse error on proof: {partial_proof[-10:]}")
             print(f"Goals response error: {e}")
