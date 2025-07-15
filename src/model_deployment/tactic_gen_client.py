@@ -471,21 +471,21 @@ class LocalTacticGenClient:
         }
 
         chosen_url = random.choice(self.urls)
-        print(f"Making request to {chosen_url}")
+        #print(f"Making request to {chosen_url}")
 
         start = time.time()
         response = self.session.post(chosen_url, json=request_data).json()
         end = time.time()
-        print(f"Model response time: {end - start:.2f}s")
+        #print(f"Model response time: {end - start:.2f}s")
         
         if request_id != request_id:
             _logger.error("ID MISMATCH IN REQUESTS")
         assert response["id"] == request_id
         
         result = ModelResult.from_json(response["result"])
-        print(f"Model returned {len(result.next_tactic_list)} tactics")
-        if result.next_tactic_list:
-            print(f"First tactic: {result.next_tactic_list[0][:100]}...")
+        #print(f"Model returned {len(result.next_tactic_list)} tactics")
+        #if result.next_tactic_list:
+        #    print(f"First tactic: {result.next_tactic_list[0]}")
         
         return result
 
