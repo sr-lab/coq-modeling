@@ -112,14 +112,6 @@ class StraightLineSearcher:
             print("Ground Truth Proof:")
             print(self.initial_proof_obj.proof_text_to_string())
             print("-" * 50)
-
-        if "Admitted" in self.initial_dset_file.proofs[-1].proof_text_to_string():
-            return StraightLineSuccess(
-                0,
-                self.total_model_time,
-                None,
-                None,
-            )
         
         while cur_time < self.timeout:
             maybe_complete, attempt = self.search_step(
