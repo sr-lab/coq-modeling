@@ -107,6 +107,16 @@ def run_proof(conf: RunProofConf) -> SuccessfulSearch | FailedSearch:
     for proof in conf.loc.dataset_file.proofs[: conf.loc.dp_proof_idx]:
         if normalize(target_theorem.term.text) == normalize(proof.theorem.term.text):
             occurance += 1
+    
+    # Debug: Print proof information
+    print(f"\n{'='*60}")
+    print(f"DEBUG: run_proof called for theorem: {target_theorem.term.text}")
+    print(f"DEBUG: Target theorem occurrence: {occurance}")
+    print(f"DEBUG: Proof index: {conf.loc.dp_proof_idx}")
+    print(f"DEBUG: Number of proofs in dataset: {len(conf.loc.dataset_file.proofs)}")
+    print(f"DEBUG: Number of tactic generators: {len(conf.tactic_gens)}")
+    print(f"{'='*60}\n")
+    
     print("Compiling File...")
     proof_info = get_proof_info(
         conf.loc.data_loc,
@@ -132,6 +142,25 @@ def run_proof(conf: RunProofConf) -> SuccessfulSearch | FailedSearch:
         print(f"Search config: {conf.search_conf.__class__.__name__}")
         print(f"Number of tactic generators: {len(conf.tactic_gens)}")
         print(f"Timeout: {conf.search_conf.timeout}")
+        
+        # Debug: Print search configuration details
+        print(f"\n{'='*50}")
+        print(f"DEBUG: Search configuration details:")
+        print(f"DEBUG: Search type: {conf.search_conf.__class__.__name__}")
+        if hasattr(conf.search_conf, 'timeout'):
+            print(f"DEBUG: Timeout: {conf.search_conf.timeout}")
+        if hasattr(conf.search_conf, 'max_branch'):
+            print(f"DEBUG: Max branch: {conf.search_conf.max_branch}")
+        if hasattr(conf.search_conf, 'max_search_steps'):
+            print(f"DEBUG: Max search steps: {conf.search_conf.max_search_steps}")
+        if hasattr(conf.search_conf, 'depth_limit'):
+            print(f"DEBUG: Depth limit: {conf.search_conf.depth_limit}")
+        if hasattr(conf.search_conf, 'beam_decode'):
+            print(f"DEBUG: Beam decode: {conf.search_conf.beam_decode}")
+        if hasattr(conf.search_conf, 'print_proofs'):
+            print(f"DEBUG: Print proofs: {conf.search_conf.print_proofs}")
+        print(f"{'='*50}\n")
+        
         result = tree_manager.search(
             print_proofs=conf.print_proofs, print_trees=conf.print_trees
         )

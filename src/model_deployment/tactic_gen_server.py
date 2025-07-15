@@ -38,6 +38,21 @@ def get_recs(
     token_mask: Optional[str],
 ) -> ModelResult:
     example = LmExample.from_json(example_json)
+    
+    # Debug: Print model wrapper input
+    print(f"\n{'='*50}")
+    print(f"DEBUG: Model wrapper input details:")
+    print(f"DEBUG: Script: {example.script[:200]}...")
+    print(f"DEBUG: Goals: {example.goals}")
+    print(f"DEBUG: Next steps: {example.next_steps}")
+    print(f"DEBUG: Number of similar proofs: {len(example.proofs) if example.proofs else 0}")
+    print(f"DEBUG: Number of premises: {len(example.premises) if example.premises else 0}")
+    print(f"DEBUG: Current proof: {current_proof[:200]}...")
+    print(f"DEBUG: Number of tactics requested: {n}")
+    print(f"DEBUG: Beam search: {beam}")
+    print(f"DEBUG: Token mask: {token_mask}")
+    print(f"{'='*50}\n")
+    
     start = time.time()
     result = wrapper.get_recs(example, n, current_proof, beam, token_mask).to_json()
     end = time.time()

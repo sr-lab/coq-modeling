@@ -129,6 +129,16 @@ class WholeProofSearcher:
         cur_proof_script = last_proof.proof_prefix_to_string(
             admitted_step, include_theorem=False
         )
+        
+        # Debug: Print whole proof search input
+        print(f"\n{'='*40}")
+        print(f"DEBUG: Whole proof search (all at once) - Input:")
+        print(f"DEBUG: Current proof script: {cur_proof_script}")
+        print(f"DEBUG: Number of attempts: {self.n_attempts}")
+        print(f"DEBUG: File prefix: {self.proof_manager.file_prefix}")
+        print(f"DEBUG: Rec type: {self.rec_type}")
+        print(f"{'='*40}\n")
+        
         start_model_time = time.time()
         result = self.tactic_gen_client.get_recs(
             len(last_proof.steps) - 1,
@@ -196,6 +206,15 @@ class WholeProofSearcher:
         cur_proof_script = last_proof.proof_prefix_to_string(
             admitted_step, include_theorem=False
         )
+        
+        # Debug: Print whole proof search step input
+        print(f"\n{'='*40}")
+        print(f"DEBUG: Whole proof search step - Input:")
+        print(f"DEBUG: Current proof script: {cur_proof_script}")
+        print(f"DEBUG: File prefix: {self.proof_manager.file_prefix}")
+        print(f"DEBUG: Rec type: {self.rec_type}")
+        print(f"{'='*40}\n")
+        
         start_time = time.time()
         result = self.tactic_gen_client.get_recs(
             len(last_proof.steps) - 1,

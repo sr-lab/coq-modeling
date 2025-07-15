@@ -168,6 +168,21 @@ class StraightLineSearcher:
             start_model_time = time.time()
             last_proof = cur_dset_file.proofs[-1]
             print(f"Step {step_count}: Calling model for step {len(last_proof.steps) - 1}")
+            
+            # Debug: Print current proof state and goals
+            print(f"\n{'='*40}")
+            print(f"DEBUG: Step {step_count} - Current proof state:")
+            print(f"DEBUG: Current proof script:")
+            print(f"DEBUG: {cur_proof_script}")
+            print(f"DEBUG: Current goals:")
+            if admitted_step.goals:
+                for i, goal in enumerate(admitted_step.goals):
+                    print(f"DEBUG: Goal {i}: {goal.text}")
+            else:
+                print(f"DEBUG: No goals available")
+            print(f"DEBUG: File prefix: {self.proof_manager.file_prefix}")
+            print(f"{'='*40}\n")
+            
             result = client.get_recs(
                 len(last_proof.steps) - 1,
                 last_proof,

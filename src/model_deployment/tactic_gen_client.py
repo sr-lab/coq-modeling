@@ -394,6 +394,17 @@ class OpenAIClient:
                 "content": current_user_prompt,
             },
         ]
+        
+        # Debug: Print OpenAI prompt details
+        print(f"\n{'='*50}")
+        print(f"DEBUG: OpenAI prompt details:")
+        print(f"DEBUG: Example user prompt: {example_user_prompt[:200]}...")
+        print(f"DEBUG: Example assistant response: {self.example_proof_str[:200]}...")
+        print(f"DEBUG: Current user prompt: {current_user_prompt[:200]}...")
+        print(f"DEBUG: File prefix: {file_prefix}")
+        print(f"DEBUG: Theorem text: {proof.theorem.term.text}")
+        print(f"{'='*50}\n")
+        
         print("GPT Request:")
         print(prompt)
 
@@ -459,6 +470,25 @@ class LocalTacticGenClient:
         print(f"Example has {len(example.next_steps)} next steps")
         print(f"Example has {len(example.proofs) if example.proofs else 0} proofs")
         print(f"Example has {len(example.premises) if example.premises else 0} premises")
+        
+        # Debug: Print detailed example information
+        print(f"\n{'='*50}")
+        print(f"DEBUG: Model input example details:")
+        print(f"DEBUG: Script: {example.script}...")
+        print(f"DEBUG: Goals: {example.goals}")
+        print(f"DEBUG: Next steps: {example.next_steps}")
+        if example.proofs:
+            print(f"DEBUG: Similar proofs (first 2):")
+            for i, proof_text in enumerate(example.proofs[:2]):
+                print(f"DEBUG: Proof {i}: {proof_text}...")
+        if example.premises:
+            print(f"DEBUG: Premises (first 3):")
+            for i, premise in enumerate(example.premises[:3]):
+                print(f"DEBUG: Premise {i}: {premise[:200]}...")
+        print(f"DEBUG: File repos path: {example.file_repos_path}")
+        print(f"DEBUG: Proof idx: {example.proof_idx}")
+        print(f"DEBUG: Step idx: {example.step_idx}")
+        print(f"{'='*50}\n")
         
         request_id = hash(example)
         request_data = {

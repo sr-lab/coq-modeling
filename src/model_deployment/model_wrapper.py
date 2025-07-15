@@ -310,7 +310,21 @@ generate only the next tactic."},
             inputs["input_ids"],
             inputs["attention_mask"],
         )
+        
+        # Debug: Print tokenized input details
+        print(f"\n{'='*50}")
+        print(f"DEBUG: Decoder model input details:")
+        print(f"DEBUG: Collated input: {collated_input[:500]}...")
+        print(f"DEBUG: Input shape: {inputs['input_ids'].shape}")
+        print(f"DEBUG: Attention mask shape: {attention_mask.shape}")
+        print(f"DEBUG: Max new tokens: {self.max_new_tokens}")
+        print(f"DEBUG: Beam search: {beam}")
+        print(f"DEBUG: Number of sequences: {n}")
+        print(f"DEBUG: Hard seq len: {self.hard_seq_len}")
+        print(f"{'='*50}\n")
+        
         with torch.no_grad():
+            print("Starting model generation...")
             outputs = self.model.generate(
                 inputs["input_ids"].cuda(),
                 max_new_tokens=self.max_new_tokens,
@@ -323,6 +337,7 @@ generate only the next tactic."},
                 num_beams=n if beam and 1 < n else 1,
                 attention_mask=attention_mask.cuda(),
             )
+            print("Model generation completed")
         input_num_tokens = inputs["input_ids"].shape[1]
         generated_seqs = outputs.sequences[:, input_num_tokens:]
         aux_tactics = self.tokenizer.batch_decode(generated_seqs, skip_special_tokens=True)

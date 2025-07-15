@@ -147,14 +147,7 @@ class ClassicalSearcher:
             print(self.initial_dset_file.proofs[-1].proof_text_to_string())
 
             print("-" * 50)
-        if "Admitted" in self.initial_dset_file.proofs[-1].proof_text_to_string():
-            return ClassicalSuccess(
-                time.time() - start,
-                self.total_model_time,
-                num_steps,
-                self.root_candidate,
-                self.root_candidate,
-            )
+    
         for i in range(self.max_search_steps):
             cur = time.time()
             if self.timeout <= cur - start:
@@ -232,6 +225,19 @@ class ClassicalSearcher:
                 self.seen_goals.append(proof_check_result.current_goals)
                 self.seen_goals_candidates.append(cur_candidate)
                 start_time = time.time()
+                
+                # Debug: Print current proof state and goals for classical search
+                print(f"\n{'='*40}")
+                print(f"DEBUG: Classical search attempt {attempt_num} - Current state:")
+                print(f"DEBUG: Current proof script: {cur_candidate.proof_str}")
+                print(f"DEBUG: Current goals:")
+                for i, goal in enumerate(proof_check_result.current_goals):
+                    print(f"DEBUG: Goal {i}: {goal.text}")
+                print(f"DEBUG: Depth: {cur_candidate.depth}")
+                print(f"DEBUG: Max branch: {self.max_branch}")
+                print(f"DEBUG: File prefix: {self.proof_manager.file_prefix}")
+                print(f"{'='*40}\n")
+                
                 recs = self.tactic_client.get_recs(
                     len(cur_candidate.proof.steps) - 1,
                     cur_candidate.proof,
