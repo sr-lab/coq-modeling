@@ -141,14 +141,12 @@ class StraightLineSearcher:
         cur_time = time.time() - start_time
         last_proof_script = ""
         step_count = 0
-        print(f"Starting straight line search, timeout: {self.timeout}")
         
         while (
             cur_proof_result.tactic_result == TacticResult.VALID
             and cur_time < self.timeout
         ):
             step_count += 1
-            print(f"Step {step_count}: Generating tactic...")
             assert cur_proof_result.new_proof is not None
             cur_dset_file = self.proof_manager.build_dset_file(
                 cur_proof_result.new_proof
@@ -159,7 +157,6 @@ class StraightLineSearcher:
             )
             start_model_time = time.time()
             last_proof = cur_dset_file.proofs[-1]
-            print(f"Step {step_count}: Calling model for step {len(last_proof.steps) - 1}")
             
             result = client.get_recs(
                 len(last_proof.steps) - 1,
@@ -171,24 +168,21 @@ class StraightLineSearcher:
                 file_prefix=self.proof_manager.file_prefix,
             )
             end_model_time = time.time()
-            print(f"Step {step_count}: Model returned {len(result.next_tactic_list)} tactics")
-            if result.next_tactic_list:
-                print(f"Step {step_count}: First tactic: {result.next_tactic_list[0][:100]}...")
-            
+        
             assert len(result.next_tactic_list) == 1
             next_tactic = result.next_tactic_list[0]
             self.total_model_time += end_model_time - start_model_time
-            print(f"Step {step_count}: Checking proof with tactic...")
+            #print(f"Step {step_count}: Checking proof with tactic...")
             proof_check_result = self.proof_manager.check_proof(
                 cur_proof_script + "\n" + next_tactic,
                 cur_proof_result.new_proof.theorem,
             )
             last_proof_script = cur_proof_script + "\n" +  next_tactic
             cur_proof_result = proof_check_result
-            print(f"Step {step_count}: Proof check result: {cur_proof_result.tactic_result}")
+            #print(f"Step {step_count}: Proof check result: {cur_proof_result.tactic_result}")
             cur_time = time.time() - start_time
 
-        print(f"Search ended after {step_count} steps, final result: {cur_proof_result.tactic_result}")
+        #print(f"Search ended after {step_count} steps, final result: {cur_proof_result.tactic_result}")
         match cur_proof_result.tactic_result:
             case TacticResult.VALID:
                 return None, last_proof_script
