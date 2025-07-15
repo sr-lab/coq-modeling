@@ -474,7 +474,7 @@ class LocalTacticGenClient:
         # Debug: Print detailed example information
         print(f"\n{'='*50}")
         print(f"DEBUG: Model input example details:")
-        print(f"DEBUG: Script: {example.script}...")
+        # print(f"DEBUG: Script: {example.script}...")
         print(f"DEBUG: Goals: {example.goals}")
         print(f"DEBUG: Next steps: {example.next_steps}")
         if example.proofs:
