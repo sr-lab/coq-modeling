@@ -61,15 +61,15 @@ example_collator:
 #   line_dict_loc: data/line-dict.json
 
 # Evaluation Args
-eval_steps: 100 
-save_steps: 100
+eval_steps: 200 
+save_steps: 200
 eval_accumulation_steps: 1
 per_device_eval_batch_size: 8
 num_eval_examples: 2000 # Evaluation would take ~2 hours each time w/o limiting this
 
 # Logging Args
 logging_steps: 100
-save_total_limit: 10
+save_total_limit: 20
 
 # Train from checkpoint
 checkpoint_name: models/deepseek-bm25-proof-tfidf-proj-thm-prem-final/checkpoint-54500
